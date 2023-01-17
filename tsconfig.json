@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "outDir": "src/public",
+    "module": "es2020"
+  },
+  "exclude": ["src/**/*.spec.ts", "*.config.ts"]
+}
