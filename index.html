@@ -1,18 +1,20 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <title>Canvas/JS RayTracer</title>
+<html>
+  <head>
+    <title>Raytracer</title>
   </head>
-<body>
-  <canvas id="mycanvas" width="300" height="300"></canvas>
-  <script type="text/javascript" src="js/Color.js"></script>
-  <script type="text/javascript" src="js/Light.js"></script>
-  <script type="text/javascript" src="js/Point.js"></script>
-  <script type="text/javascript" src="js/Ray.js"></script>
-  <script type="text/javascript" src="js/Sphere.js"></script>
-  <script type="text/javascript" src="js/ViewPlane.js"></script>
-  <script type="text/javascript" src="js/Vector.js"></script>
-  <script type="text/javascript" src="js/traceRays.js"></script>
-</body>
+  <body>
+    <div id="root"></div>
+    <div>
+      <canvas
+        id="imageCanvas"
+        width="1000"
+        height="1000"
+        style="display: none"
+      ></canvas>
+    </div>
+    <div>
+      <canvas id="canvas" width="1000" height="1000"></canvas>
+    </div>
+    <script src="src/index.ts" type="module"></script>
+  </body>
 </html>
