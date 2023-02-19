@@ -13,7 +13,7 @@ export const rotateCamera = (dir: Vector) => {
   return dir;
 };
 
-const ambient1 = new AmbientLight({ intensity: 0.1 });
+const ambient1 = new AmbientLight({ intensity: 0.2 });
 
 const ceilingLight = new AreaLight({
   corner: new Point(-0.5, 3.9, 2),
@@ -21,7 +21,7 @@ const ceilingLight = new AreaLight({
   v2: new Vector(0, 0, 1),
   uSteps: 4,
   vSteps: 4,
-  intensity: 0.4,
+  intensity: 0.8,
   size: 1,
   material: new Material({
     albedo: new Color(255, 255, 255)
@@ -113,7 +113,7 @@ const reflectiveBall = new Sphere({
   radius: 1,
   name: "reflective",
   material: new Material({
-    albedo: new Color(0, 0, 0),
+    albedo: new Color(255, 255, 255),
     specular: 100,
     reflectivity: 0.8,
     refractionIndex: 0

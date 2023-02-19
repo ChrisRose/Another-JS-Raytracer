@@ -106,7 +106,7 @@ const floor = new Rectangle({
   material: new Material({
     reflectivity: 0.5,
     albedo: new Color(255, 255, 255),
-    glossiness: 0.1
+    glossiness: 0.01
     // texture: checkerBoardTexture
   })
 });

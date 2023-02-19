@@ -12,7 +12,6 @@ export class Rectangle {
   v2: Vector;
   normal: Vector;
   size: number;
-  reflectivity?: number;
   orientation: string;
   name?: string;
   material: Material;

@@ -28,4 +28,12 @@ export class Color {
   subtract(color: Color) {
     return new Color(this.r - color.r, this.g - color.g, this.b - color.b);
   }
+
+  clamp() {
+    return new Color(
+      Math.floor(Math.min(Math.max(this.r, 0), 255)),
+      Math.floor(Math.min(Math.max(this.g, 0), 255)),
+      Math.floor(Math.min(Math.max(this.b, 0), 255))
+    );
+  }
 }

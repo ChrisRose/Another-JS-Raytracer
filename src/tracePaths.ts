@@ -1,14 +1,8 @@
 import { Color } from "./Color.js";
 import { Ray } from "./Ray.js";
 import { Vector } from "./Vector.js";
-import { Intersected, Intersection, SceneObjects, Shape } from "./types.js";
-import {
-  distance,
-  subtract,
-  dotProduct,
-  getGlossyRay,
-  getHemisphereRay
-} from "./utils.js";
+import { Intersected, SceneObjects, Shape } from "./types.js";
+import { distance, subtract, dotProduct, getGlossyRay } from "./utils.js";
 import { epsilon } from "./const.js";
 import { AreaLight, Light } from "./Light.js";
 // import {
@@ -22,7 +16,7 @@ import {
   lights,
   rotateCamera,
   sceneObjects
-} from "./scenes/caustics.js";
+} from "./scenes/cornell.js";
 // import {
 //   cameraStart,
 //   lights,
@@ -229,38 +223,45 @@ const computeIntensity = function ({
 
 const computeColor = function ({
   intersected,
-  intensity,
   imageMap
 }: {
   intersected: Intersected;
-  intensity: number;
   imageMap?: ImageData;
 }) {
   let pixelColor = new Color(0, 0, 0);
   const point = intersected?.point;
   const object = intersected?.object as Shape;
-  if (object?.material?.texture && point) {
-    // @ts-ignore
-    pixelColor = object?.material
-      .texture?.(point.x, point.z)
-      ?.multiply(intensity);
-  } else if (
-    object?.type === "sphere" &&
-    object?.name === "skyBall" &&
-    imageMap &&
-    point
-  ) {
-    const radius = object.radius;
-    // scale the point on a sphere with radius 9 to a point on a sphere with radius 1
-    const scaledPoint = new Point(
-      point.x / radius,
-      point.y / radius,
-      point.z / radius
+
+  if (!point || !object) {
+    return pixelColor;
+  }
+
+  if (object.type === "sphere" && object.name === "skyBall" && imageMap) {
+    // center of sphere as a vector
+    const center = new Vector(
+      object.center.x,
+      object.center.y,
+      object.center.z
+    );
+
+    // point on sphere as a vector
+    const pointOnSphere = new Vector(point.x, point.y, point.z);
+
+    // vector from center of sphere to point on sphere
+    const pointAroundCenter = subtract(pointOnSphere, center);
+
+    // scale the point to the unit sphere
+    const scaledPointAroundCenter = new Point(
+      Math.min(1, pointAroundCenter.x / object.radius),
+      Math.min(1, pointAroundCenter.y / object.radius),
+      Math.min(1, pointAroundCenter.z / object.radius)
     );
 
     // find the latitude and longitude of the point
-    const theta = Math.acos(scaledPoint.y);
-    const phi = Math.atan2(scaledPoint.z, scaledPoint.x) + Math.PI;
+    const theta = Math.acos(scaledPointAroundCenter.y);
+    const phi =
+      Math.atan2(scaledPointAroundCenter.z, scaledPointAroundCenter.x) +
+      Math.PI;
 
     // find the pixel coordinates of the texture map
     const u = Math.floor((phi / (2 * Math.PI)) * imageMap.width);
@@ -272,11 +273,12 @@ const computeColor = function ({
     const g = imageMap.data[index + 1];
     const b = imageMap.data[index + 2];
 
-    pixelColor = new Color(r, g, b).multiply(intensity);
+    pixelColor = new Color(r, g, b);
+  } else if (object.material?.texture) {
+    // @ts-ignore
+    pixelColor = object?.material.texture?.(point.x, point.z);
   } else if (intersected?.object?.material.albedo) {
-    pixelColor = intersected.object.material.albedo
-      .divide(Math.PI)
-      .multiply(intensity);
+    pixelColor = intersected.object.material.albedo;
   }
   return pixelColor;
 };
@@ -354,7 +356,7 @@ const getFresnelReflectance = ({
   // computes Shlick's approximation
   const cosTheta = Math.max(0, normal.dotProduct(incidentRay));
   const r0 = Math.pow((1 - refractionIndex) / (1 + refractionIndex), 2);
-  return r0 + (1 - r0) * Math.pow(1 - cosTheta, 5);
+  return Math.max(0, r0 + (1 - r0) * Math.pow(1 - cosTheta, 5));
 };
 
 export function traceRay({
@@ -370,10 +372,14 @@ export function traceRay({
   bounceDepth?: number;
   imageMap?: ImageData;
 }): Color {
-  const maxBounceDepth = 5;
-  const pathsPerPixel = 3;
+  const maxBounceDepth = 1;
+  const pathsPerPixel = 5;
 
   let intersected, normal, reflectedRay;
+
+  // if (i === 330 || j === 700) {
+  //   return new Color(0, 255, 0);
+  // }
 
   intersected = intersection({
     origin: ray.start,
@@ -384,10 +390,6 @@ export function traceRay({
     j,
     sceneObjects
   });
-
-  // if (i === 500 && j === 500) {
-  //   debugger;
-  // }
 
   if (!intersected) {
     return new Color(0, 0, 0);
@@ -422,7 +424,6 @@ export function traceRay({
 
   let pixelColor = computeColor({
     intersected,
-    intensity,
     imageMap
   });
 
@@ -488,9 +489,14 @@ export function traceRay({
       });
     }
 
-    pixelColor = pixelColor.add(
-      reflectedColor.multiply(Math.max(0, fresnelReflectance))
+    const a = pixelColor.multiply(
+      1 - intersected.object.material.reflectivity * (1 - fresnelReflectance)
     );
+    const b = reflectedColor.multiply(
+      intersected.object.material.reflectivity * fresnelReflectance
+    );
+
+    pixelColor = a.add(b);
   }
 
   if (intersected?.object.material?.refractionIndex) {
@@ -517,20 +523,26 @@ export function traceRay({
   }
 
   const getRandomDirection = (normal: Vector) => {
-    const u = Math.random();
-    const v = Math.random();
-    const sinTheta = Math.sqrt(1 - u * u);
-    const phi = 2 * Math.PI * v;
-    const x = sinTheta * Math.acos(phi);
-    const z = sinTheta * Math.asin(phi);
-    const randomDirection = new Vector(x, v, z);
-    const cosTheta = randomDirection.normalize().dotProduct(normal);
+    // get random direction around a normal
+    const theta = Math.random() * 2 * Math.PI;
+    const phi = Math.random() * Math.PI;
+    const x = Math.cos(theta) * Math.sin(phi);
+    const y = Math.cos(phi);
+    const z = Math.sin(theta) * Math.sin(phi);
+    const randomDirection = new Vector(x, y, z);
+    const cosTheta = randomDirection.dotProduct(normal);
+    if (cosTheta < 0) {
+      return {
+        randomDirection: randomDirection.multiply(-1),
+        cosTheta: -cosTheta
+      };
+    }
     return { randomDirection, cosTheta };
   };
 
   let bounceColor = new Color(0, 0, 0);
   for (let i = 0; i <= pathsPerPixel; i++) {
-    const { randomDirection } = getRandomDirection(normal.normalize());
+    const { randomDirection, cosTheta } = getRandomDirection(normal);
     const biasedNormal = normal?.multiply(epsilon);
     const biasedPoint = new Point(
       biasedNormal.x,
@@ -543,32 +555,29 @@ export function traceRay({
       intersected?.point.z
     ).add(biasedPoint);
 
-    // const hemisphereRay = getHemisphereRay({
-    //   point: shiftedPoint
-    // });
-
     const randomRay = new Ray(shiftedPoint, randomDirection);
 
     const randomColor = traceRay({
       ray: randomRay,
-      bounceDepth: bounceDepth + 1
+      bounceDepth: bounceDepth + 1,
+      imageMap,
+      i,
+      j
     });
-    bounceColor = bounceColor.add(randomColor);
+    bounceColor = bounceColor.add(randomColor.multiply(cosTheta));
   }
   bounceColor = bounceColor.divide(pathsPerPixel);
-  pixelColor = pixelColor.add(bounceColor);
+  pixelColor = pixelColor.divide(Math.PI).add(bounceColor).multiply(intensity);
 
-  return new Color(
-    Math.min(pixelColor.r, 255),
-    Math.min(pixelColor.g, 255),
-    Math.min(pixelColor.b, 255)
-  );
+  pixelColor = pixelColor.clamp();
+
+  return pixelColor;
 }
 
 onmessage = (e: MessageEvent) => {
   const { iStart, iEnd, jStart, jEnd, width, imageMap } = e.data;
 
-  const samplesPerPixel = 10;
+  const samplesPerPixel = 15;
 
   const pixelColors = [];
   let pixelColor = new Color(0, 0, 0);

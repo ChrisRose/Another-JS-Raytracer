@@ -54,9 +54,9 @@ function traceRays() {
   for (let i = 0; i <= 7; i++) {
     const iStart = (i * width) / 8;
     const iEnd = ((i + 1) * width) / 8;
-    for (let i = 0; i <= 7; i++) {
-      const jStart = (i * height) / 8;
-      const jEnd = ((i + 1) * height) / 8;
+    for (let j = 0; j <= 7; j++) {
+      const jStart = (j * height) / 8;
+      const jEnd = ((j + 1) * height) / 8;
       const worker = new Worker("tracePaths.js", { type: "module" });
       worker.postMessage({
         iStart,
@@ -68,26 +68,19 @@ function traceRays() {
       });
       worker.onmessage = (e) => {
         const { pixelColors } = e.data;
-        pixelColors?.forEach(
-          ({
-            i,
-            j,
-            pixelColor
-          }: {
-            i: number;
-            j: number;
-            pixelColor: Color;
-          }) => {
-            setPixel({
-              imageData,
-              x: i,
-              y: j,
-              width: width,
-              color: pixelColor,
-              a: 0xff
-            });
-          }
-        );
+
+        for (let k = 0; k < pixelColors.length; k++) {
+          const pixelColor = pixelColors[k];
+          setPixel({
+            imageData,
+            x: pixelColor.i,
+            y: pixelColor.j,
+            width: width,
+            color: pixelColor.pixelColor,
+            a: 0xff
+          });
+        }
+
         context?.putImageData(imageData, 0, 0);
       };
     }

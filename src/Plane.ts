@@ -25,7 +25,6 @@ export class Plane {
     center: Point;
     normal: Vector;
     texture?: (x: number, y: number) => Color;
-    reflectivity?: number;
     specular?: number;
     name?: string;
     size: number;
