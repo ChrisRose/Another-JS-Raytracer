@@ -81,7 +81,7 @@ const floor = new Rectangle({
   size: 6,
   orientation: "xzAxis",
   normal: new Vector(0, 1, 0),
-  material: new Material({ reflectivity: 0, texture: checkerBoardTexture })
+  material: new Material({ reflectivity: 0, albedo: new Color(255, 255, 255) })
 });
 
 const glassBall = new Sphere({

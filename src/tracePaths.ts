@@ -179,19 +179,19 @@ const computeIntensity = function ({
       const dot = light.dir?.negative().dotProduct(normal.normalize());
       intensity += light.intensity * dot;
     } else if (light.type === "areaLight") {
-      // const shadowBiasVector = normal?.multiply(0.01);
-      // const shadowBiasPoint = new Point(
-      //   shadowBiasVector.x,
-      //   shadowBiasVector.y,
-      //   shadowBiasVector.z
-      // );
-      // const shiftedPoint = new Point(point.x, point.y, point.z).add(
-      //   shadowBiasPoint
-      // );
+      const shadowBiasVector = normal?.multiply(0.01);
+      const shadowBiasPoint = new Point(
+        shadowBiasVector.x,
+        shadowBiasVector.y,
+        shadowBiasVector.z
+      );
+      const shiftedPoint = new Point(point.x, point.y, point.z).add(
+        shadowBiasPoint
+      );
 
-      // const softIntensity = intensityAt(light, shiftedPoint, sceneObjects);
+      const softIntensity = intensityAt(light, shiftedPoint, sceneObjects);
 
-      // intensity *= softIntensity + 0.4;
+      intensity *= softIntensity + 0.4;
 
       const lightVector = new Vector(
         light.position.subtract(point).x,
@@ -523,7 +523,8 @@ export function traceRay({
   }
 
   const getRandomDirection = (normal: Vector) => {
-    // get random direction around a normal
+    // get random direction around a normal in a hemisphere
+
     const theta = Math.random() * 2 * Math.PI;
     const phi = Math.random() * Math.PI;
     const x = Math.cos(theta) * Math.sin(phi);
@@ -532,17 +533,14 @@ export function traceRay({
     const randomDirection = new Vector(x, y, z);
     const cosTheta = randomDirection.dotProduct(normal);
     if (cosTheta < 0) {
-      return {
-        randomDirection: randomDirection.multiply(-1),
-        cosTheta: -cosTheta
-      };
+      return undefined;
     }
     return { randomDirection, cosTheta };
   };
 
   let bounceColor = new Color(0, 0, 0);
   for (let i = 0; i <= pathsPerPixel; i++) {
-    const { randomDirection, cosTheta } = getRandomDirection(normal);
+    const randomDirection = getRandomDirection(normal);
     const biasedNormal = normal?.multiply(epsilon);
     const biasedPoint = new Point(
       biasedNormal.x,
@@ -555,7 +553,11 @@ export function traceRay({
       intersected?.point.z
     ).add(biasedPoint);
 
-    const randomRay = new Ray(shiftedPoint, randomDirection);
+    if (!randomDirection) {
+      continue;
+    }
+
+    const randomRay = new Ray(shiftedPoint, randomDirection?.randomDirection);
 
     const randomColor = traceRay({
       ray: randomRay,
@@ -564,7 +566,9 @@ export function traceRay({
       i,
       j
     });
-    bounceColor = bounceColor.add(randomColor.multiply(cosTheta));
+    bounceColor = bounceColor.add(
+      randomColor.multiply(randomDirection?.cosTheta)
+    );
   }
   bounceColor = bounceColor.divide(pathsPerPixel);
   pixelColor = pixelColor.divide(Math.PI).add(bounceColor).multiply(intensity);
