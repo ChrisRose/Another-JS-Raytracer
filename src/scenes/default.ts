@@ -39,7 +39,8 @@ const plane1 = new Plane({
   size: 3,
   material: new Material({
     reflectivity: 0,
-    texture: checkerBoardTexture
+    texture: checkerBoardTexture,
+    albedo: new Color(255, 255, 255)
   })
 });
 

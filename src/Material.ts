@@ -1,7 +1,7 @@
 import { Color } from "./Color.js";
 
 export class Material {
-  albedo?: Color;
+  albedo: Color;
   specular?: number;
   reflectivity?: number;
   refractionIndex?: number;
@@ -16,7 +16,7 @@ export class Material {
     glossiness = 0,
     texture
   }: {
-    albedo?: Color;
+    albedo: Color;
     specular?: number;
     reflectivity?: number;
     refractionIndex?: number;

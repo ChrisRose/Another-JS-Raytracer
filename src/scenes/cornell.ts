@@ -24,7 +24,7 @@ const ceilingLight = new AreaLight({
   intensity: 0.8,
   size: 1,
   material: new Material({
-    albedo: new Color(255, 255, 255)
+    albedo: new Color(255, 255, 0)
   })
 });
 
