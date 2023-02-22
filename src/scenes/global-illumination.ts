@@ -71,7 +71,8 @@ const floor = new Rectangle({
   corner: new Point(-30, 0, -30),
   v1: new Vector(1, 0, 0),
   v2: new Vector(0, 0, 1),
-  size: 60,
+  width: 60,
+  height: 60,
   normal: new Vector(0, 1, 0),
   orientation: "xzAxis",
   material: new Material({

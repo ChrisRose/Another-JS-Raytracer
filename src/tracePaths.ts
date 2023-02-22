@@ -25,7 +25,7 @@ import {
 // } from "./scenes/default.js";
 import { Point } from "./Point.js";
 
-export function intersection({
+export const findClosestIntersection = ({
   origin,
   dir,
   tMin,
@@ -41,7 +41,7 @@ export function intersection({
   sceneObjects: SceneObjects;
   i?: number;
   j?: number;
-}) {
+}) => {
   let point: Point;
   let intersected = null;
   let dist = Infinity;
@@ -63,14 +63,19 @@ export function intersection({
 
         if (dist < closestIntersection) {
           closestIntersection = dist;
-          intersected = { point, object: sceneObjects[k], inside };
+          intersected = {
+            point,
+            object: sceneObjects[k],
+            inside,
+            intersection
+          };
         }
       }
     }
   }
 
   return intersected;
-}
+};
 
 const getReflectedRay = function ({
   normal,
@@ -103,7 +108,7 @@ const isShadowed = function ({
     lightPosition.z - origin.z
   );
 
-  return intersection({
+  return findClosestIntersection({
     origin: origin,
     dir: L,
     tMin: epsilon,
@@ -143,7 +148,8 @@ const computeIntensity = function ({
   object,
   inside,
   sceneObjects,
-  ray
+  ray,
+  normal
 }: {
   point: Point;
   object: Shape;
@@ -152,22 +158,12 @@ const computeIntensity = function ({
   sceneObjects: SceneObjects;
   i?: number;
   j?: number;
+  normal?: Vector;
 }) {
   let intensity = 0;
 
   for (let k = 0; k <= lights.length - 1; k++) {
     const light = lights[k];
-
-    let normal;
-
-    if (object?.type === "sphere") {
-      normal = object.normal(point);
-      if (inside) {
-        normal = normal.multiply(-1);
-      }
-    } else if (object.type === "plane" || object.type === "rectangle") {
-      normal = object.normal;
-    }
 
     if (!normal) {
       throw new Error("normal is undefined");
@@ -373,7 +369,7 @@ export function traceRay({
   imageMap?: ImageData;
 }): Color {
   const maxBounceDepth = 1;
-  const pathsPerPixel = 5;
+  const pathsPerPixel = 10;
 
   let intersected, normal, reflectedRay;
 
@@ -381,7 +377,7 @@ export function traceRay({
   //   return new Color(0, 255, 0);
   // }
 
-  intersected = intersection({
+  intersected = findClosestIntersection({
     origin: ray.start,
     dir: ray.dir,
     tMin: epsilon,
@@ -404,6 +400,8 @@ export function traceRay({
     if (intersected?.object?.name === "skyBall") {
       normal = normal.negative();
     }
+  } else if (intersected?.object?.type === "box") {
+    normal = intersected?.intersection?.normal;
   } else {
     normal = intersected?.object?.normal;
   }
@@ -419,7 +417,8 @@ export function traceRay({
     ray,
     i,
     j,
-    sceneObjects
+    sceneObjects,
+    normal
   });
 
   let pixelColor = computeColor({
@@ -478,7 +477,7 @@ export function traceRay({
 
         reflectedColor = reflectedColor.add(color);
       }
-      reflectedColor = reflectedColor.multiply(1 / pathsPerPixel);
+      reflectedColor = reflectedColor.multiply(1);
     } else {
       reflectedColor = traceRay({
         ray: reflectedRay,
@@ -496,7 +495,9 @@ export function traceRay({
       intersected.object.material.reflectivity * fresnelReflectance
     );
 
-    pixelColor = a.add(b);
+    const cosTheta = Math.max(0, normal.dotProduct(reflectedRay.dir));
+
+    pixelColor = a.add(b.multiply(cosTheta));
   }
 
   if (intersected?.object.material?.refractionIndex) {
@@ -570,8 +571,8 @@ export function traceRay({
       randomColor.multiply(randomDirection?.cosTheta)
     );
   }
-  bounceColor = bounceColor.divide(pathsPerPixel);
-  pixelColor = pixelColor.divide(Math.PI).add(bounceColor).multiply(intensity);
+  bounceColor = bounceColor.multiply(Math.PI / pathsPerPixel);
+  pixelColor = pixelColor.divide(Math.PI).add(bounceColor);
 
   pixelColor = pixelColor.clamp();
 
@@ -581,7 +582,7 @@ export function traceRay({
 onmessage = (e: MessageEvent) => {
   const { iStart, iEnd, jStart, jEnd, width, imageMap } = e.data;
 
-  const samplesPerPixel = 15;
+  const samplesPerPixel = 5;
 
   const pixelColors = [];
   let pixelColor = new Color(0, 0, 0);

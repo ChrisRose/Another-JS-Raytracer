@@ -11,38 +11,42 @@ export class Rectangle {
   v1: Vector;
   v2: Vector;
   normal: Vector;
-  size: number;
   orientation: string;
   name?: string;
   material: Material;
+  width: number;
+  height: number;
 
   constructor({
     corner,
     v1,
     v2,
-    size,
     orientation,
     normal,
     name,
-    material
+    material,
+    width,
+    height
   }: {
     corner: Point;
     v1: Vector;
     v2: Vector;
-    size: number;
     orientation: string;
     normal: Vector;
     name?: string;
     material: Material;
+    width: number;
+    height: number;
   }) {
     this.corner = corner;
     this.v1 = v1;
     this.v2 = v2;
     this.normal = normal;
-    this.size = size;
     this.orientation = orientation;
     this.name = name;
     this.material = material;
+    this.width = width;
+    this.height = height;
   }
 
   intersection(ray: Ray): Intersection {
@@ -52,9 +56,9 @@ export class Rectangle {
       const hitPoint = ray.getPoint(t);
 
       const y0 = this.corner.y;
-      const y1 = this.corner.y + this.v1.y * this.size;
+      const y1 = this.corner.y + this.v1.y * this.height;
       const z0 = this.corner.z;
-      const z1 = this.corner.z + this.v2.z * this.size;
+      const z1 = this.corner.z + this.v2.z * this.width;
 
       if (
         hitPoint.y > y0 &&
@@ -70,9 +74,9 @@ export class Rectangle {
       const hitPoint = ray.getPoint(t);
 
       const x0 = this.corner.x;
-      const x1 = this.corner.x + this.v1.x * this.size;
+      const x1 = this.corner.x + this.v1.x * this.width;
       const y0 = this.corner.y;
-      const y1 = this.corner.y + this.v2.y * this.size;
+      const y1 = this.corner.y + this.v2.y * this.height;
 
       if (
         hitPoint.x > x0 &&
@@ -88,9 +92,9 @@ export class Rectangle {
       const hitPoint = ray.getPoint(t);
 
       const x0 = this.corner.x;
-      const x1 = this.corner.x + this.v1.x * this.size;
+      const x1 = this.corner.x + this.v1.x * this.width;
       const z0 = this.corner.z;
-      const z1 = this.corner.z + this.v2.z * this.size;
+      const z1 = this.corner.z + this.v2.z * this.width;
 
       if (
         hitPoint.x > x0 &&

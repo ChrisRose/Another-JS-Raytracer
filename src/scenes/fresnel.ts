@@ -41,7 +41,8 @@ const floor = new Rectangle({
   v2: new Vector(0, 0, 1),
   normal: new Vector(0, 1, 0),
   orientation: "xzAxis",
-  size: 100,
+  width: 100,
+  height: 100,
   material: new Material({
     albedo: new Color(255, 255, 255),
     reflectivity: 0.8

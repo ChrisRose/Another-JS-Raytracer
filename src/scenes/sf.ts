@@ -75,7 +75,8 @@ const leftWall = new Rectangle({
   corner: new Point(-2.5, -1, -3),
   v1: new Vector(0, 1, 0),
   v2: new Vector(0, 0, 1),
-  size: 2,
+  width: 2,
+  height: 2,
   orientation: "yzAxis",
   normal: new Vector(1, 0, 0),
   material: new Material({
@@ -100,7 +101,8 @@ const floor = new Rectangle({
   corner: new Point(-50, -1, -50),
   v1: new Vector(1, 0, 0),
   v2: new Vector(0, 0, 1),
-  size: 100,
+  width: 100,
+  height: 100,
   normal: new Vector(0, 1, 0),
   orientation: "xzAxis",
   material: new Material({
