@@ -41,7 +41,7 @@ export class Sphere {
   }
 
   intersection(ray: Ray): Intersection {
-    var a, b, c, discriminant, t0, t1;
+    var a, b, c, discriminant;
 
     const rayDirNormalized = ray.dir.normalize();
 

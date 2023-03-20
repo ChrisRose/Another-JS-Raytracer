@@ -8,15 +8,15 @@ import {
   SceneObject,
   Shape
 } from "./types.js";
-import { distance, subtract, dotProduct, getGlossyRay } from "./utils.js";
+import { distance, subtract, dotProduct } from "./utils.js";
 import { epsilon } from "./const.js";
-import { AreaLight, Light, LightBall } from "./Light.js";
+import { AreaLight } from "./Light.js";
 import {
   cameraStart,
   lights,
   rotateCamera,
   sceneObjects
-} from "./scenes/cornellBoxMeshes.js";
+} from "./scenes/teapot.js";
 import { Point } from "./Point.js";
 import { Mesh } from "./Mesh.js";
 import { getRotationMatrixAlignedToVector } from "./matrix.js";
@@ -52,35 +52,34 @@ export function findClosestIntersection({
   for (let k = 0; k < meshObjects.length; k++) {
     const meshObject = meshObjects[k] as Mesh;
     const boundingBox = meshObject.boundingBox;
-    if (boundingBox) {
-      const boundingBoxIntersection = boundingBox.intersection(
-        new Ray(origin, dir)
-      );
-      if (true || boundingBoxIntersection) {
-        for (let j = 0; j < meshObject.meshObjects.length; j++) {
-          const object = meshObject.meshObjects[j];
 
-          intersection = object.intersection(new Ray(origin, dir));
+    const boundingBoxIntersection = boundingBox
+      ? boundingBox.intersection(new Ray(origin, dir))
+      : true;
+    if (boundingBoxIntersection) {
+      for (let j = 0; j < meshObject.meshObjects.length; j++) {
+        const object = meshObject.meshObjects[j];
 
-          if (intersection) {
-            const { t } = intersection;
-            point = new Ray(origin, dir).getPoint(t);
+        intersection = object.intersection(new Ray(origin, dir));
 
-            if (t > tMin && t < tMax) {
-              if (!findClosest) {
-                return { point, object };
-              }
+        if (intersection) {
+          const { t } = intersection;
+          point = new Ray(origin, dir).getPoint(t);
 
-              dist = distance(point, origin);
+          if (t > tMin && t < tMax) {
+            if (!findClosest) {
+              return { point, object };
+            }
 
-              if (dist < closestIntersection) {
-                closestIntersection = dist;
-                intersected = {
-                  point,
-                  object,
-                  intersection
-                };
-              }
+            dist = distance(point, origin);
+
+            if (dist < closestIntersection) {
+              closestIntersection = dist;
+              intersected = {
+                point,
+                object,
+                intersection
+              };
             }
           }
         }
@@ -366,7 +365,14 @@ const traceRay = ({
 
   let normal: Vector;
   if (intersected?.object) {
-    if (typeof intersected?.object.normal === "function") {
+    if (intersected.object.type === "triangle") {
+      // get barycentric coordinates
+      const UVW = intersected.object.getUVW(intersected.point);
+      const { u, v, w } = UVW;
+      // get the normal at the point of intersection
+      normal = intersected.object.normalAtPoint({ u, v, w });
+      //normal = intersected.object.normal;
+    } else if (typeof intersected?.object.normal === "function") {
       normal = intersected?.object.normal(intersected?.point);
     } else {
       normal = intersected?.object?.normal;
@@ -445,21 +451,12 @@ const traceRay = ({
       }
     }
 
-    const biasedNormal = normal.multiply(epsilon).toPoint();
-    const shiftedPoint = intersected.point.add(biasedNormal);
+    const shiftedPoint = intersected.point.add(
+      normal.multiply(epsilon).toPoint()
+    );
 
     // reflection
     if (reflectance > 0) {
-      if (intersected.object.type === "triangle") {
-        // get barycentric coordinates
-        const UVW = intersected.object.getUVW(intersected.point);
-        if (UVW) {
-          const { u, v, w } = UVW;
-          // get the normal at the point of intersection
-          normal = intersected.object.normalAtPoint({ u, v, w });
-        }
-      }
-
       const reflectedRay = getReflectedRay({
         normal,
         point: shiftedPoint,
@@ -552,7 +549,7 @@ const traceRay = ({
       );
     }
 
-    // // indirect lighting
+    // indirect lighting
     let indirectColor = new Color(0, 0, 0);
     const randomDirection = getCosineWeightedSample(normal);
     const cosTheta = Math.max(0, randomDirection.dotProduct(normal));

@@ -1,29 +1,53 @@
 <!DOCTYPE MeshLabDocument>
 <MeshLabProject>
  <MeshGroup>
-  <MLMesh filename="../cornellBox2/leftBox.obj" idInFile="-1" visible="0" label="SelectedFacesSubset(1)">
+  <MLMesh filename="backWall.obj" idInFile="-1" visible="1" label="backWall.obj">
    <MLMatrix44>
 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 
 </MLMatrix44>
    <RenderingOption solidColor="192 192 192 255" pointSize="3" wireColor="64 64 64 255" pointColor="252 233 79 255" wireWidth="1" boxColor="234 234 234 255">100001000000000000000100000001011101000010100000000100111011100000001001</RenderingOption>
   </MLMesh>
-  <MLMesh filename="../cornellBox2/leftBox.obj.ply" idInFile="-1" visible="0" label="Merged Mesh">
+  <MLMesh filename="ceiling.obj" idInFile="-1" visible="1" label="ceiling.obj">
    <MLMatrix44>
 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 
 </MLMatrix44>
    <RenderingOption solidColor="192 192 192 255" pointSize="3" wireColor="64 64 64 255" pointColor="252 233 79 255" wireWidth="1" boxColor="234 234 234 255">100001000000000000000100000001011101000010100000000100111011100000001001</RenderingOption>
   </MLMesh>
-  <MLMesh filename="../cornellBox2/leftBox.obj" idInFile="-1" visible="0" label="SelectedFacesSubset">
+  <MLMesh filename="floor.obj" idInFile="-1" visible="1" label="floor.obj">
    <MLMatrix44>
 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 
 </MLMatrix44>
    <RenderingOption solidColor="192 192 192 255" pointSize="3" wireColor="64 64 64 255" pointColor="252 233 79 255" wireWidth="1" boxColor="234 234 234 255">100001000000000000000100000001011101000010100000000100111011100000001001</RenderingOption>
   </MLMesh>
-  <MLMesh filename="backWall.obj" idInFile="-1" visible="1" label="SelectedFacesSubset(2)">
+  <MLMesh filename="leftBox.obj" idInFile="-1" visible="1" label="leftBox.obj">
    <MLMatrix44>
 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 
 </MLMatrix44>
-   <RenderingOption solidColor="192 192 192 255" pointSize="3" wireColor="64 64 64 255" pointColor="252 233 79 255" wireWidth="1" boxColor="234 234 234 255">100001000000000000000000000001010101000010100000000100111011100000001001</RenderingOption>
+   <RenderingOption solidColor="192 192 192 255" pointSize="3" wireColor="64 64 64 255" pointColor="252 233 79 255" wireWidth="1" boxColor="234 234 234 255">100001000000000000000100000001011101000010100000000100111011100000001001</RenderingOption>
+  </MLMesh>
+  <MLMesh filename="leftWall.ply" idInFile="-1" visible="0" label="leftWall.ply">
+   <MLMatrix44>
+1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 
+</MLMatrix44>
+   <RenderingOption solidColor="192 192 192 255" pointSize="3" wireColor="64 64 64 255" pointColor="252 233 79 255" wireWidth="1" boxColor="234 234 234 255">100001000000000000000100000001011101000010100000000100111011100000001001</RenderingOption>
+  </MLMesh>
+  <MLMesh filename="rightBox.obj" idInFile="-1" visible="1" label="rightBox.obj">
+   <MLMatrix44>
+1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 
+</MLMatrix44>
+   <RenderingOption solidColor="192 192 192 255" pointSize="3" wireColor="64 64 64 255" pointColor="252 233 79 255" wireWidth="1" boxColor="234 234 234 255">100001000000000000000100000001011101000010100000000100111011100000001001</RenderingOption>
+  </MLMesh>
+  <MLMesh filename="rightWall.obj" idInFile="-1" visible="0" label="rightWall.obj">
+   <MLMatrix44>
+1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 
+</MLMatrix44>
+   <RenderingOption solidColor="192 192 192 255" pointSize="3" wireColor="64 64 64 255" pointColor="252 233 79 255" wireWidth="1" boxColor="234 234 234 255">100001000000000000000100000001011101000010100000000100111011100000001001</RenderingOption>
+  </MLMesh>
+  <MLMesh filename="teapotLowRes.obj" idInFile="-1" visible="1" label="teapotLowRes.obj">
+   <MLMatrix44>
+1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 
+</MLMatrix44>
+   <RenderingOption solidColor="192 192 192 255" pointSize="3" wireColor="64 64 64 255" pointColor="252 233 79 255" wireWidth="1" boxColor="234 234 234 255">101001000000010000000100000001011101010010100000110100111011100000001001</RenderingOption>
   </MLMesh>
  </MeshGroup>
  <RasterGroup/>

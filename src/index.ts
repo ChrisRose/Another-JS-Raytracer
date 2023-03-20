@@ -60,8 +60,8 @@ traceRays(imageMaps);
 function traceRays(imageMaps: { [key: string]: ImageData }) {
   const canvas = document.getElementById("canvas") as HTMLCanvasElement;
   const context = canvas?.getContext("2d");
-  const width = 600;
-  const height = 600;
+  const width = 400;
+  const height = 400;
   const squares = 8;
   const imageData = context?.createImageData(width, height) as ImageData;
   let workerCount = 0;

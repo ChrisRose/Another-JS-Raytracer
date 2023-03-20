@@ -74,14 +74,16 @@ export class Mesh {
       }
     }
 
-    this.boundingBox = new Box({
-      corner: new Point(minX, minY, minZ),
-      width: maxX - minX,
-      height: maxY - minY,
-      material: new Material({
-        albedo: new Color(0, 0, 0),
-        emissive: new Color(0, 0, 0)
-      })
-    });
+    if (this.name === "teapot") {
+      this.boundingBox = new Box({
+        corner: new Point(minX, minY, minZ),
+        width: maxX - minX || maxZ - minZ,
+        height: maxY - minY,
+        material: new Material({
+          albedo: new Color(0, 0, 0),
+          emissive: new Color(0, 0, 0)
+        })
+      });
+    }
   }
 }

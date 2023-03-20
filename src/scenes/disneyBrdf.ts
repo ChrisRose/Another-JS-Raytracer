@@ -14,15 +14,10 @@ export const rotateCamera = (dir: Vector) => {
   return dir.multiplyWith3x3Matrix(getRotationXMatrix(45));
 };
 
-export const ambientLight = new AmbientLight({
-  color: new Color(1, 1, 1),
-  intensity: 1
-});
-
 const lightBall = new LightBall({
   position: new Point(-3, 5, -1),
   radius: 0.5,
-  intensity: 10,
+  intensity: 1,
   color: new Color(1, 1, 1),
   name: "lightBall",
   uSteps: 4,
@@ -30,7 +25,6 @@ const lightBall = new LightBall({
 });
 
 export const lights: LightType[] = [];
-lights.push(ambientLight);
 lights.push(lightBall);
 
 export const sceneObjects: SceneObject[] = [];
@@ -45,8 +39,6 @@ const floor = new Rectangle({
   normal: new Vector(0, 1, 0),
   material: new Material({
     albedo: new Color(1, 0, 0),
-    emissive: new Color(0, 0, 0),
-    reflectivity: 0,
     texture: checkerboardTexture
   })
 });
@@ -73,7 +65,6 @@ const ball1 = new Sphere({
   material: new Material({
     albedo: new Color(1, 1, 1),
     specular: 200,
-    emissive: new Color(0, 0, 0),
     reflectivity: 0.5
   })
 });
@@ -85,7 +76,6 @@ const ball2 = new Sphere({
   material: new Material({
     albedo: new Color(1, 1, 1),
     specular: 200,
-    emissive: new Color(0, 0, 0),
     refractionIndex: 1
   })
 });
@@ -96,8 +86,7 @@ const ball3 = new Sphere({
   name: "ball3",
   material: new Material({
     albedo: new Color(1, 1, 1),
-    specular: 200,
-    emissive: new Color(0, 0, 0)
+    specular: 200
   })
 });
 

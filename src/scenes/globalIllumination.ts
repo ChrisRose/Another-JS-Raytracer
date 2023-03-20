@@ -36,8 +36,7 @@ const leftWall = new Rectangle({
   orientation: "yzAxis",
   normal: new Vector(1, 0, 0),
   material: new Material({
-    albedo: new Color(1, 1, 1),
-    emissive: new Color(0, 0, 0)
+    albedo: new Color(1, 1, 1)
   })
 });
 
@@ -50,8 +49,7 @@ const rightWall = new Rectangle({
   orientation: "yzAxis",
   normal: new Vector(-1, 0, 0),
   material: new Material({
-    albedo: new Color(1, 1, 1),
-    emissive: new Color(0, 0, 0)
+    albedo: new Color(1, 1, 1)
   })
 });
 
@@ -64,8 +62,7 @@ const backWall = new Rectangle({
   orientation: "xyAxis",
   normal: new Vector(0, 0, -1),
   material: new Material({
-    albedo: new Color(1, 1, 1),
-    emissive: new Color(0, 0, 0)
+    albedo: new Color(1, 1, 1)
   })
 });
 
@@ -82,8 +79,7 @@ const floor = new Rectangle({
     specular: 0,
     reflectivity: 0,
     refractionIndex: 0,
-    glossiness: 0,
-    emissive: new Color(0, 0, 0)
+    glossiness: 0
   })
 });
 
@@ -96,8 +92,7 @@ const ceiling = new Rectangle({
   orientation: "xzAxis",
   normal: new Vector(0, -1, 0),
   material: new Material({
-    albedo: new Color(1, 1, 1),
-    emissive: new Color(0, 0, 0)
+    albedo: new Color(1, 1, 1)
   })
 });
 
@@ -110,8 +105,7 @@ const greenBall = new Sphere({
     specular: 0,
     reflectivity: 0,
     refractionIndex: 0,
-    glossiness: 0,
-    emissive: new Color(0, 0, 0)
+    glossiness: 0
   })
 });
 

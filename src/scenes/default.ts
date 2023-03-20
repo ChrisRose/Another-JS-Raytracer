@@ -13,11 +13,6 @@ export const rotateCamera = (dir: Vector) => {
   return dir;
 };
 
-const ambient1 = new AmbientLight({
-  color: new Color(1, 1, 1),
-  intensity: 0.1
-});
-
 const ceilingLight = new AreaLight({
   corner: new Point(0, 3.5, 1.5),
   v1: new Vector(1, 0, 0),
@@ -26,10 +21,9 @@ const ceilingLight = new AreaLight({
   vSteps: 4,
   intensity: 0.6,
   size: 1,
-  color: new Color(1, 1, 159)
+  color: new Color(1, 1, 1)
 });
 export const lights: Light[] = [];
-lights.push(ambient1);
 lights.push(ceilingLight);
 
 export const sceneObjects: SceneObject[] = [];
@@ -62,36 +56,25 @@ const sphere2 = new Sphere({
   radius: 0.8,
   name: "blue",
   material: new Material({
-    albedo: new Color(132, 198, 250),
+    albedo: new Color(1, 0, 0),
     specular: 100,
-    reflectivity: 0.2
+    reflectivity: 0
   })
 });
 
 const sphere3 = new Sphere({
   center: new Point(-1.5, -0.2, -2),
   radius: 0.8,
-  name: "pink",
+  name: "green",
   material: new Material({
     albedo: new Color(1, 153, 1),
     specular: 100,
-    reflectivity: 0.2
-  })
-});
-const sphere4 = new Sphere({
-  center: new Point(0, -0.6, -2),
-  radius: 0.4,
-  name: "glass",
-  material: new Material({
-    albedo: new Color(1, 1, 1),
-    specular: 0,
-    reflectivity: 0,
-    refractionIndex: 1.5
+    reflectivity: 0.8
   })
 });
 
 sceneObjects.push(sphere1);
 sceneObjects.push(sphere2);
 sceneObjects.push(sphere3);
-sceneObjects.push(sphere4);
 sceneObjects.push(plane1);
+sceneObjects.push(ceilingLight);

@@ -12,6 +12,7 @@ import { rightWall as rightWallMesh } from "../meshes/cornellBox/rightWall.js";
 import { floor as floorMesh } from "../meshes/cornellBox/floor.js";
 import { ceiling as ceilingMesh } from "../meshes/cornellBox/ceiling.js";
 import { backWall as backWallMesh } from "../meshes/cornellBox/backWall.js";
+import { teapotLowRes as teapotMesh } from "../meshes/cornellBox/teapotLowRes.js";
 import { parseMesh } from "../meshUtils.js";
 import { Sphere } from "../Sphere.js";
 
@@ -31,7 +32,7 @@ const ceilingLight = new AreaLight({
   v2: new Vector(0, 0, 1),
   uSteps: 4,
   vSteps: 4,
-  intensity: 3,
+  intensity: 1,
   color: new Color(1, 1, 1),
   size: 4,
   name: "ceilingLight"
@@ -50,7 +51,7 @@ const lightBall = new LightBall({
 export const lights: LightType[] = [];
 lights.push(ceilingLight);
 lights.push(ambientLight);
-lights.push(lightBall);
+//lights.push(lightBall);
 
 export const sceneObjects: SceneObject[] = [];
 
@@ -142,6 +143,14 @@ const textureMappedBall = new Sphere({
   })
 });
 
+const teapot = parseMesh({
+  mesh: teapotMesh,
+  name: "teapot",
+  material: new Material({
+    albedo: new Color(1, 0, 0)
+  })
+});
+
 sceneObjects.push(floor);
 sceneObjects.push(ceiling);
 sceneObjects.push(leftWall);
@@ -150,8 +159,7 @@ sceneObjects.push(leftBox);
 sceneObjects.push(rightBox);
 sceneObjects.push(reflectiveBall);
 sceneObjects.push(refractiveBall);
-sceneObjects.push(lightBall);
+//sceneObjects.push(lightBall);
 sceneObjects.push(backWall);
+sceneObjects.push(teapot);
 //sceneObjects.push(textureMappedBall);
-
-console.log("sceneObjects", sceneObjects);
