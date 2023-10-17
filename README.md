@@ -2,4 +2,4 @@
 
 ### A personal experiment in tracing rays.  Current progress:
 
-![cornell box with teapot]((https://github.com/ChrisRose/Another-JS-Raytracer/blob/path-tracer/renders/cornellBox3.png?raw=true))
+![cornell box with teapot](https://github.com/ChrisRose/Another-JS-Raytracer/blob/path-tracer/renders/cornellBox3.png?raw=true)
