@@ -16,7 +16,7 @@ import {
   lights,
   rotateCamera,
   sceneObjects
-} from "./scenes/teapot.js";
+} from "./scenes/cornellBoxMeshes.js";
 import { Point } from "./Point.js";
 import { Mesh } from "./Mesh.js";
 import { getRotationMatrixAlignedToVector } from "./matrix.js";
@@ -90,10 +90,6 @@ export function findClosestIntersection({
   let objects = sceneObjects.filter((object) => object.type !== "mesh");
   for (let k = 0; k < objects.length; k++) {
     const object = objects[k] as Primitive;
-
-    // if (i === 400 && j === 325 && object.type === "triangle") {
-    //   debugger;
-    // }
 
     intersection = object.intersection(new Ray(origin, dir));
 
