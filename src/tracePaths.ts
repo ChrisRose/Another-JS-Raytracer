@@ -575,7 +575,7 @@ const traceRay = ({
 onmessage = (e: MessageEvent) => {
   const { iStart, iEnd, jStart, jEnd, width, imageMaps } = e.data;
 
-  const samplesPerPixel = 100;
+  const samplesPerPixel = 32;
 
   const pixelColors: {
     i: number;
@@ -592,8 +592,17 @@ onmessage = (e: MessageEvent) => {
       const rotatedDir = rotateCamera(dir);
 
       for (let k = 0; k <= samplesPerPixel; k++) {
+        // jitter the ray
+        const xJitter = Math.random() / width;
+        const yJitter = Math.random() / width;
+        const jitteredDir = new Vector(
+          rotatedDir.x + xJitter,
+          rotatedDir.y + yJitter,
+          rotatedDir.z
+        );
+
         const color = traceRay({
-          ray: new Ray(cameraStart, rotatedDir),
+          ray: new Ray(cameraStart, jitteredDir),
           i,
           j,
           imageMaps,
