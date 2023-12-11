@@ -4,6 +4,7 @@ import { Ray } from "./Ray.js";
 import { Vector } from "./Vector.js";
 import { Intersection, LightPatch } from "./types.js";
 import { epsilon } from "./const.js";
+import { Material } from "./Material.js";
 
 export type LightType =
   | AmbientLight
@@ -19,6 +20,7 @@ export class Light {
   type?: string;
   dir?: Vector;
   position?: Point;
+  material?: Material;
 
   constructor({
     intensity,
@@ -26,7 +28,8 @@ export class Light {
     name,
     type,
     dir,
-    position
+    position,
+    material
   }: {
     intensity: number;
     color: Color;
@@ -34,6 +37,7 @@ export class Light {
     type?: string;
     dir?: Vector;
     position?: Point;
+    material?: Material;
   }) {
     this.intensity = intensity;
     this.color = color;
@@ -41,6 +45,7 @@ export class Light {
     this.type = type;
     this.dir = dir;
     this.position = position;
+    this.material = material;
   }
 }
 
@@ -170,7 +175,7 @@ export class AreaLight extends Light {
   }
 }
 
-export class LightBall {
+export class LightBall extends Light {
   type = "lightBall" as const;
   position: Point;
   radius: number;
@@ -178,8 +183,6 @@ export class LightBall {
   discriminant: number | undefined;
   b: number | undefined;
   c: number | undefined;
-  intensity: number;
-  color: Color;
   uSteps: number;
   vSteps: number;
   inside?: boolean;
@@ -201,11 +204,9 @@ export class LightBall {
     uSteps: number;
     vSteps: number;
   }) {
+    super({ intensity, color, name });
     this.position = position;
     this.radius = radius;
-    this.name = name;
-    this.intensity = intensity;
-    this.color = color;
     this.name = name;
     this.uSteps = uSteps;
     this.vSteps = vSteps;

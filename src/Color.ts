@@ -25,7 +25,10 @@ export class Color {
     return new Color(this.r + color.r, this.g + color.g, this.b + color.b);
   }
 
-  multiplyWithColor(color: Color) {
+  multiplyWithColor(color?: Color) {
+    if (!color) {
+      return new Color(this.r, this.g, this.b);
+    }
     return new Color(this.r * color.r, this.g * color.g, this.b * color.b);
   }
 

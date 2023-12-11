@@ -13,6 +13,7 @@ export class Triangle {
   name?: string;
   vertextNormals?: Vector[];
   normal: Vector;
+  center: Point;
 
   constructor({
     material,
@@ -38,6 +39,11 @@ export class Triangle {
     const edge1 = this.v1.subtract(this.v2);
     const edge2 = this.v3.subtract(this.v2);
     this.normal = edge1.crossProduct(edge2).normalize();
+    this.center = new Point(
+      (this.v1.x + this.v2.x + this.v3.x) / 3,
+      (this.v1.y + this.v2.y + this.v3.y) / 3,
+      (this.v1.z + this.v2.z + this.v3.z) / 3
+    );
   }
 
   intersection(ray: Ray) {

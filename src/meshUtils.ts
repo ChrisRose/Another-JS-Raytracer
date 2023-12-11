@@ -22,13 +22,6 @@ export const parseMesh = ({
 
   for (let i = 0; i < faces.length; i += 1) {
     if (faces[i].vertices.length === 3) {
-      const v1Normal =
-        model.vertexNormals[faces[i].vertices[0]?.vertexNormalIndex - 1];
-      const v2Normal =
-        model.vertexNormals[faces[i].vertices[1]?.vertexNormalIndex - 1];
-      const v3Normal =
-        model.vertexNormals[faces[i].vertices[2]?.vertexNormalIndex - 1];
-
       const v1 = model.vertices[faces[i].vertices[0]?.vertexIndex - 1];
       const v2 = model.vertices[faces[i].vertices[1]?.vertexIndex - 1];
       const v3 = model.vertices[faces[i].vertices[2]?.vertexIndex - 1];
@@ -37,11 +30,6 @@ export const parseMesh = ({
         v1: new Vector(v1.x, v1.y, -v1.z),
         v2: new Vector(v2.x, v2.y, -v2.z),
         v3: new Vector(v3.x, v3.y, -v3.z),
-        vertextNormals: [
-          new Vector(v1Normal.x, v1Normal.y, -v1Normal.z),
-          new Vector(v2Normal.x, v2Normal.y, -v2Normal.z),
-          new Vector(v3Normal.x, v3Normal.y, -v3Normal.z)
-        ],
         material
       });
 

@@ -64,8 +64,7 @@ const teapot = parseMesh({
   mesh: teapotMesh,
   name: "teapot",
   material: new Material({
-    albedo: new Color(1, 1, 1),
-    reflectivity: 0.3
+    albedo: new Color(1, 1, 1)
   })
 });
 
@@ -83,5 +82,5 @@ sceneObjects.push(cornellBox);
 sceneObjects.push(leftWall);
 sceneObjects.push(rightWall);
 
-sceneObjects.push(ball);
-//sceneObjects.push(teapot);
+//sceneObjects.push(ball);
+sceneObjects.push(teapot);

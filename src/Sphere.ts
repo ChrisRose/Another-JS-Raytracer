@@ -1,3 +1,4 @@
+import { Color } from "./Color.js";
 import { Point } from "./Point.js";
 import { Vector } from "./Vector.js";
 import { Ray } from "./Ray.js";
@@ -41,7 +42,7 @@ export class Sphere {
   }
 
   intersection(ray: Ray): Intersection {
-    var a, b, c, discriminant;
+    var a, b, c, discriminant, t0, t1;
 
     const rayDirNormalized = ray.dir.normalize();
 
@@ -71,6 +72,15 @@ export class Sphere {
 
       if (t0 > 0) {
         return { t: t0 };
+      }
+
+      // hack! ray is inside skybox
+      // if (t0 < 3 && t1 > 3) {
+      //   return { inside: true, t: t1 };
+      // }
+
+      if (this.name === "skyBall") {
+        return { inside: true, t: t1 };
       }
 
       if (t0 > t1) {

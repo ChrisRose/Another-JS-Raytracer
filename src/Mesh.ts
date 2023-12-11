@@ -51,26 +51,6 @@ export class Mesh {
         if (yMax > maxY) maxY = yMax;
         if (zMin < minZ) minZ = zMin;
         if (zMax > maxZ) maxZ = zMax;
-      } else if (meshObject.type === "quad") {
-        const { v1, v2, v3, v4 } = meshObject;
-        const xValues = [v1.x, v2.x, v3.x, v4.x];
-        const xMin = Math.min(...xValues);
-        const xMax = Math.max(...xValues);
-
-        const yValues = [v1.y, v2.y, v3.y, v4.y];
-        const yMin = Math.min(...yValues);
-        const yMax = Math.max(...yValues);
-
-        const zValues = [v1.z, v2.z, v3.z, v4.z];
-        const zMin = Math.min(...zValues);
-        const zMax = Math.max(...zValues);
-
-        if (xMin < minX) minX = xMin;
-        if (xMax > maxX) maxX = xMax;
-        if (yMin < minY) minY = yMin;
-        if (yMax > maxY) maxY = yMax;
-        if (zMin < minZ) minZ = zMin;
-        if (zMax > maxZ) maxZ = zMax;
       }
     }
 

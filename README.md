@@ -3,3 +3,7 @@
 ### A personal experiment in tracing rays.  Current progress:
 
 ![cornell box with teapot](https://github.com/ChrisRose/Another-JS-Raytracer/blob/path-tracer/renders/cornellBox3.png?raw=true)
+
+ nvm use 18.13.0
+
+ npm run dev -- --host

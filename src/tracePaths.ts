@@ -10,20 +10,18 @@ import {
 } from "./types.js";
 import { distance, subtract, dotProduct } from "./utils.js";
 import { epsilon } from "./const.js";
-import { AreaLight } from "./Light.js";
 import {
   cameraStart,
-  lights,
   rotateCamera,
   sceneObjects
 } from "./scenes/cornellBoxMeshes.js";
 import { Point } from "./Point.js";
 import { Mesh } from "./Mesh.js";
 import { getRotationMatrixAlignedToVector } from "./matrix.js";
+import { Sphere } from "./Sphere.js";
 
 export function findClosestIntersection({
-  origin,
-  dir,
+  ray,
   tMin,
   tMax,
   findClosest = true,
@@ -31,8 +29,7 @@ export function findClosestIntersection({
   i,
   j
 }: {
-  origin: Point;
-  dir: Vector;
+  ray: Ray;
   tMin: number;
   tMax: number;
   findClosest?: boolean;
@@ -51,27 +48,28 @@ export function findClosestIntersection({
   // if intersection with bounding box then find closest intersection
   for (let k = 0; k < meshObjects.length; k++) {
     const meshObject = meshObjects[k] as Mesh;
+
     const boundingBox = meshObject.boundingBox;
 
     const boundingBoxIntersection = boundingBox
-      ? boundingBox.intersection(new Ray(origin, dir))
+      ? boundingBox.intersection(ray)
       : true;
     if (boundingBoxIntersection) {
       for (let j = 0; j < meshObject.meshObjects.length; j++) {
         const object = meshObject.meshObjects[j];
 
-        intersection = object.intersection(new Ray(origin, dir));
+        intersection = object.intersection(ray);
 
         if (intersection) {
           const { t } = intersection;
-          point = new Ray(origin, dir).getPoint(t);
+          point = ray.getPoint(t);
 
           if (t > tMin && t < tMax) {
             if (!findClosest) {
               return { point, object };
             }
 
-            dist = distance(point, origin);
+            dist = distance(point, ray.start);
 
             if (dist < closestIntersection) {
               closestIntersection = dist;
@@ -91,18 +89,18 @@ export function findClosestIntersection({
   for (let k = 0; k < objects.length; k++) {
     const object = objects[k] as Primitive;
 
-    intersection = object.intersection(new Ray(origin, dir));
+    intersection = object.intersection(ray);
 
     if (intersection) {
       const { t } = intersection;
-      point = new Ray(origin, dir).getPoint(t);
+      point = ray.getPoint(t);
 
       if (t > tMin && t < tMax) {
         if (!findClosest) {
           return { point, object };
         }
 
-        dist = distance(point, origin);
+        dist = distance(point, ray.start);
 
         if (dist < closestIntersection) {
           closestIntersection = dist;
@@ -118,72 +116,6 @@ export function findClosestIntersection({
 
   return intersected;
 }
-
-const isShadowed = function ({
-  lightDirection,
-  origin,
-  sceneObjects
-}: {
-  lightDirection: Vector;
-  origin: Point;
-  sceneObjects: SceneObject[];
-}) {
-  return findClosestIntersection({
-    origin,
-    dir: lightDirection,
-    tMin: epsilon,
-    tMax: 1,
-    findClosest: false,
-    sceneObjects: sceneObjects.filter(
-      (object) => object.type !== "lightBall" && object.type !== "areaLight"
-    )
-  });
-};
-
-// const intensityAt = ({
-//   light,
-//   point,
-//   sceneObjects
-// }: {
-//   light: AreaLight | LightBall;
-//   point: Point;
-//   sceneObjects: SceneObject[];
-// }) => {
-//   let total = 0;
-
-//   if (light.type === "areaLight") {
-//     for (let v = 0; v <= light.vSteps - 1; v++) {
-//       for (let u = 0; u <= light.uSteps - 1; u++) {
-//         const lightPosition = light.pointOnLight(u, v);
-//         if (
-//           !isShadowed({
-//             origin: point,
-//             lightPosition,
-//             sceneObjects
-//           })
-//         ) {
-//           total += 1;
-//         }
-//       }
-//     }
-//   } else if (light.type === "lightBall") {
-//     const lightPatches = light.getLightPatches();
-
-//     for (let i = 0; i < lightPatches.length; i++) {
-//       const lightPosition = lightPatches[i].center;
-//       if (
-//         !isShadowed({
-//           origin: point,
-//           lightPosition,
-//           sceneObjects
-//         })
-//       ) {
-//         total += 1;
-//       }
-//     }
-//   }
-//   return total / (light.uSteps * light.vSteps);
-// };
 
 const getFresnelReflectance = ({
   normal,
@@ -278,8 +210,7 @@ const castRay = ({
   j?: number;
 }) => {
   const closestIntersection = findClosestIntersection({
-    origin: ray.start,
-    dir: ray.dir,
+    ray,
     tMin: epsilon,
     tMax: Infinity,
     sceneObjects,
@@ -349,12 +280,12 @@ const traceRay = ({
   i?: number;
   j?: number;
   k?: number;
-}): Color => {
-  let color = new Color(0, 0, 0);
+}): Color | undefined => {
+  let radiance = new Color(0, 0, 0);
   const maxBounceDepth = 1;
 
   if (bounceDepth > maxBounceDepth) {
-    return color;
+    return;
   }
 
   let intersected = castRay({ ray, sceneObjects, i, j });
@@ -374,204 +305,88 @@ const traceRay = ({
       normal = intersected?.object?.normal;
     }
 
-    let albedo: Color;
-
     if (!normal) {
       throw new Error("No normal found");
     }
 
-    if ((intersected?.object as Primitive).material?.imageMap) {
-      albedo = getColorFromImageMap({
-        imageMap:
-          imageMaps[(intersected.object as Primitive).material.imageMap!],
-        point: intersected.point,
-        object: intersected.object
-      });
-    } else if ((intersected?.object as Primitive).material?.texture) {
-      albedo =
-        (intersected?.object as Primitive)?.material?.texture?.(intersected) ||
-        new Color(0, 0, 0);
-    } else {
-      albedo =
-        (intersected?.object as Primitive)?.material?.albedo ||
-        new Color(1, 1, 1);
+    const emission = intersected?.object?.material?.emissive;
+
+    if (emission) {
+      return emission;
     }
 
-    const emissive =
-      (intersected?.object as Primitive)?.material?.emissive ||
-      (intersected?.object as AreaLight).color;
+    let color = (intersected.object as Primitive).material.albedo;
 
-    if (emissive) {
-      color = color.addWithColor(emissive);
-      if ((intersected?.object as AreaLight)?.intensity) {
-        color = color.multiply((intersected?.object as AreaLight)?.intensity);
-      }
-      return color;
-    }
+    const sampleCount = 65;
+    for (i = 0; i < sampleCount; i++) {
+      const randomDirection = getCosineWeightedSample(normal);
 
-    const reflectance =
-      (intersected?.object as Primitive)?.material?.reflectivity || 0;
+      const throughputWeight = color.multiply(
+        2 * normal.dotProduct(randomDirection)
+      );
 
-    const refractionIndex =
-      (intersected?.object as Primitive)?.material?.refractionIndex || 0;
+      const shiftedPoint = intersected.point.add(
+        normal.multiply(epsilon).toPoint()
+      );
 
-    // direct lighting
-    for (i = 0; i < lights.length; i++) {
-      const light = lights[i];
-      if (light.position) {
-        const lightDirection = new Vector(
-          light.position.subtract(intersected.point).x,
-          light.position.subtract(intersected.point).y,
-          light.position.subtract(intersected.point).z
-        ).normalize();
-
-        const cosTheta = Math.max(
-          0,
-          dotProduct(lightDirection, normal.normalize())
-        );
-
-        const brdf = albedo.divide(Math.PI);
-
-        if (!(intersected.object as Primitive).material?.refractionIndex) {
-          color = color.multiplyWithColor(
-            light.color.multiply(light.intensity)
-          );
-
-          color = color.addWithColor(brdf.multiply(cosTheta));
-        }
-      }
-      if (!(intersected.object as Primitive).material?.refractionIndex) {
-        if (light.type === "ambient") {
-          color = color.addWithColor(light.color.multiply(light.intensity));
-        }
-      }
-    }
-
-    const shiftedPoint = intersected.point.add(
-      normal.multiply(epsilon).toPoint()
-    );
-
-    // reflection
-    if (reflectance > 0) {
-      const reflectedRay = getReflectedRay({
-        normal,
-        point: shiftedPoint,
-        incidentRay: ray.dir.normalize()
-      });
-
-      const fresnelReflectance = getFresnelReflectance({
-        normal,
-        incidentRay: reflectedRay.dir,
-        refractionIndex: refractionIndex
-      });
-
-      const reflectedColor = traceRay({
-        ray: reflectedRay,
-        imageMaps,
-        bounceDepth: bounceDepth + 1,
-        i,
-        j,
-        k
-      });
-
-      color = color.addWithColor(
-        reflectedColor.multiply(reflectance * fresnelReflectance)
+      // recursively trace the ray
+      radiance = radiance.addWithColor(
+        throughputWeight.multiplyWithColor(
+          traceRay({
+            ray: new Ray(shiftedPoint, randomDirection),
+            imageMaps,
+            bounceDepth: bounceDepth + 1,
+            i,
+            j,
+            k
+          })
+        )
       );
     }
 
-    // refraction
-    if (refractionIndex > 0) {
-      const refractedRay = getRefractedRay({
-        normal: normal.normalize(),
-        point: intersected.point,
-        incidentRay: ray.dir.normalize(),
-        refractionIndex
-      });
+    radiance = radiance.divide(sampleCount);
 
-      if (!refractedRay) {
-        return color;
-      }
+    // importance sample the light
+    const light = sceneObjects.find((object) => object.name === "lightBall");
 
-      const refractedColor = traceRay({
-        ray: refractedRay,
-        imageMaps,
-        bounceDepth: bounceDepth + 1,
-        i,
-        j,
-        k
-      });
-
-      color = color.addWithColor(refractedColor);
+    if (!light) {
+      throw new Error("No light found");
     }
 
-    // russian roulette
-    const random = Math.random();
-    const russianRouletteProbability = 0.2;
-    if (random >= russianRouletteProbability) {
-      return color;
-    }
+    const lightCenter = (light as Sphere).center;
 
-    // soft shadows
-    const filteredLights = lights.filter((light) => light.type !== "ambient");
-    const randomLight =
-      filteredLights[Math.floor(Math.random() * filteredLights.length)];
-    if (!randomLight.position) {
-      return color;
-    }
-    let softIntensity = 0;
-    if (randomLight.type === "areaLight") {
-      for (let v = 0; v < randomLight.vSteps; v++) {
-        for (let u = 0; u < randomLight.uSteps; u++) {
-          const pointOnLight = randomLight.pointOnLight(u, v);
-          const lightDirection = new Vector(
-            pointOnLight.x - shiftedPoint.x,
-            pointOnLight.y - shiftedPoint.y,
-            pointOnLight.z - shiftedPoint.z
-          );
-
-          if (
-            !isShadowed({
-              lightDirection,
-              sceneObjects,
-              origin: shiftedPoint
-            })
-          ) {
-            softIntensity += 1;
-          }
-        }
-      }
-      color = color.multiply(
-        softIntensity / (randomLight.uSteps * randomLight.vSteps)
-      );
-    }
-
-    // indirect lighting
-    let indirectColor = new Color(0, 0, 0);
-    const randomDirection = getCosineWeightedSample(normal);
-    const cosTheta = Math.max(0, randomDirection.dotProduct(normal));
-
-    const randomRay = new Ray(shiftedPoint, randomDirection);
-    indirectColor = indirectColor.addWithColor(
-      traceRay({
-        ray: randomRay,
-        imageMaps,
-        i,
-        j,
-        k
-      })
-        .multiply(cosTheta)
-        .multiply(1 / russianRouletteProbability)
+    const lightPoint = lightCenter.add(
+      new Point(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5)
     );
 
-    color = color.addWithColor(indirectColor);
+    const lightDirection = lightPoint
+      .subtract(intersected.point)
+      .toVector()
+      .normalize();
+
+    const lightRay = new Ray(intersected.point, lightDirection);
+
+    const brdf = normal.dotProduct(lightDirection);
+
+    let intersected2 = castRay({ ray: lightRay, sceneObjects, i, j });
+
+    if (intersected2?.object?.name === "lightBall") {
+      const lightThroughput = color.multiply(brdf);
+
+      radiance = radiance.addWithColor(lightThroughput);
+    }
+  } else {
+    const skyColor = new Color(0.2, 0.2, 0.2);
+    radiance = radiance.addWithColor(skyColor);
   }
-  return color;
+
+  return radiance;
 };
 
 onmessage = (e: MessageEvent) => {
   const { iStart, iEnd, jStart, jEnd, width, imageMaps } = e.data;
 
-  const samplesPerPixel = 32;
+  const samplesPerPixel = 8;
 
   const pixelColors: {
     i: number;
@@ -596,7 +411,6 @@ onmessage = (e: MessageEvent) => {
           rotatedDir.y + yJitter,
           rotatedDir.z
         );
-
         const color = traceRay({
           ray: new Ray(cameraStart, jitteredDir),
           i,
@@ -605,7 +419,9 @@ onmessage = (e: MessageEvent) => {
           k
         });
 
-        pixelColor = pixelColor.addWithColor(color);
+        if (color) {
+          pixelColor = pixelColor.addWithColor(color);
+        }
       }
       pixelColor = pixelColor.divide(samplesPerPixel);
 

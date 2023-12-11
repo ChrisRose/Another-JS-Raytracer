@@ -62,14 +62,14 @@ function traceRays(imageMaps: { [key: string]: ImageData }) {
   const context = canvas?.getContext("2d");
   const width = 400;
   const height = 400;
-  const squares = 8;
+  const squares = 4;
   const imageData = context?.createImageData(width, height) as ImageData;
   let workerCount = 0;
   let times: { [workerIndex: string]: number } = {};
   for (let i = 0; i <= squares - 1; i++) {
     const iStart = (i * width) / squares;
     const iEnd = ((i + 1) * width) / squares;
-    for (let j = 0; j <= 7; j++) {
+    for (let j = 0; j <= squares - 1; j++) {
       const jStart = (j * height) / squares;
       const jEnd = ((j + 1) * height) / squares;
       const worker = new Worker(new URL("./tracePaths.ts", import.meta.url), {
