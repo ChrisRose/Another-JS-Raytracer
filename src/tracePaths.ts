@@ -577,56 +577,45 @@ const traceRay = ({
 };
 
 onmessage = async (e: MessageEvent) => {
-  const { iStart, iEnd, jStart, jEnd, width, imageMaps, sceneName = "cornellBoxMeshes" } = e.data;
+  const {
+    iStart, iEnd, jStart, jEnd, width, imageMaps,
+    sceneName = "cornellBoxMeshes",
+    totalPasses = 128
+  } = e.data;
 
   const scene = await importScene(sceneName);
   sceneObjects = scene.sceneObjects;
   cameraStart  = scene.cameraStart;
   rotateCamera = scene.rotateCamera;
 
-  const samplesPerPixel = 32;
-
-  const pixelColors: {
-    i: number;
-    j: number;
-    pixelColor: { r: number; g: number; b: number };
-  }[] = [];
-  for (var i = iStart; i < iEnd; i++) {
-    for (var j = jStart; j < jEnd; j++) {
-      let pixelColor = new Color(0, 0, 0);
+  // Precompute base ray directions for the tile — same for every pass.
+  type PixelDir = { i: number; j: number; rotatedDir: Vector };
+  const pixelDirs: PixelDir[] = [];
+  for (let i = iStart; i < iEnd; i++) {
+    for (let j = jStart; j < jEnd; j++) {
       const xStart = (j - width / 2) / width;
       const yStart = (width / 2 - i) / width;
-      const dir = new Vector(xStart, yStart, 1);
-      const rotatedDir = rotateCamera(dir);
-
-      for (let k = 0; k < samplesPerPixel; k++) {
-        // jitter the ray
-        const xJitter = Math.random() / width;
-        const yJitter = Math.random() / width;
-        const jitteredDir = new Vector(
-          rotatedDir.x + xJitter,
-          rotatedDir.y + yJitter,
-          rotatedDir.z
-        );
-        const color = traceRay({
-          ray: new Ray(cameraStart, jitteredDir),
-          i,
-          j,
-          imageMaps,
-          k
-        });
-
-        if (color) {
-          pixelColor = pixelColor.addWithColor(color);
-        }
-      }
-      pixelColor = pixelColor.divide(samplesPerPixel);
-      pixelColor = pixelColor.gammaCorrect();
-      pixelColor = pixelColor.clamp();
-
-      pixelColors.push({ i, j, pixelColor });
+      pixelDirs.push({ i, j, rotatedDir: rotateCamera(new Vector(xStart, yStart, 1)) });
     }
   }
 
-  postMessage({ pixelColors });
+  // Progressive: send one raw sample per pixel per message.
+  // The main thread accumulates and gamma-corrects for display.
+  for (let pass = 0; pass < totalPasses; pass++) {
+    const pixelColors: { i: number; j: number; r: number; g: number; b: number }[] = [];
+
+    for (const { i, j, rotatedDir } of pixelDirs) {
+      const xJitter = Math.random() / width;
+      const yJitter = Math.random() / width;
+      const jitteredDir = new Vector(
+        rotatedDir.x + xJitter,
+        rotatedDir.y + yJitter,
+        rotatedDir.z
+      );
+      const color = traceRay({ ray: new Ray(cameraStart, jitteredDir), imageMaps, i, j });
+      pixelColors.push({ i, j, r: color.r, g: color.g, b: color.b });
+    }
+
+    postMessage({ pass, totalPasses, pixelColors });
+  }
 };
