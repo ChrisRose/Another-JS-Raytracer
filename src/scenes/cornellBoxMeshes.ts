@@ -14,7 +14,6 @@ import { ceilingLight as ceilingLightMesh } from "../meshes/cornellBox/ceilingLi
 import { backWall as backWallMesh } from "../meshes/cornellBox/backWall.js";
 import { teapotLowRes as teapotMesh } from "../meshes/cornellBox/teapotLowRes.js";
 import { parseMesh } from "../meshUtils.js";
-import { Sphere } from "../Sphere.js";
 
 export const cameraStart = new Point(0, 8, -25);
 export const rotateCamera = (dir: Vector) => {
@@ -39,24 +38,6 @@ const ceiling = parseMesh({
   })
 });
 
-// const ceilingLight = parseMesh({
-//   mesh: ceilingLightMesh,
-//   name: "ceilingLight",
-//   material: new Material({
-//     albedo: new Color(1, 1, 1),
-//     emissive: new Color(3, 3, 3)
-//   })
-// });
-
-const lightBall = new Sphere({
-  center: new Point(0, 17, 1),
-  radius: 2,
-  name: "lightBall",
-  material: new Material({
-    albedo: new Color(1, 1, 1),
-    emissive: new Color(3, 3, 3)
-  })
-});
 
 const backWall = parseMesh({
   mesh: backWallMesh,
@@ -106,16 +87,6 @@ const teapot = parseMesh({
   })
 });
 
-const skyBall = new Sphere({
-  center: new Point(0, 0, 0),
-  radius: 40,
-  name: "skyBall",
-  material: new Material({
-    albedo: new Color(1, 1, 1),
-    emissive: new Color(0.5, 0.5, 0.5)
-  })
-});
-
 const ceilingLight = parseMesh({
   mesh: ceilingLightMesh,
   name: "ceilingLight",
@@ -131,8 +102,7 @@ sceneObjects.push(leftWall);
 sceneObjects.push(rightWall);
 sceneObjects.push(leftBox);
 sceneObjects.push(rightBox);
-sceneObjects.push(lightBall);
+sceneObjects.push(ceilingLight);
 sceneObjects.push(backWall);
 sceneObjects.push(teapot);
-sceneObjects.push(skyBall);
 
