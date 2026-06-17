@@ -33,6 +33,7 @@ async function importScene(name: string): Promise<{
   if (name === "furnaceTest")        return import("./scenes/furnaceTest.js");
   if (name === "teapot")             return import("./scenes/teapot.js");
   if (name === "refraction")         return import("./scenes/refraction.js");
+  if (name === "metalBunny")         return import("./scenes/metalBunny.js");
   return import("./scenes/cornellBoxMeshes.js");
 }
 
@@ -223,6 +224,38 @@ const sampleSphereLight = (
   return { dir, solidAngle };
 };
 
+// ─── Disney-style metallic BRDF (Cook-Torrance GGX) ─────────────────────────
+
+// GGX NDF: D(h) = α² / (π * ((n·h)²(α²-1)+1)²)
+const ggxD = (nDotH: number, alpha2: number): number => {
+  const d = nDotH * nDotH * (alpha2 - 1) + 1;
+  return alpha2 / (Math.PI * d * d);
+};
+
+// Smith G1 masking term for GGX
+const smithG1 = (nDotV: number, alpha2: number): number => {
+  return 2 * nDotV / (nDotV + Math.sqrt(alpha2 + (1 - alpha2) * nDotV * nDotV));
+};
+
+// Sample a microfacet half-vector from the GGX distribution.
+// Returns h in world space.
+const sampleGGX = (normal: Vector, alpha2: number): Vector => {
+  const u1 = Math.random();
+  const u2 = Math.random();
+  // Spherical coords of h in local frame (n is up)
+  const cosTheta = Math.sqrt((1 - u1) / (1 + (alpha2 - 1) * u1));
+  const sinTheta = Math.sqrt(Math.max(0, 1 - cosTheta * cosTheta));
+  const phi = 2 * Math.PI * u2;
+  // Build ONB around normal
+  const up = Math.abs(normal.y) < 0.999 ? new Vector(0, 1, 0) : new Vector(1, 0, 0);
+  const tangent = up.crossProduct(normal).normalize();
+  const bitangent = normal.crossProduct(tangent);
+  return tangent.multiply(sinTheta * Math.cos(phi))
+    .add(bitangent.multiply(sinTheta * Math.sin(phi)))
+    .add(normal.multiply(cosTheta))
+    .normalize();
+};
+
 const getCosineWeightedSample = (normal: Vector) => {
   const u = Math.random();
   const v = Math.random();
@@ -367,6 +400,44 @@ const traceRay = ({
     }
 
     const material = (intersected.object as Primitive).material;
+
+    // Metallic: Cook-Torrance GGX specular BRDF with importance sampling.
+    // F0 = albedo (metals reflect their own colour), no diffuse component.
+    if ((material.metallic ?? 0) > 0) {
+      const roughness = Math.max(0.01, material.roughness ?? 0.3);
+      const alpha2 = roughness * roughness * roughness * roughness; // α = roughness², α² = roughness⁴
+      const ωo = ray.dir.multiply(-1).normalize();          // view direction (outgoing)
+      const nDotO = Math.max(0, normal.dotProduct(ωo));
+      if (nDotO <= 0) return new Color(0, 0, 0);
+
+      const h = sampleGGX(normal, alpha2);
+      const oDotH = Math.max(0, ωo.dotProduct(h));
+
+      // Reflect ωo about h to get the incoming light direction ωi
+      const ωi = h.multiply(2 * ωo.dotProduct(h)).subtract(ωo).normalize();
+      const nDotI = Math.max(0, normal.dotProduct(ωi));
+      if (nDotI <= 0) return new Color(0, 0, 0); // below surface
+
+      const nDotH = Math.max(0, normal.dotProduct(h));
+
+      // Schlick Fresnel: F0 = albedo for metals
+      const f0 = material.albedo;
+      const fresnel = f0.addWithColor(
+        new Color(1, 1, 1).subtract(f0).multiply(Math.pow(1 - oDotH, 5))
+      );
+
+      // Smith G2 (separable form)
+      const G = smithG1(nDotO, alpha2) * smithG1(nDotI, alpha2);
+
+      // GGX importance-sampled weight: F * G * (ωo·h) / ((n·ωo) * (n·h))
+      // (D cancels with the PDF D*(n·h)/(4*(ωo·h)))
+      const weight = (G * oDotH) / (nDotO * nDotH);
+      const Li = traceRay({
+        ray: new Ray(intersected.point.add(normal.multiply(epsilon).toPoint()), ωi),
+        imageMaps, bounceDepth: bounceDepth + 1, includeEmission: true, i, j, k
+      });
+      return fresnel.multiply(weight).multiplyWithColor(Li);
+    }
 
     // Dielectric (glass): Fresnel-weighted Russian roulette between reflection and refraction.
     // Skip diffuse bounce and NEE — this is a purely specular path.
