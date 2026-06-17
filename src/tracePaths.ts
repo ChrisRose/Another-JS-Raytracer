@@ -14,6 +14,7 @@ import { Point } from "./Point.js";
 import { Mesh } from "./Mesh.js";
 import { Sphere } from "./Sphere.js";
 import { Triangle } from "./Triangle.js";
+import { intersectBVH } from "./BVH.js";
 
 // Scene state — populated dynamically in onmessage before rendering begins.
 /* eslint-disable prefer-const */
@@ -59,40 +60,36 @@ export function findClosestIntersection({
   let intersection: Intersection;
   let meshObjects = sceneObjects.filter((object) => object.type === "mesh");
 
-  // loop through all scene objects and find each mesh object
-  // if intersection with bounding box then find closest intersection
+  // BVH-accelerated mesh intersection: O(log n) per ray instead of O(n)
   for (let k = 0; k < meshObjects.length; k++) {
     const meshObject = meshObjects[k] as Mesh;
 
-    const boundingBox = meshObject.boundingBox;
-
-    const boundingBoxIntersection = boundingBox
-      ? boundingBox.intersection(ray)
-      : true;
-    if (boundingBoxIntersection) {
+    if (meshObject.bvh) {
+      const hit = intersectBVH(meshObject.bvh, ray, tMin, tMax, !findClosest);
+      if (hit) {
+        point = ray.getPoint(hit.t);
+        if (!findClosest) return { point, object: hit.tri };
+        dist = distance(point, ray.start);
+        if (dist < closestIntersection) {
+          closestIntersection = dist;
+          tMax = hit.t; // shrink window so later meshes get a tighter bound
+          intersected = { point, object: hit.tri, intersection: { t: hit.t } };
+        }
+      }
+    } else {
+      // Fallback for meshes with no triangles (e.g. quad-only meshes)
       for (let j = 0; j < meshObject.meshObjects.length; j++) {
         const object = meshObject.meshObjects[j];
-
         intersection = object.intersection(ray);
-
         if (intersection) {
           const { t } = intersection;
           point = ray.getPoint(t);
-
           if (t > tMin && t < tMax) {
-            if (!findClosest) {
-              return { point, object };
-            }
-
+            if (!findClosest) return { point, object };
             dist = distance(point, ray.start);
-
             if (dist < closestIntersection) {
               closestIntersection = dist;
-              intersected = {
-                point,
-                object,
-                intersection
-              };
+              intersected = { point, object, intersection };
             }
           }
         }
