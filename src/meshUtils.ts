@@ -26,10 +26,26 @@ export const parseMesh = ({
       const v2 = model.vertices[faces[i].vertices[1]?.vertexIndex - 1];
       const v3 = model.vertices[faces[i].vertices[2]?.vertexIndex - 1];
 
+      const vn1Idx = faces[i].vertices[0]?.vertexNormalIndex;
+      const vn2Idx = faces[i].vertices[1]?.vertexNormalIndex;
+      const vn3Idx = faces[i].vertices[2]?.vertexNormalIndex;
+      const n1 = vn1Idx ? model.vertexNormals[vn1Idx - 1] : null;
+      const n2 = vn2Idx ? model.vertexNormals[vn2Idx - 1] : null;
+      const n3 = vn3Idx ? model.vertexNormals[vn3Idx - 1] : null;
+      const vertexNormals =
+        n1 && n2 && n3
+          ? [
+              new Vector(n1.x, n1.y, -n1.z),
+              new Vector(n2.x, n2.y, -n2.z),
+              new Vector(n3.x, n3.y, -n3.z)
+            ]
+          : undefined;
+
       const triangle = new Triangle({
         v1: new Vector(v1.x, v1.y, -v1.z),
         v2: new Vector(v2.x, v2.y, -v2.z),
         v3: new Vector(v3.x, v3.y, -v3.z),
+        vertextNormals: vertexNormals,
         material
       });
 

@@ -37,22 +37,6 @@ const SCENES = [
   },
 ];
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function setPixel(
-  imageData: ImageData,
-  i: number,
-  j: number,
-  color: { r: number; g: number; b: number },
-  width: number
-) {
-  const index = i * width * 4 + j * 4;
-  imageData.data[index + 0] = color.r * 255;
-  imageData.data[index + 1] = color.g * 255;
-  imageData.data[index + 2] = color.b * 255;
-  imageData.data[index + 3] = 0xff;
-}
-
 // ─── Gallery view ─────────────────────────────────────────────────────────────
 
 function renderGallery() {
@@ -97,7 +81,7 @@ function renderScene(sceneId: string, sceneTitle: string) {
       <div class="canvas-wrap">
         <div class="canvas-placeholder" id="placeholder">
           <div class="spinner"></div>
-          <p>Rendering with 16 workers…</p>
+          <p>Starting render…</p>
         </div>
       </div>
     </div>
@@ -107,18 +91,27 @@ function renderScene(sceneId: string, sceneTitle: string) {
 }
 
 function startRender(sceneName: string) {
-  const width  = 400;
-  const height = 400;
-  const tiles  = 4;           // tiles × tiles = number of workers
+  const width       = 400;
+  const height      = 400;
+  const tiles       = 4;
+  const totalPasses = 128;
 
   const canvas = document.getElementById("render-canvas") as HTMLCanvasElement;
   const ctx    = canvas.getContext("2d")!;
   canvas.width  = width;
   canvas.height = height;
-  const imageData = ctx.createImageData(width, height);
 
-  const total  = tiles * tiles;
-  let finished = 0;
+  // Raw linear-light accumulation buffers — gamma is applied at draw time.
+  const accumR     = new Float32Array(width * height);
+  const accumG     = new Float32Array(width * height);
+  const accumB     = new Float32Array(width * height);
+  const sampleCounts = new Uint32Array(width * height);
+  const imageData  = ctx.createImageData(width, height);
+
+  let swapped        = false;
+  let redrawPending  = false;
+  let msgsReceived   = 0;
+  const totalMsgs    = tiles * tiles * totalPasses;
 
   const updateStatus = (text: string) => {
     const el = document.getElementById("render-status");
@@ -133,39 +126,70 @@ function startRender(sceneName: string) {
     }
   }
 
-  for (let i = 0; i < tiles; i++) {
-    const iStart = (i * width)  / tiles;
-    const iEnd   = ((i + 1) * width)  / tiles;
+  function redraw() {
+    redrawPending = false;
+    const inv = 1 / 2.2;
+    for (let pi = 0; pi < height; pi++) {
+      for (let pj = 0; pj < width; pj++) {
+        const idx = pi * width + pj;
+        const n = sampleCounts[idx];
+        if (n === 0) continue;
+        const r = Math.min(1, Math.pow(Math.max(0, accumR[idx] / n), inv));
+        const g = Math.min(1, Math.pow(Math.max(0, accumG[idx] / n), inv));
+        const b = Math.min(1, Math.pow(Math.max(0, accumB[idx] / n), inv));
+        const p = idx * 4;
+        imageData.data[p]     = r * 255;
+        imageData.data[p + 1] = g * 255;
+        imageData.data[p + 2] = b * 255;
+        imageData.data[p + 3] = 255;
+      }
+    }
+    ctx.putImageData(imageData, 0, 0);
+  }
 
-    for (let j = 0; j < tiles; j++) {
-      const jStart = (j * height) / tiles;
-      const jEnd   = ((j + 1) * height) / tiles;
+  for (let ti = 0; ti < tiles; ti++) {
+    const iStart = (ti * height) / tiles;
+    const iEnd   = ((ti + 1) * height) / tiles;
+
+    for (let tj = 0; tj < tiles; tj++) {
+      const jStart = (tj * width) / tiles;
+      const jEnd   = ((tj + 1) * width) / tiles;
 
       const worker = new Worker(
         new URL("./tracePaths.ts", import.meta.url),
         { type: "module" }
       );
 
-      worker.postMessage({ iStart, iEnd, jStart, jEnd, width, imageMaps: {}, sceneName });
+      worker.postMessage({ iStart, iEnd, jStart, jEnd, width, imageMaps: {}, sceneName, totalPasses });
 
       worker.onmessage = (e: MessageEvent) => {
-        const { pixelColors } = e.data as {
-          pixelColors: { i: number; j: number; pixelColor: { r: number; g: number; b: number } }[];
+        const { pass, pixelColors } = e.data as {
+          pass: number;
+          totalPasses: number;
+          pixelColors: { i: number; j: number; r: number; g: number; b: number }[];
         };
 
-        for (const { i: pi, j: pj, pixelColor } of pixelColors) {
-          setPixel(imageData, pi, pj, pixelColor, width);
+        for (const { i: pi, j: pj, r, g, b } of pixelColors) {
+          const idx = pi * width + pj;
+          accumR[idx] += r;
+          accumG[idx] += g;
+          accumB[idx] += b;
+          sampleCounts[idx]++;
         }
 
-        finished++;
-        const pct = Math.round((finished / total) * 100);
-        updateStatus(finished < total ? `Rendering… ${pct}%` : "Done ✓");
+        msgsReceived++;
+        const spp = Math.round(msgsReceived / (tiles * tiles));
+        const done = msgsReceived >= totalMsgs;
+        updateStatus(done ? `Done — ${totalPasses} spp` : `Rendering… ${spp} spp`);
 
-        // Show canvas as soon as the first tile arrives
-        if (finished === 1) swapInCanvas();
-        ctx.putImageData(imageData, 0, 0);
+        if (!swapped) { swapInCanvas(); swapped = true; }
 
-        worker.terminate();
+        if (!redrawPending) {
+          redrawPending = true;
+          requestAnimationFrame(redraw);
+        }
+
+        if (pass === totalPasses - 1) worker.terminate();
       };
 
       worker.onerror = (err) => {
