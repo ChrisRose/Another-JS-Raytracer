@@ -80,7 +80,7 @@ export class Sphere {
       // }
 
       if (this.name === "skyBall") {
-        return { inside: true, t: t1 };
+        return { t: t1 };
       }
 
       if (t0 > t1) {
