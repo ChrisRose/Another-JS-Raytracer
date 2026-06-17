@@ -19,6 +19,14 @@ const SCENES = [
       "Demonstrates indirect diffuse interreflection: a green sphere lit by a large emissive sphere light with colour bleeding onto the surrounding white walls.",
     thumb: null,
   },
+  {
+    id: "refraction",
+    title: "Refraction",
+    tag: "Dielectrics",
+    description:
+      "A glass sphere (IOR 1.5) refracts and inverts the scene behind it. Fresnel-weighted Russian roulette selects between specular reflection and transmission at each bounce.",
+    thumb: null as string | null,
+  },
 ];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

@@ -31,6 +31,7 @@ async function importScene(name: string): Promise<{
   if (name === "globalIllumination") return import("./scenes/globalIllumination.js");
   if (name === "furnaceTest")        return import("./scenes/furnaceTest.js");
   if (name === "teapot")             return import("./scenes/teapot.js");
+  if (name === "refraction")         return import("./scenes/refraction.js");
   return import("./scenes/cornellBoxMeshes.js");
 }
 
@@ -140,9 +141,9 @@ const getFresnelReflectance = ({
   incidentRay: Vector;
   refractionIndex: number;
 }) => {
-  const cosTheta = Math.max(0, normal.dotProduct(incidentRay));
+  const cosTheta = Math.abs(normal.dotProduct(incidentRay));
   const r0 = Math.pow((1 - refractionIndex) / (1 + refractionIndex), 2);
-  return Math.max(0, r0 + (1 - r0) * Math.pow(1 - cosTheta, 5));
+  return r0 + (1 - r0) * Math.pow(1 - cosTheta, 5);
 };
 
 const getReflectedRay = function ({
@@ -172,24 +173,23 @@ const getRefractedRay = ({
   incidentRay: Vector;
   refractionIndex: number;
 }) => {
-  let n = refractionIndex;
-  let cosThetaI = normal.dotProduct(incidentRay);
-  if (cosThetaI < 0) {
-    n = 1 / refractionIndex;
-  } else {
-  }
-  const sin2ThetaI = Math.max(0, 1 - cosThetaI * cosThetaI);
-  const sin2ThetaT = n * n * sin2ThetaI;
-  if (sin2ThetaI >= 1) {
-    return null;
-  }
+  const cosThetaI = normal.dotProduct(incidentRay);
+  const entering = cosThetaI < 0;
+  // n = n_incident / n_transmitted
+  const n = entering ? (1 / refractionIndex) : refractionIndex;
+  // Orient normal toward the incident medium so the formula is uniform
+  const orientedNormal = entering ? normal : normal.multiply(-1);
+  const cosTheta = Math.abs(cosThetaI);
+
+  const sin2ThetaT = n * n * (1 - cosTheta * cosTheta);
+  if (sin2ThetaT >= 1) return null; // total internal reflection
+
   const cosThetaT = Math.sqrt(1 - sin2ThetaT);
+  // ωt = n·ωi + (n·cosθi − cosθt)·n̂  (n̂ points into incident medium)
+  const refractedDir = incidentRay.multiply(n)
+    .add(orientedNormal.multiply(n * cosTheta - cosThetaT));
 
-  const refractedRay = incidentRay
-    .multiply(-1 * n)
-    .add(normal.multiply(n * cosThetaI - cosThetaT));
-
-  return new Ray(point, refractedRay);
+  return new Ray(point, refractedDir);
 };
 
 // Proper sphere-light NEE: uniform cone sampling with solid-angle estimator.
@@ -369,7 +369,26 @@ const traceRay = ({
       return includeEmission ? emission : new Color(0, 0, 0);
     }
 
-    let color = (intersected.object as Primitive).material.albedo;
+    const material = (intersected.object as Primitive).material;
+
+    // Dielectric (glass): Fresnel-weighted Russian roulette between reflection and refraction.
+    // Skip diffuse bounce and NEE — this is a purely specular path.
+    if ((material.refractionIndex ?? 0) > 0) {
+      const fresnel = getFresnelReflectance({
+        normal,
+        incidentRay: ray.dir,
+        refractionIndex: material.refractionIndex!
+      });
+      const reflected = getReflectedRay({ normal, point: intersected.point, incidentRay: ray.dir });
+      if (Math.random() < fresnel) {
+        return traceRay({ ray: reflected, imageMaps, bounceDepth: bounceDepth + 1, includeEmission: true, i, j, k });
+      }
+      const refracted = getRefractedRay({ normal, point: intersected.point, incidentRay: ray.dir, refractionIndex: material.refractionIndex! });
+      // TIR fallback: reflect if refraction is geometrically impossible
+      return traceRay({ ray: refracted ?? reflected, imageMaps, bounceDepth: bounceDepth + 1, includeEmission: true, i, j, k });
+    }
+
+    let color = material.albedo;
 
     // Single path sample per bounce (proper Monte Carlo path tracing).
     // With cosine-weighted sampling, PDF = cos(θ)/π and BRDF = albedo/π,
