@@ -177,6 +177,40 @@ const getRefractedRay = ({
   return new Ray(point, refractedRay);
 };
 
+// Proper sphere-light NEE: uniform cone sampling with solid-angle estimator.
+// MC estimator for one sample:  (albedo/π) × L_e × cos(θ) × solidAngle
+// Expected value = true direct-lighting integral (unbiased).
+const sampleSphereLight = (
+  lightCenter: Point,
+  lightRadius: number,
+  surfacePoint: Point
+): { dir: Vector; solidAngle: number } | null => {
+  const toLight = lightCenter.subtract(surfacePoint).toVector();
+  const dist = toLight.length();
+  if (dist <= lightRadius) return null;
+
+  const sinMax = lightRadius / dist;
+  const cosMax = Math.sqrt(1 - sinMax * sinMax);
+  const solidAngle = 2 * Math.PI * (1 - cosMax);
+
+  const u = Math.random(), v = Math.random();
+  const cosT = 1 - u * (1 - cosMax);
+  const sinT = Math.sqrt(Math.max(0, 1 - cosT * cosT));
+  const phi = 2 * Math.PI * v;
+
+  const z = toLight.normalize();
+  const up = Math.abs(z.y) < 0.999 ? new Vector(0, 1, 0) : new Vector(1, 0, 0);
+  const x = up.crossProduct(z).normalize();
+  const y = z.crossProduct(x);
+
+  const dir = x.multiply(sinT * Math.cos(phi))
+    .add(y.multiply(sinT * Math.sin(phi)))
+    .add(z.multiply(cosT))
+    .normalize();
+
+  return { dir, solidAngle };
+};
+
 const getCosineWeightedSample = (normal: Vector) => {
   const u = Math.random();
   const v = Math.random();
@@ -346,30 +380,34 @@ const traceRay = ({
       )
     );
 
-    // Next-event estimation: explicitly sample the area light.
+    // Next-event estimation: proper sphere-light sampling.
+    // Estimator: (albedo/π) × L_e × cos(θ) × solidAngle  (unbiased).
     const light = sceneObjects.find((object) => object.name === "lightBall");
 
     if (light) {
-      const lightCenter = (light as Sphere).center;
-
-      const lightPoint = lightCenter.add(
-        new Point(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5)
+      const lightSphere = light as Sphere;
+      const sample = sampleSphereLight(
+        lightSphere.center,
+        lightSphere.radius,
+        intersected.point
       );
 
-      const lightDirection = lightPoint
-        .subtract(intersected.point)
-        .toVector()
-        .normalize();
+      if (sample) {
+        const { dir: lightDir, solidAngle } = sample;
+        const cosTheta = Math.max(0, normal.dotProduct(lightDir));
 
-      const shadowRay = new Ray(intersected.point, lightDirection);
+        if (cosTheta > 0) {
+          const shadowRay = new Ray(intersected.point, lightDir);
+          const shadowHit = castRay({ ray: shadowRay, sceneObjects, i, j });
 
-      const brdf = Math.max(0, normal.dotProduct(lightDirection));
-
-      const shadowHit = castRay({ ray: shadowRay, sceneObjects, i, j });
-
-      if (shadowHit?.object?.name === "lightBall") {
-        const lightThroughput = color.multiply(brdf);
-        radiance = radiance.addWithColor(lightThroughput);
+          if (shadowHit?.object?.name === "lightBall") {
+            const emission = lightSphere.material.emissive ?? new Color(0, 0, 0);
+            const weight = cosTheta * solidAngle / Math.PI;
+            radiance = radiance.addWithColor(
+              color.multiply(weight).multiplyWithColor(emission)
+            );
+          }
+        }
       }
     }
   } else {
