@@ -1,20 +1,158 @@
-<html>
-  <head>
-    <title>Raytracer</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <div>
-      <canvas
-        id="imageCanvas"
-        width="1000"
-        height="1000"
-        style="display: none"
-      ></canvas>
-    </div>
-    <div>
-      <canvas id="canvas" width="1000" height="1000"></canvas>
-    </div>
-    <script src="src/index.ts" type="module"></script>
-  </body>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JS Raytracer</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0d0d12;
+      color: #e0e0e8;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    /* ─── Gallery ─────────────────────────────────────────── */
+    .gallery {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 60px 24px 80px;
+    }
+    .gallery-header { margin-bottom: 52px; }
+    .gallery-header h1 {
+      font-size: clamp(2rem, 5vw, 2.8rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      background: linear-gradient(130deg, #c8d0ff 0%, #7c9bff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 10px;
+    }
+    .gallery-header p { color: #666; font-size: 1rem; }
+
+    .scene-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .scene-card {
+      display: flex;
+      flex-direction: column;
+      background: #12121c;
+      border: 1px solid #1d1d2a;
+      border-radius: 14px;
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      cursor: pointer;
+    }
+    .scene-card:hover {
+      border-color: #4f6ef7;
+      box-shadow: 0 0 0 1px #4f6ef718, 0 12px 32px #00000060;
+    }
+
+    .scene-thumb {
+      width: 100%;
+      aspect-ratio: 1;
+      background: #080810;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      color: #222;
+      overflow: hidden;
+    }
+    .scene-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+    .scene-info { padding: 20px; flex: 1; display: flex; flex-direction: column; }
+    .scene-tag {
+      display: inline-flex;
+      align-items: center;
+      font-size: 0.68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #7c9bff;
+      background: #7c9bff14;
+      border: 1px solid #7c9bff28;
+      padding: 2px 8px;
+      border-radius: 20px;
+      margin-bottom: 10px;
+      width: fit-content;
+    }
+    .scene-info h2 { font-size: 1rem; font-weight: 600; margin-bottom: 8px; letter-spacing: -0.01em; }
+    .scene-info p { font-size: 0.83rem; color: #777; line-height: 1.6; flex: 1; margin-bottom: 16px; }
+    .render-link { font-size: 0.83rem; color: #7c9bff; font-weight: 500; }
+
+    /* ─── Renderer ─────────────────────────────────────────── */
+    .renderer-page {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 32px 24px;
+    }
+    .renderer-nav {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+    .back-link {
+      color: #666;
+      text-decoration: none;
+      font-size: 0.85rem;
+      padding: 6px 14px;
+      border: 1px solid #1d1d2a;
+      border-radius: 8px;
+      transition: color 0.15s, border-color 0.15s;
+      white-space: nowrap;
+    }
+    .back-link:hover { color: #ccc; border-color: #333; }
+    .renderer-nav h1 { font-size: 1.25rem; font-weight: 600; flex: 1; }
+    .render-status { font-size: 0.85rem; color: #7c9bff; white-space: nowrap; }
+
+    .canvas-wrap { position: relative; display: inline-block; }
+    .canvas-placeholder {
+      width: 400px;
+      height: 400px;
+      background: #09090f;
+      border: 1px solid #1d1d2a;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+    }
+    .spinner {
+      width: 30px; height: 30px;
+      border: 2px solid #1d1d2a;
+      border-top-color: #7c9bff;
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .canvas-placeholder p { font-size: 0.82rem; color: #444; }
+
+    #render-canvas {
+      display: none;
+      border-radius: 10px;
+      border: 1px solid #1d1d2a;
+    }
+    #image-canvas { display: none; }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <!-- Hidden canvases kept in DOM so workers can write to them progressively -->
+  <canvas id="image-canvas" width="1000" height="1000"></canvas>
+  <canvas id="render-canvas" width="400" height="400"></canvas>
+  <script type="module" src="/src/index.ts"></script>
+</body>
 </html>

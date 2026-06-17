@@ -133,7 +133,6 @@ sceneObjects.push(leftBox);
 sceneObjects.push(rightBox);
 sceneObjects.push(lightBall);
 sceneObjects.push(backWall);
-//sceneObjects.push(teapot);
-//sceneObjects.push(ceilingLight);
+sceneObjects.push(teapot);
 sceneObjects.push(skyBall);
 

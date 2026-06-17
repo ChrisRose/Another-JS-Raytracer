@@ -10,14 +10,28 @@ import {
 } from "./types.js";
 import { distance, subtract, dotProduct } from "./utils.js";
 import { epsilon } from "./const.js";
-import {
-  cameraStart,
-  rotateCamera,
-  sceneObjects
-} from "./scenes/cornellBoxMeshes.js";
 import { Point } from "./Point.js";
 import { Mesh } from "./Mesh.js";
 import { Sphere } from "./Sphere.js";
+
+// Scene state — populated dynamically in onmessage before rendering begins.
+/* eslint-disable prefer-const */
+let sceneObjects: SceneObject[] = [];
+let cameraStart!: Point;
+let rotateCamera!: (dir: Vector) => Vector;
+/* eslint-enable prefer-const */
+
+async function importScene(name: string): Promise<{
+  cameraStart: Point;
+  rotateCamera: (dir: Vector) => Vector;
+  sceneObjects: SceneObject[];
+}> {
+  if (name === "cornellBox")         return import("./scenes/cornellBox.js");
+  if (name === "globalIllumination") return import("./scenes/globalIllumination.js");
+  if (name === "furnaceTest")        return import("./scenes/furnaceTest.js");
+  if (name === "teapot")             return import("./scenes/teapot.js");
+  return import("./scenes/cornellBoxMeshes.js");
+}
 
 export function findClosestIntersection({
   ray,
@@ -418,8 +432,13 @@ const traceRay = ({
   return radiance;
 };
 
-onmessage = (e: MessageEvent) => {
-  const { iStart, iEnd, jStart, jEnd, width, imageMaps } = e.data;
+onmessage = async (e: MessageEvent) => {
+  const { iStart, iEnd, jStart, jEnd, width, imageMaps, sceneName = "cornellBoxMeshes" } = e.data;
+
+  const scene = await importScene(sceneName);
+  sceneObjects = scene.sceneObjects;
+  cameraStart  = scene.cameraStart;
+  rotateCamera = scene.rotateCamera;
 
   const samplesPerPixel = 32;
 
