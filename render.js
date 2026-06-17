@@ -151,21 +151,17 @@ class Sphere {
 
 // Cornell box bounds (from OBJ vertex data):
 //   x: -8 to 8, y: 0 to 18, z: -8 to 10
+// Cornell box is open at the front — no front wall (camera looks in from z=-25).
 const scene = [
   new Plane('y',  0,  1, WHITE, null, 'floor'),
   new Plane('y', 18, -1, WHITE, null, 'ceiling'),
   new Plane('z', 10, -1, WHITE, null, 'backWall'),
-  new Plane('z', -8,  1, BLACK, null, 'frontWall'), // behind camera, won't be seen
   new Plane('x', -8,  1, RED,   null, 'leftWall'),
   new Plane('x',  8, -1, GREEN, null, 'rightWall'),
 ];
 
-const lightBall = new Sphere(0, 17, 1, 2, WHITE, new Color(4, 4, 4), 'lightBall');
+const lightBall = new Sphere(0, 17, 1, 2, WHITE, new Color(8, 8, 8), 'lightBall');
 scene.push(lightBall);
-
-// Hemisphere sky dome provides ambient fill for rays that escape the box
-const skyBall = new Sphere(0, 9, 0, 60, WHITE, new Color(0.15, 0.15, 0.2), 'skyBall');
-scene.push(skyBall);
 
 function ro(vec) { return { x: vec.x, y: vec.y, z: vec.z }; }
 
@@ -182,16 +178,18 @@ function intersect(rayO, rayD) {
 // Path tracer
 // ---------------------------------------------------------------------------
 
-function trace(rayO, rayD, depth) {
+// includeEmission: true for camera rays and specular bounces; false for diffuse
+// bounces where NEE already accounts for direct lighting (avoids double-counting).
+function trace(rayO, rayD, depth, includeEmission = true) {
   if (depth > MAX_DEPTH) return BLACK;
 
   const hit = intersect(rayO, rayD);
-  if (!hit) return new Color(0.1, 0.1, 0.15); // sky fallback
+  if (!hit) return BLACK; // no sky dome — only explicit lights contribute
 
   const { t, obj } = hit;
   const P = rayO.add(rayD.mul(t));
 
-  if (obj.emissive) return obj.emissive;
+  if (obj.emissive) return includeEmission ? obj.emissive : BLACK;
 
   const normal = obj.normalAt ? obj.normalAt(P) : obj.normalAt();
 
@@ -202,7 +200,8 @@ function trace(rayO, rayD, depth) {
   // Indirect: single cosine-weighted bounce (weight = albedo, PDF cancels)
   const indirDir = cosineSample(faceNormal);
   const indirO = P.add(faceNormal.mul(EPS));
-  const indirColor = trace(indirO, indirDir, depth + 1);
+  // Diffuse bounce: NEE handles direct lighting, so suppress emissive hits
+  const indirColor = trace(indirO, indirDir, depth + 1, false);
   let radiance = albedo.mulC(indirColor);
 
   // Next-event estimation against the area light
