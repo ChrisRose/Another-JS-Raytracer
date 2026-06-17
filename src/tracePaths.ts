@@ -271,6 +271,7 @@ const traceRay = ({
   ray,
   imageMaps,
   bounceDepth = 0,
+  includeEmission = true,
   i,
   j,
   k
@@ -278,10 +279,11 @@ const traceRay = ({
   ray: Ray;
   imageMaps: { [key: string]: ImageData };
   bounceDepth?: number;
+  includeEmission?: boolean;
   i?: number;
   j?: number;
   k?: number;
-}): Color | undefined => {
+}): Color => {
   let radiance = new Color(0, 0, 0);
   const maxBounceDepth = 4;
 
@@ -299,7 +301,6 @@ const traceRay = ({
       const { u, v, w } = UVW;
       // get the normal at the point of intersection
       normal = intersected.object.normalAtPoint({ u, v, w });
-      //normal = intersected.object.normal;
     } else if (typeof intersected?.object.normal === "function") {
       normal = intersected?.object.normal(intersected?.point);
     } else {
@@ -312,8 +313,11 @@ const traceRay = ({
 
     const emission = intersected?.object?.material?.emissive;
 
+    // Only count emissive surfaces for camera rays or specular bounces.
+    // Diffuse bounces use NEE for direct lighting, so suppress emissive
+    // hits to avoid double-counting the same light contribution.
     if (emission) {
-      return emission;
+      return includeEmission ? emission : new Color(0, 0, 0);
     }
 
     let color = (intersected.object as Primitive).material.albedo;
@@ -327,12 +331,14 @@ const traceRay = ({
       normal.multiply(epsilon).toPoint()
     );
 
+    // Diffuse bounce: suppress emissive hits since NEE covers direct lighting.
     radiance = radiance.addWithColor(
       throughputWeight.multiplyWithColor(
         traceRay({
           ray: new Ray(shiftedPoint, randomDirection),
           imageMaps,
           bounceDepth: bounceDepth + 1,
+          includeEmission: false,
           i,
           j,
           k
