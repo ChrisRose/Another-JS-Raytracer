@@ -17,7 +17,6 @@ import {
 } from "./scenes/cornellBoxMeshes.js";
 import { Point } from "./Point.js";
 import { Mesh } from "./Mesh.js";
-import { getRotationMatrixAlignedToVector } from "./matrix.js";
 import { Sphere } from "./Sphere.js";
 
 export function findClosestIntersection({
@@ -182,20 +181,22 @@ const getCosineWeightedSample = (normal: Vector) => {
   const u = Math.random();
   const v = Math.random();
   const theta = 2 * Math.PI * u;
-  const phi = Math.acos(2 * v - 1);
-  const x = Math.sin(phi) * Math.cos(theta);
-  const y = Math.sin(phi) * Math.sin(theta);
-  const z = Math.cos(phi);
 
-  const randomDirection = new Vector(x, y, z);
+  // Malley's method: project a uniform disk sample onto the hemisphere.
+  // PDF = cos(θ)/π, giving efficient cosine-weighted sampling.
+  const r = Math.sqrt(v);
+  const localX = r * Math.cos(theta);
+  const localY = r * Math.sin(theta);
+  const localZ = Math.sqrt(1 - v); // z ≥ 0 → upper hemisphere only
 
-  const rotationMatrix = getRotationMatrixAlignedToVector(normal);
+  // Build an orthonormal basis (tangent, bitangent, normal) via Gram-Schmidt.
+  const up = Math.abs(normal.y) < 0.999 ? new Vector(0, 1, 0) : new Vector(1, 0, 0);
+  const tangent = up.crossProduct(normal).normalize();
+  const bitangent = normal.crossProduct(tangent);
 
-  const rotatedRandomDirection = randomDirection.multiplyWith3x3Matrix(
-    rotationMatrix
-  ) as Vector;
-
-  return rotatedRandomDirection;
+  return tangent.multiply(localX)
+    .add(bitangent.multiply(localY))
+    .add(normal.multiply(localZ));
 };
 
 const castRay = ({
@@ -282,10 +283,10 @@ const traceRay = ({
   k?: number;
 }): Color | undefined => {
   let radiance = new Color(0, 0, 0);
-  const maxBounceDepth = 1;
+  const maxBounceDepth = 4;
 
   if (bounceDepth > maxBounceDepth) {
-    return;
+    return new Color(0, 0, 0);
   }
 
   let intersected = castRay({ ray, sceneObjects, i, j });
@@ -317,63 +318,53 @@ const traceRay = ({
 
     let color = (intersected.object as Primitive).material.albedo;
 
-    const sampleCount = 65;
-    for (i = 0; i < sampleCount; i++) {
-      const randomDirection = getCosineWeightedSample(normal);
-
-      const throughputWeight = color.multiply(
-        2 * normal.dotProduct(randomDirection)
-      );
-
-      const shiftedPoint = intersected.point.add(
-        normal.multiply(epsilon).toPoint()
-      );
-
-      // recursively trace the ray
-      radiance = radiance.addWithColor(
-        throughputWeight.multiplyWithColor(
-          traceRay({
-            ray: new Ray(shiftedPoint, randomDirection),
-            imageMaps,
-            bounceDepth: bounceDepth + 1,
-            i,
-            j,
-            k
-          })
-        )
-      );
-    }
-
-    radiance = radiance.divide(sampleCount);
-
-    // importance sample the light
-    const light = sceneObjects.find((object) => object.name === "lightBall");
-
-    if (!light) {
-      throw new Error("No light found");
-    }
-
-    const lightCenter = (light as Sphere).center;
-
-    const lightPoint = lightCenter.add(
-      new Point(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5)
+    // Single path sample per bounce (proper Monte Carlo path tracing).
+    // With cosine-weighted sampling, PDF = cos(θ)/π and BRDF = albedo/π,
+    // so the weight simplifies to just albedo.
+    const randomDirection = getCosineWeightedSample(normal);
+    const throughputWeight = color;
+    const shiftedPoint = intersected.point.add(
+      normal.multiply(epsilon).toPoint()
     );
 
-    const lightDirection = lightPoint
-      .subtract(intersected.point)
-      .toVector()
-      .normalize();
+    radiance = radiance.addWithColor(
+      throughputWeight.multiplyWithColor(
+        traceRay({
+          ray: new Ray(shiftedPoint, randomDirection),
+          imageMaps,
+          bounceDepth: bounceDepth + 1,
+          i,
+          j,
+          k
+        })
+      )
+    );
 
-    const lightRay = new Ray(intersected.point, lightDirection);
+    // Next-event estimation: explicitly sample the area light.
+    const light = sceneObjects.find((object) => object.name === "lightBall");
 
-    const brdf = normal.dotProduct(lightDirection);
+    if (light) {
+      const lightCenter = (light as Sphere).center;
 
-    let intersected2 = castRay({ ray: lightRay, sceneObjects, i, j });
+      const lightPoint = lightCenter.add(
+        new Point(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5)
+      );
 
-    if (intersected2?.object?.name === "lightBall") {
-      const lightThroughput = color.multiply(brdf);
+      const lightDirection = lightPoint
+        .subtract(intersected.point)
+        .toVector()
+        .normalize();
 
-      radiance = radiance.addWithColor(lightThroughput);
+      const shadowRay = new Ray(intersected.point, lightDirection);
+
+      const brdf = Math.max(0, normal.dotProduct(lightDirection));
+
+      const shadowHit = castRay({ ray: shadowRay, sceneObjects, i, j });
+
+      if (shadowHit?.object?.name === "lightBall") {
+        const lightThroughput = color.multiply(brdf);
+        radiance = radiance.addWithColor(lightThroughput);
+      }
     }
   } else {
     const skyColor = new Color(0.2, 0.2, 0.2);
@@ -386,23 +377,22 @@ const traceRay = ({
 onmessage = (e: MessageEvent) => {
   const { iStart, iEnd, jStart, jEnd, width, imageMaps } = e.data;
 
-  const samplesPerPixel = 8;
+  const samplesPerPixel = 32;
 
   const pixelColors: {
     i: number;
     j: number;
     pixelColor: { r: number; g: number; b: number };
   }[] = [];
-  let pixelColor = new Color(0, 0, 0);
-
   for (var i = iStart; i < iEnd; i++) {
     for (var j = jStart; j < jEnd; j++) {
+      let pixelColor = new Color(0, 0, 0);
       const xStart = (j - width / 2) / width;
       const yStart = (width / 2 - i) / width;
       const dir = new Vector(xStart, yStart, 1);
       const rotatedDir = rotateCamera(dir);
 
-      for (let k = 0; k <= samplesPerPixel; k++) {
+      for (let k = 0; k < samplesPerPixel; k++) {
         // jitter the ray
         const xJitter = Math.random() / width;
         const yJitter = Math.random() / width;
@@ -424,7 +414,7 @@ onmessage = (e: MessageEvent) => {
         }
       }
       pixelColor = pixelColor.divide(samplesPerPixel);
-
+      pixelColor = pixelColor.gammaCorrect();
       pixelColor = pixelColor.clamp();
 
       pixelColors.push({ i, j, pixelColor });

@@ -39,4 +39,13 @@ export class Color {
       Math.min(Math.max(this.b, 0), 1)
     );
   }
+
+  gammaCorrect() {
+    const inv = 1 / 2.2;
+    return new Color(
+      Math.pow(Math.max(0, this.r), inv),
+      Math.pow(Math.max(0, this.g), inv),
+      Math.pow(Math.max(0, this.b), inv)
+    );
+  }
 }
