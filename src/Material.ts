@@ -11,6 +11,8 @@ export class Material {
   texture?: (intersected: Intersected) => Color;
   emissive?: Color;
   imageMap?: string;
+  metallic?: number;   // 1 = fully metallic (F0 = albedo, no diffuse)
+  roughness?: number;  // GGX α² parameter; 0 = mirror, 1 = fully rough
 
   constructor({
     albedo = new Color(0, 0, 0),
@@ -20,7 +22,9 @@ export class Material {
     glossiness = 0,
     texture,
     emissive,
-    imageMap
+    imageMap,
+    metallic,
+    roughness
   }: {
     albedo: Color;
     specular?: number;
@@ -30,6 +34,8 @@ export class Material {
     texture?: (intersected: Intersected) => Color;
     emissive?: Color;
     imageMap?: string;
+    metallic?: number;
+    roughness?: number;
   }) {
     this.albedo = albedo;
     this.specular = specular;
@@ -39,5 +45,7 @@ export class Material {
     this.texture = texture;
     this.emissive = emissive;
     this.imageMap = imageMap;
+    this.metallic = metallic;
+    this.roughness = roughness;
   }
 }

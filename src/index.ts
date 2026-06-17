@@ -27,6 +27,14 @@ const SCENES = [
       "A glass sphere (IOR 1.5) refracts and inverts the scene behind it. Fresnel-weighted Russian roulette selects between specular reflection and transmission at each bounce.",
     thumb: null as string | null,
   },
+  {
+    id: "metalBunny",
+    title: "Metal Bunny",
+    tag: "Metallic BRDF",
+    description:
+      "Stanford Bunny rendered with a Disney-style Cook-Torrance GGX metallic BRDF. Gold F0 with roughness 0.25. BVH-accelerated intersection over 2000 triangles.",
+    thumb: null as string | null,
+  },
 ];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
