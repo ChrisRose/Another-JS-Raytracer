@@ -13,6 +13,7 @@ import { epsilon } from "./const.js";
 import { Point } from "./Point.js";
 import { Mesh } from "./Mesh.js";
 import { Sphere } from "./Sphere.js";
+import { Triangle } from "./Triangle.js";
 
 // Scene state — populated dynamically in onmessage before rendering begins.
 /* eslint-disable prefer-const */
@@ -394,32 +395,88 @@ const traceRay = ({
       )
     );
 
-    // Next-event estimation: proper sphere-light sampling.
-    // Estimator: (albedo/π) × L_e × cos(θ) × solidAngle  (unbiased).
-    const light = sceneObjects.find((object) => object.name === "lightBall");
+    // Next-event estimation: sphere light or mesh area light.
+    const lightSphere = sceneObjects.find((o) => o.name === "lightBall") as Sphere | undefined;
 
-    if (light) {
-      const lightSphere = light as Sphere;
-      const sample = sampleSphereLight(
-        lightSphere.center,
-        lightSphere.radius,
-        intersected.point
-      );
-
+    if (lightSphere) {
+      // Sphere-light NEE: uniform cone sampling, solid-angle estimator.
+      const sample = sampleSphereLight(lightSphere.center, lightSphere.radius, intersected.point);
       if (sample) {
         const { dir: lightDir, solidAngle } = sample;
         const cosTheta = Math.max(0, normal.dotProduct(lightDir));
-
         if (cosTheta > 0) {
-          const shadowRay = new Ray(intersected.point, lightDir);
-          const shadowHit = castRay({ ray: shadowRay, sceneObjects, i, j });
-
+          const shadowHit = castRay({ ray: new Ray(intersected.point, lightDir), sceneObjects, i, j });
           if (shadowHit?.object?.name === "lightBall") {
             const emission = lightSphere.material.emissive ?? new Color(0, 0, 0);
             const weight = cosTheta * solidAngle / Math.PI;
-            radiance = radiance.addWithColor(
-              color.multiply(weight).multiplyWithColor(emission)
-            );
+            radiance = radiance.addWithColor(color.multiply(weight).multiplyWithColor(emission));
+          }
+        }
+      }
+    } else {
+      // Area-light NEE: sample a random point on any emissive mesh triangle.
+      // Estimator: albedo/π × L_e × cosTheta_surface × cosTheta_light × totalArea / dist²
+      type EmissiveTri = { tri: Triangle; emission: Color; area: number };
+      const emissiveTris: EmissiveTri[] = [];
+      for (const obj of sceneObjects) {
+        if (obj.type === "mesh") {
+          const mesh = obj as Mesh;
+          const emissive = mesh.material?.emissive;
+          if (emissive && (emissive.r > 0 || emissive.g > 0 || emissive.b > 0)) {
+            for (const prim of mesh.meshObjects) {
+              if (prim.type === "triangle") {
+                const tri = prim as Triangle;
+                const edge1 = tri.v2.subtract(tri.v1);
+                const edge2 = tri.v3.subtract(tri.v1);
+                const area = 0.5 * edge1.crossProduct(edge2).length();
+                emissiveTris.push({ tri, emission: emissive, area });
+              }
+            }
+          }
+        }
+      }
+
+      if (emissiveTris.length > 0) {
+        const totalArea = emissiveTris.reduce((s, e) => s + e.area, 0);
+
+        // Pick triangle proportional to area
+        let rnd = Math.random() * totalArea;
+        let chosen = emissiveTris[emissiveTris.length - 1];
+        for (const e of emissiveTris) { rnd -= e.area; if (rnd <= 0) { chosen = e; break; } }
+
+        // Uniform point on triangle via barycentric coordinates
+        const sqr1 = Math.sqrt(Math.random());
+        const r2 = Math.random();
+        const b0 = 1 - sqr1, b1 = sqr1 * (1 - r2), b2 = sqr1 * r2;
+        const { tri, emission } = chosen;
+        const lightPoint = new Point(
+          b0 * tri.v1.x + b1 * tri.v2.x + b2 * tri.v3.x,
+          b0 * tri.v1.y + b1 * tri.v2.y + b2 * tri.v3.y,
+          b0 * tri.v1.z + b1 * tri.v2.z + b2 * tri.v3.z
+        );
+
+        const toLightVec = new Vector(
+          lightPoint.x - intersected.point.x,
+          lightPoint.y - intersected.point.y,
+          lightPoint.z - intersected.point.z
+        );
+        const dist = toLightVec.length();
+        const lightDir = toLightVec.normalize();
+        const cosTheta = Math.max(0, normal.dotProduct(lightDir));
+        const cosThetaLight = Math.abs(tri.normal.dotProduct(lightDir));
+
+        if (cosTheta > 0 && cosThetaLight > 0) {
+          const shadowHit = findClosestIntersection({
+            ray: new Ray(intersected.point, lightDir),
+            tMin: epsilon,
+            tMax: dist - epsilon,
+            sceneObjects,
+            i,
+            j
+          });
+          if (!shadowHit) {
+            const weight = cosTheta * cosThetaLight * totalArea / (dist * dist * Math.PI);
+            radiance = radiance.addWithColor(color.multiply(weight).multiplyWithColor(emission));
           }
         }
       }
