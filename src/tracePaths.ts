@@ -34,6 +34,7 @@ async function importScene(name: string): Promise<{
   if (name === "teapot")             return import("./scenes/teapot.js");
   if (name === "refraction")         return import("./scenes/refraction.js");
   if (name === "metalBunny")         return import("./scenes/metalBunny.js");
+  if (name === "backrooms")          return import("./scenes/backrooms.js");
   return import("./scenes/cornellBoxMeshes.js");
 }
 
