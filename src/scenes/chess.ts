@@ -11,10 +11,10 @@ import { queen as queenMesh } from "../meshes/chess/queen.js";
 import { king as kingMesh } from "../meshes/chess/king.js";
 import { pawn as pawnMesh } from "../meshes/chess/pawn.js";
 
-// Low dramatic angle looking across the board
-export const cameraStart = new Point(0.5, 1.8, -2);
+// Low angle — pulled back a little since the pieces are now at the near end
+export const cameraStart = new Point(0, 1.6, -3);
 export const rotateCamera = (dir: Vector) =>
-  dir.multiplyWith3x3Matrix(getRotationXMatrix(18));
+  dir.multiplyWith3x3Matrix(getRotationXMatrix(14));
 
 // ─── Milky Way sky ────────────────────────────────────────────────────────────
 // Deterministic integer hash (xorshift-based) → [0,1)
@@ -86,21 +86,22 @@ const whiteMat = new Material({ albedo: new Color(0.88, 0.86, 0.84), metallic: 1
 // Black pieces: dark gunmetal
 const blackMat = new Material({ albedo: new Color(0.12, 0.10, 0.10), metallic: 1, roughness: 0.10 });
 
-// ─── Checkmate position: Ke6 Qd8# ────────────────────────────────────────────
-// White Queen d8 (col 3, row 7) delivers checkmate to Black King e8 (col 4, row 7).
-// White King e6 (col 4, row 5) supports.
+// ─── Checkmate position: Qe1# (board rotated 180°) ───────────────────────────
+// White Queen e1 (col 4, row 0) delivers checkmate to Black King d1 (col 3, row 0).
+// White King d3 (col 3, row 2) supports.
 //
+// Board rotated 180° from original Qd8# so the action is at the near end.
 // All Black King escape squares are covered:
-//   d7 → controlled by Qd8 (file) + Ke6 (adjacent)
-//   e7 → controlled by Qd8 (diagonal) + Ke6 (adjacent)
-//   f8 → controlled by Qd8 (rank)
-//   f7 → controlled by Ke6 (adjacent)
-//   d8 → occupied by White Queen
+//   c1 → controlled by Qe1 (rank)
+//   c2 → controlled by Kd3 (adjacent)
+//   d2 → controlled by Qe1 (diagonal) + Kd3 (adjacent)
+//   e2 → controlled by Qe1 (file) + Kd3 (adjacent)
+//   e1 → occupied by White Queen
 //
 // Scale 0.14 → king ≈1.13u tall, queen ≈1.0u tall, pawn ≈0.51u tall.
 const SCALE = 0.14;
 
-// col 0-7 (a-h), row 0-7 (rank 1-8)
+// col 0-7 (a-h), row 0-7 (rank 1-8); pieces on near side of board (low z)
 const at = (col: number, row: number) => ({
   x: col - 3.5, y: 0, z: row + 0.5
 });
@@ -118,8 +119,8 @@ sceneObjects.push(new Rectangle({
   material: new Material({ albedo: new Color(0.5, 0.5, 0.5), texture: boardColor })
 }));
 
-// White Queen — d8
-const { x: qx, z: qz } = at(3, 7);
+// White Queen — e1
+const { x: qx, z: qz } = at(4, 0);
 sceneObjects.push(parseMesh({
   mesh: queenMesh, name: "wQueen",
   material: whiteMat,
@@ -127,8 +128,8 @@ sceneObjects.push(parseMesh({
   translate: { x: qx, y: 0, z: qz }
 }));
 
-// White King — e6
-const { x: wkx, z: wkz } = at(4, 5);
+// White King — d3
+const { x: wkx, z: wkz } = at(3, 2);
 sceneObjects.push(parseMesh({
   mesh: kingMesh, name: "wKing",
   material: whiteMat,
@@ -136,8 +137,8 @@ sceneObjects.push(parseMesh({
   translate: { x: wkx, y: 0, z: wkz }
 }));
 
-// Black King — e8
-const { x: bkx, z: bkz } = at(4, 7);
+// Black King — d1
+const { x: bkx, z: bkz } = at(3, 0);
 sceneObjects.push(parseMesh({
   mesh: kingMesh, name: "bKing",
   material: blackMat,
@@ -145,10 +146,10 @@ sceneObjects.push(parseMesh({
   translate: { x: bkx, y: 0, z: bkz }
 }));
 
-// A couple of scattered pawns for context / depth
-const { x: p1x, z: p1z } = at(2, 5);
+// Scattered pawns for depth
+const { x: p1x, z: p1z } = at(5, 2);
 sceneObjects.push(parseMesh({ mesh: pawnMesh, name: "p1", material: whiteMat, scale: SCALE, translate: { x: p1x, y: 0, z: p1z } }));
-const { x: p2x, z: p2z } = at(6, 6);
+const { x: p2x, z: p2z } = at(1, 1);
 sceneObjects.push(parseMesh({ mesh: pawnMesh, name: "p2", material: blackMat, scale: SCALE, translate: { x: p2x, y: 0, z: p2z } }));
 
 // ─── Soft fill light ──────────────────────────────────────────────────────────
