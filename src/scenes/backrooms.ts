@@ -88,10 +88,10 @@ const frontWall = new Rectangle({
   material: wallMat,
 });
 
-// ─── Left wall: split around doorway at z = 9..11, y = 0..2.2 ────────────────
+// ─── Left wall: split around doorway at z = 6..8, y = 0..2.2 ────────────────
 
-const DOOR_Z0  = 9;
-const DOOR_Z1  = 11;
+const DOOR_Z0  = 6;
+const DOOR_Z1  = 8;
 const DOOR_H   = 2.2;  // door height
 
 const leftWallPreDoor = new Rectangle({
@@ -131,9 +131,9 @@ const aboveDoor = new Rectangle({
 // ─── Side room off the left: x = -7..-2, z = 7..15 ──────────────────────────
 // No lights — illuminated only by indirect light leaking through the doorway.
 
-const ROOM_X0  = -7;
-const ROOM_Z0  = 7;
-const ROOM_Z1  = 15;
+const ROOM_X0  = -10;
+const ROOM_Z0  = 4;
+const ROOM_Z1  = 22;
 const ROOM_D   = ROOM_Z1 - ROOM_Z0;  // 8
 const ROOM_W   = -HALF_W - ROOM_X0;  // 5  (x: -7..-2)
 
@@ -246,14 +246,14 @@ const sideRoomLight = (() => {
 
 // ─── Teapot at the end of the hallway ────────────────────────────────────────
 // OBJ native bounds: x 0.66..3.47, y 5.92..7.43, z 2.43..4.17
-// translate centres x at 0, puts y bottom at floor, centres z under last light (z≈52).
+// translate centres x at 0, puts y bottom at floor, centres z at ~25 (50% closer than before).
 
 const teapot = parseMesh({
   mesh: teapotMesh,
   name: "teapot",
   scale:     1.0,
-  translate: { x: -2.07, y: -5.92, z: 55.3 },
-  material:  new Material({ albedo: new Color(0.78, 0.74, 0.65) }),
+  translate: { x: -2.07, y: -5.92, z: 28.5 },
+  material:  new Material({ albedo: new Color(0.02, 0.02, 0.02) }),
 });
 
 // ─── Scene export ─────────────────────────────────────────────────────────────
