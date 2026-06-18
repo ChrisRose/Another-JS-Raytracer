@@ -10,7 +10,7 @@ const SCENES = [
     title: "Cornell Box (Mesh Scene)",
     tag: "Path Tracing",
     description:
-      "Full path-traced Cornell box built from OBJ triangle meshes — two rotated boxes and the Utah teapot. Uses cosine-weighted hemisphere sampling and sphere-light next-event estimation.",
+      "Classic Cornell box with a red left wall, green right wall, and a diffuse ceiling area light. Two white OBJ boxes of different heights share the floor with a red Utah teapot. Cosine-weighted hemisphere sampling with sphere-light next-event estimation.",
     thumb: `${BASE}thumbnails/cornellBoxMeshes.jpg` as string | null,
   },
   {
@@ -18,7 +18,7 @@ const SCENES = [
     title: "Global Illumination",
     tag: "Path Tracing",
     description:
-      "Demonstrates indirect diffuse interreflection: a green sphere lit by a large emissive sphere light with colour bleeding onto the surrounding white walls.",
+      "A green diffuse sphere in a white room lit by an emissive sphere off to the left. Green light bleeds onto the surrounding white walls — a minimal scene that isolates indirect colour interreflection.",
     thumb: `${BASE}thumbnails/globalIllumination.jpg` as string | null,
   },
   {
@@ -26,7 +26,7 @@ const SCENES = [
     title: "Refraction",
     tag: "Dielectrics",
     description:
-      "A glass sphere (IOR 1.5) refracts and inverts the scene behind it. Fresnel-weighted Russian roulette selects between specular reflection and transmission at each bounce.",
+      "A large glass sphere (IOR 1.5) sits in a room with a red left wall, blue right wall, and gold ceiling. An orange and a teal sphere behind the glass appear inverted and distorted through refraction. Fresnel-weighted Russian roulette picks between reflection and transmission at each bounce.",
     thumb: `${BASE}thumbnails/refraction.jpg` as string | null,
   },
   {
@@ -34,7 +34,7 @@ const SCENES = [
     title: "Metal Bunny",
     tag: "Metallic BRDF",
     description:
-      "Stanford Bunny rendered with a Disney-style Cook-Torrance GGX metallic BRDF. Gold F0 with roughness 0.25. BVH-accelerated intersection over 2000 triangles.",
+      "Stanford Bunny rendered with a Cook-Torrance GGX metallic BRDF — gold F0 (1.0, 0.71, 0.29) at roughness 0.25. Red and green side walls reflect across the polished gold surface. BVH-accelerated intersection over ~70 000 triangles.",
     thumb: `${BASE}thumbnails/metalBunny.jpg` as string | null,
   },
   {
@@ -42,7 +42,7 @@ const SCENES = [
     title: "The Backrooms",
     tag: "Environment",
     description:
-      "A fluorescent-lit hallway fading to darkness — inspired by Kane Pixels' Backrooms. Yellowed walls, moist carpet, and recessed ceiling panels lit by warm area lights with progressive path-traced global illumination.",
+      "A 63-unit deep corridor with yellow chevron-patterned walls, dark brown carpet, and ten warm fluorescent ceiling panels fading to darkness. A nearly black teapot silhouette stands mid-hallway beside a side door on the left. Progressive path-traced global illumination.",
     thumb: `${BASE}thumbnails/backrooms.jpg` as string | null,
   },
   {
@@ -50,7 +50,7 @@ const SCENES = [
     title: "Chess Board",
     tag: "Reflections",
     description:
-      "Classic ray-tracing showcase: 32 pieces rendered as chrome, gold, silver, and glass spheres on an ivory-and-ebony checkerboard. Low dramatic camera angle with deep multi-bounce reflections between pieces.",
+      "A Qe1# checkmate position: White Queen, White King, and Black King as polished silver and dark gunmetal metallic mesh pieces with two pawns on an ivory-and-ebony checkerboard with dark wood edge panels. A Milky Way equirectangular sky texture provides the environment light.",
     thumb: `${BASE}thumbnails/chess.jpg` as string | null,
   },
 ];
