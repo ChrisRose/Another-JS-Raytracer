@@ -35,6 +35,14 @@ const SCENES = [
       "Stanford Bunny rendered with a Disney-style Cook-Torrance GGX metallic BRDF. Gold F0 with roughness 0.25. BVH-accelerated intersection over 2000 triangles.",
     thumb: null as string | null,
   },
+  {
+    id: "backrooms",
+    title: "The Backrooms",
+    tag: "Environment",
+    description:
+      "A fluorescent-lit hallway fading to darkness — inspired by Kane Pixels' Backrooms. Yellowed walls, moist carpet, and recessed ceiling panels lit by warm area lights with progressive path-traced global illumination.",
+    thumb: null as string | null,
+  },
 ];
 
 // ─── Gallery view ─────────────────────────────────────────────────────────────
