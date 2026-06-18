@@ -10,9 +10,9 @@ permissions:
   pages: write
   id-token: write
 
-# Only one deployment at a time; cancel in-progress runs on new push.
+# One deployment per workflow+branch at a time; cancel in-progress runs on new push.
 concurrency:
-  group: pages
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:

@@ -56,6 +56,12 @@ const SCENES = [
 // ─── Gallery view ─────────────────────────────────────────────────────────────
 
 function renderGallery() {
+  // Populate thumbnails from localStorage before building HTML.
+  for (const s of SCENES) {
+    const stored = localStorage.getItem('thumb_' + s.id);
+    if (stored) s.thumb = stored;
+  }
+
   const app = document.getElementById("app")!;
   app.innerHTML = `
     <div class="gallery">
@@ -153,6 +159,7 @@ async function startRender(sceneName: string) {
   let swapped        = false;
   let redrawPending  = false;
   let msgsReceived   = 0;
+  let thumbSaved     = false;
   const totalMsgs    = tiles * tiles * totalPasses;
 
   const updateStatus = (text: string) => {
@@ -229,6 +236,19 @@ async function startRender(sceneName: string) {
         if (!redrawPending) {
           redrawPending = true;
           requestAnimationFrame(redraw);
+        }
+
+        // Auto-save thumbnail once at 32 accumulated spp.
+        if (!thumbSaved && msgsReceived === 32 * tiles * tiles) {
+          thumbSaved = true;
+          requestAnimationFrame(() => {
+            try {
+              const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+              localStorage.setItem('thumb_' + sceneName, dataUrl);
+            } catch {
+              // Silently ignore quota or security errors.
+            }
+          });
         }
 
         if (pass === totalPasses - 1) worker.terminate();
