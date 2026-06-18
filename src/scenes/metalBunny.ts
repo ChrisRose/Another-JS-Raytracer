@@ -18,32 +18,32 @@ export const sceneObjects: SceneObject[] = [];
 // ─── Room geometry (Rectangles — no mesh loading overhead) ───────────────────
 
 const floor = new Rectangle({
-  corner: new Point(-10, 0, -10),
+  corner: new Point(-5, 0, -16),
   v1: new Vector(1, 0, 0),
   v2: new Vector(0, 0, 1),
-  width: 20,
-  height: 20,
+  width: 10,
+  height: 28,
   normal: new Vector(0, 1, 0),
   orientation: "xzAxis",
   material: new Material({ albedo: new Color(0.9, 0.9, 0.9) })
 });
 
 const ceiling = new Rectangle({
-  corner: new Point(-10, 14, -10),
+  corner: new Point(-5, 14, -16),
   v1: new Vector(1, 0, 0),
   v2: new Vector(0, 0, 1),
-  width: 20,
-  height: 20,
+  width: 10,
+  height: 28,
   normal: new Vector(0, -1, 0),
   orientation: "xzAxis",
   material: new Material({ albedo: new Color(0.9, 0.9, 0.9) })
 });
 
 const backWall = new Rectangle({
-  corner: new Point(-10, 0, 10),
+  corner: new Point(-5, 0, 12),
   v1: new Vector(1, 0, 0),
   v2: new Vector(0, 1, 0),
-  width: 20,
+  width: 10,
   height: 14,
   normal: new Vector(0, 0, -1),
   orientation: "xyAxis",
@@ -51,22 +51,22 @@ const backWall = new Rectangle({
 });
 
 const leftWall = new Rectangle({
-  corner: new Point(-10, 0, -10),
+  corner: new Point(-5, 0, -16),
   v1: new Vector(0, 1, 0),
   v2: new Vector(0, 0, 1),
   width: 14,
-  height: 20,
+  height: 28,
   normal: new Vector(1, 0, 0),
   orientation: "yzAxis",
   material: new Material({ albedo: new Color(0.65, 0.1, 0.1) })
 });
 
 const rightWall = new Rectangle({
-  corner: new Point(10, 0, -10),
+  corner: new Point(5, 0, -16),
   v1: new Vector(0, 1, 0),
   v2: new Vector(0, 0, 1),
   width: 14,
-  height: 20,
+  height: 28,
   normal: new Vector(-1, 0, 0),
   orientation: "yzAxis",
   material: new Material({ albedo: new Color(0.1, 0.4, 0.15) })

@@ -25,21 +25,21 @@ const lightBall = new Sphere({
 export const sceneObjects: SceneObject[] = [];
 
 const floor = new Rectangle({
-  corner: new Point(-6, 0, -6),
+  corner: new Point(-4, 0, -8),
   v1: new Vector(1, 0, 0),
   v2: new Vector(0, 0, 1),
-  width: 12,
-  height: 12,
+  width: 8,
+  height: 16,
   normal: new Vector(0, 1, 0),
   orientation: "xzAxis",
   material: new Material({ albedo: new Color(0.85, 0.85, 0.85) })
 });
 
 const backWall = new Rectangle({
-  corner: new Point(-6, 0, 6),
+  corner: new Point(-4, 0, 8),
   v1: new Vector(1, 0, 0),
   v2: new Vector(0, 1, 0),
-  width: 12,
+  width: 8,
   height: 6,
   orientation: "xyAxis",
   normal: new Vector(0, 0, -1),
@@ -47,22 +47,22 @@ const backWall = new Rectangle({
 });
 
 const leftWall = new Rectangle({
-  corner: new Point(-6, 0, -6),
+  corner: new Point(-4, 0, -8),
   v1: new Vector(0, 1, 0),
   v2: new Vector(0, 0, 1),
   width: 6,
-  height: 12,
+  height: 16,
   orientation: "yzAxis",
   normal: new Vector(1, 0, 0),
   material: new Material({ albedo: new Color(0.85, 0.2, 0.2) })
 });
 
 const rightWall = new Rectangle({
-  corner: new Point(6, 0, -6),
+  corner: new Point(4, 0, -8),
   v1: new Vector(0, 1, 0),
   v2: new Vector(0, 0, 1),
   width: 6,
-  height: 12,
+  height: 16,
   orientation: "yzAxis",
   normal: new Vector(-1, 0, 0),
   material: new Material({ albedo: new Color(0.2, 0.35, 0.85) })
