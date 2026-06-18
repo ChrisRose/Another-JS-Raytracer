@@ -54,8 +54,8 @@ const leftWall = new Rectangle({
   corner: new Point(-5, 0, -16),
   v1: new Vector(0, 1, 0),
   v2: new Vector(0, 0, 1),
-  width: 14,
-  height: 28,
+  width: 28,
+  height: 14,
   normal: new Vector(1, 0, 0),
   orientation: "yzAxis",
   material: new Material({ albedo: new Color(0.65, 0.1, 0.1) })
@@ -65,8 +65,8 @@ const rightWall = new Rectangle({
   corner: new Point(5, 0, -16),
   v1: new Vector(0, 1, 0),
   v2: new Vector(0, 0, 1),
-  width: 14,
-  height: 28,
+  width: 28,
+  height: 14,
   normal: new Vector(-1, 0, 0),
   orientation: "yzAxis",
   material: new Material({ albedo: new Color(0.1, 0.4, 0.15) })
