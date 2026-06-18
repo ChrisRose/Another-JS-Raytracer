@@ -457,7 +457,7 @@ const traceRay = ({
       return traceRay({ ray: refracted ?? reflected, imageMaps, bounceDepth: bounceDepth + 1, includeEmission: true, i, j, k });
     }
 
-    let color = material.albedo;
+    let color = material.texture ? material.texture(intersected.point, normal) : material.albedo;
 
     // Single path sample per bounce (proper Monte Carlo path tracing).
     // With cosine-weighted sampling, PDF = cos(θ)/π and BRDF = albedo/π,

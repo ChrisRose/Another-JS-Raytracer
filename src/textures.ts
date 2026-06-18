@@ -1,60 +1,26 @@
 import { Color } from "./Color.js";
-import { epsilon } from "./const.js";
 import { Point } from "./Point.js";
-import { Intersected } from "./types.js";
+import { Vector } from "./Vector.js";
 
-const getUV = (intersected: Intersected) => {
-  if (!intersected?.object) {
-    return { u: 0, v: 0 };
-  }
-  const { x, y, z } = intersected.point;
-  let u: number = 0,
-    v: number = 0;
-  if (intersected.object?.type === "rectangle") {
-    if (intersected.object.orientation === "xyAxis") {
-      u = x % 1;
-      v = y % 1;
-    }
-    if (intersected.object.orientation === "xzAxis") {
-      u = x % 1;
-      v = z % 1;
-    }
-  } else {
-    u = x % 1;
-    v = z % 1;
-  }
-  return { u, v };
+const getUV = (point: Point, normal: Vector) => {
+  const ax = Math.abs(normal.x), ay = Math.abs(normal.y), az = Math.abs(normal.z);
+  if (az >= ax && az >= ay) return { u: point.x % 1, v: point.y % 1 }; // front/back
+  if (ay >= ax)              return { u: point.x % 1, v: point.z % 1 }; // floor/ceiling
+  return                            { u: point.z % 1, v: point.y % 1 }; // left/right
 };
 
-export const checkerboardTexture = (intersected: Intersected) => {
-  const checkers = {
-    width: 2,
-    height: 2,
-    color1: new Color(0, 0, 0),
-    color2: new Color(1, 1, 1)
-  };
-  const { u, v } = getUV(intersected);
-
-  let u2 = Math.floor(u * checkers.width);
-  let v2 = Math.floor(v * checkers.height);
-
-  if ((u2 + v2) % 2 === 0) {
-    return checkers.color1;
-  }
-  return checkers.color2;
+export const checkerboardTexture = (point: Point, normal: Vector): Color => {
+  const { u, v } = getUV(point, normal);
+  const u2 = Math.floor(u * 2);
+  const v2 = Math.floor(v * 2);
+  return (u2 + v2) % 2 === 0 ? new Color(0, 0, 0) : new Color(1, 1, 1);
 };
 
-export const gridTexture = (intersected: Intersected) => {
-  const { u, v } = getUV(intersected);
-
+export const gridTexture = (point: Point, normal: Vector): Color => {
+  const { u, v } = getUV(point, normal);
   const thickness = 0.01;
-  const background = new Color(0.5, 0.5, 0.5);
-  const grid = new Color(0, 0, 0);
-  const delta = (v: number) => Math.abs(v - Math.floor(v + 0.5));
-  const isline = (v: number) => (delta(v) < thickness ? true : false);
-  if (isline(u) || isline(v)) {
-    return grid;
-  } else {
-    return background;
-  }
+  const delta = (x: number) => Math.abs(x - Math.floor(x + 0.5));
+  return delta(u) < thickness || delta(v) < thickness
+    ? new Color(0, 0, 0)
+    : new Color(0.5, 0.5, 0.5);
 };
