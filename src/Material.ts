@@ -1,6 +1,6 @@
 import { Color } from "./Color.js";
 import { Point } from "./Point.js";
-import { Intersected } from "./types.js";
+import { Vector } from "./Vector.js";
 
 export class Material {
   albedo: Color;
@@ -8,7 +8,7 @@ export class Material {
   reflectivity?: number;
   refractionIndex?: number;
   glossiness?: number;
-  texture?: (intersected: Intersected) => Color;
+  texture?: (point: Point, normal: Vector) => Color;
   emissive?: Color;
   imageMap?: string;
   metallic?: number;   // 1 = fully metallic (F0 = albedo, no diffuse)
@@ -31,7 +31,7 @@ export class Material {
     reflectivity?: number;
     refractionIndex?: number;
     glossiness?: number;
-    texture?: (intersected: Intersected) => Color;
+    texture?: (point: Point, normal: Vector) => Color;
     emissive?: Color;
     imageMap?: string;
     metallic?: number;

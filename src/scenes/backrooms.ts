@@ -23,7 +23,31 @@ const Z_START = -3;
 const Z_END   = 60;
 const DEPTH   = Z_END - Z_START; // 63
 
-const wallMat  = new Material({ albedo: new Color(0.80, 0.70, 0.33) });
+// Procedural chevron wallpaper — upward-pointing V shapes, subtle contrast.
+// Uses hit-point world coords; normal selects the correct surface-local axes.
+function chevronColor(point: Point, normal: Vector): Color {
+  const base = new Color(0.80, 0.70, 0.33);
+  const mark = new Color(0.65, 0.57, 0.27);
+
+  const ax = Math.abs(normal.x), ay = Math.abs(normal.y), az = Math.abs(normal.z);
+  let h: number, v: number;
+  if (ay >= ax && ay >= az) { h = point.x; v = point.z; }   // floor / ceiling
+  else if (ax >= az)         { h = point.z; v = point.y; }   // left / right wall
+  else                       { h = point.x; v = point.y; }   // front / back wall
+
+  const freqV = 2.5, freqH = 2.5;
+  const vf = ((v * freqV) % 1 + 1) % 1;   // 0..1, handles negative coords
+  const hf = ((h * freqH) % 1 + 1) % 1;
+
+  // V pointing up: left stroke rises hf = vf/2 (0→0.5), right descends hf = 1 − vf/2
+  const thickness = 0.055;
+  const onLine = Math.abs(hf - vf * 0.5) < thickness
+              || Math.abs(hf - (1 - vf * 0.5)) < thickness;
+
+  return onLine ? mark : base;
+}
+
+const wallMat  = new Material({ albedo: new Color(0.80, 0.70, 0.33), texture: chevronColor });
 const floorMat = new Material({ albedo: new Color(0.50, 0.44, 0.20) });
 const ceilMat  = new Material({ albedo: new Color(0.88, 0.83, 0.50) });
 
