@@ -106,7 +106,33 @@ function renderScene(sceneId: string, sceneTitle: string) {
   startRender(sceneId);
 }
 
-function startRender(sceneName: string) {
+async function loadImageData(url: string): Promise<ImageData | null> {
+  try {
+    const img = new Image();
+    await new Promise<void>((resolve, reject) => {
+      img.onload  = () => resolve();
+      img.onerror = () => reject(new Error("image load failed"));
+      img.src = url;
+    });
+    const tmpCanvas = document.createElement("canvas");
+    tmpCanvas.width  = img.naturalWidth;
+    tmpCanvas.height = img.naturalHeight;
+    tmpCanvas.getContext("2d")!.drawImage(img, 0, 0);
+    return tmpCanvas.getContext("2d")!.getImageData(0, 0, img.naturalWidth, img.naturalHeight);
+  } catch {
+    return null;
+  }
+}
+
+async function startRender(sceneName: string) {
+  // Preload scene-specific sky images before spawning workers.
+  const imageMaps: Record<string, ImageData> = {};
+  if (sceneName === "chess") {
+    const skyUrl = new URL("./assets/sky.jpg", import.meta.url).href;
+    const skyData = await loadImageData(skyUrl);
+    if (skyData) imageMaps["sky"] = skyData;
+  }
+
   const width       = 600;
   const height      = 600;
   const tiles       = 4;
@@ -176,7 +202,7 @@ function startRender(sceneName: string) {
         { type: "module" }
       );
 
-      worker.postMessage({ iStart, iEnd, jStart, jEnd, width, imageMaps: {}, sceneName, totalPasses });
+      worker.postMessage({ iStart, iEnd, jStart, jEnd, width, imageMaps, sceneName, totalPasses });
 
       worker.onmessage = (e: MessageEvent) => {
         const { pass, pixelColors } = e.data as {
