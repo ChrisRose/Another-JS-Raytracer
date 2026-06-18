@@ -99,10 +99,10 @@ function renderScene(sceneId: string, sceneTitle: string) {
 }
 
 function startRender(sceneName: string) {
-  const width       = 400;
-  const height      = 400;
+  const width       = 600;
+  const height      = 600;
   const tiles       = 4;
-  const totalPasses = 128;
+  const totalPasses = 192;
 
   const canvas = document.getElementById("render-canvas") as HTMLCanvasElement;
   const ctx    = canvas.getContext("2d")!;
