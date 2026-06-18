@@ -135,7 +135,7 @@ const ROOM_X0  = -7;
 const ROOM_Z0  = 7;
 const ROOM_Z1  = 15;
 const ROOM_D   = ROOM_Z1 - ROOM_Z0;  // 8
-const ROOM_W   = HALF_W - ROOM_X0;   // 5  (x: -7..-2)
+const ROOM_W   = -HALF_W - ROOM_X0;  // 5  (x: -7..-2)
 
 const sideFloor = new Rectangle({
   corner: new Point(ROOM_X0, 0, ROOM_Z0),
@@ -221,6 +221,29 @@ function makePanel(zCenter: number): Mesh {
 
 const lights = [2, 8, 14, 20, 28, 36, 44, 52].map(makePanel);
 
+// ─── Side-room light ──────────────────────────────────────────────────────────
+// One dim panel centred in the side room — half the hallway brightness so it
+// reads as a different, gloomier space rather than pitch black.
+const sideRoomLight = (() => {
+  const LW  = 0.8;
+  const LD  = 0.45;
+  const xc  = (ROOM_X0 - HALF_W) / 2;   // -4.5
+  const zc  = (ROOM_Z0 + ROOM_Z1) / 2;  // 11
+  const y   = CEIL_H - 0.01;
+  const mat = new Material({
+    albedo:   new Color(1, 0.95, 0.8),
+    emissive: new Color(2.5, 2.1, 1.0),
+  });
+  const p0 = new Vector(xc - LW, y, zc - LD);
+  const p1 = new Vector(xc + LW, y, zc - LD);
+  const p2 = new Vector(xc + LW, y, zc + LD);
+  const p3 = new Vector(xc - LW, y, zc + LD);
+  return new Mesh({ name: "light", material: mat, meshObjects: [
+    new Triangle({ v1: p0, v2: p2, v3: p1, material: mat }),
+    new Triangle({ v1: p0, v2: p3, v3: p2, material: mat }),
+  ]});
+})();
+
 // ─── Teapot at the end of the hallway ────────────────────────────────────────
 // OBJ native bounds: x 0.66..3.47, y 5.92..7.43, z 2.43..4.17
 // translate centres x at 0, puts y bottom at floor, centres z under last light (z≈52).
@@ -245,6 +268,7 @@ export const sceneObjects: SceneObject[] = [
   sideFloor, sideCeiling, sideOuterWall, sideNearWall, sideFarWall,
   // Overhead lights
   ...lights,
+  sideRoomLight,
   // Teapot
   teapot,
 ];
