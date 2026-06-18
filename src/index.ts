@@ -43,6 +43,14 @@ const SCENES = [
       "A fluorescent-lit hallway fading to darkness — inspired by Kane Pixels' Backrooms. Yellowed walls, moist carpet, and recessed ceiling panels lit by warm area lights with progressive path-traced global illumination.",
     thumb: null as string | null,
   },
+  {
+    id: "chess",
+    title: "Chess Board",
+    tag: "Reflections",
+    description:
+      "Classic ray-tracing showcase: 32 pieces rendered as chrome, gold, silver, and glass spheres on an ivory-and-ebony checkerboard. Low dramatic camera angle with deep multi-bounce reflections between pieces.",
+    thumb: null as string | null,
+  },
 ];
 
 // ─── Gallery view ─────────────────────────────────────────────────────────────
