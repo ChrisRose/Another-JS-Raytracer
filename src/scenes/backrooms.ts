@@ -48,7 +48,7 @@ function chevronColor(point: Point, normal: Vector): Color {
 }
 
 const wallMat  = new Material({ albedo: new Color(0.80, 0.70, 0.33), texture: chevronColor });
-const floorMat = new Material({ albedo: new Color(0.50, 0.44, 0.20) });
+const floorMat = new Material({ albedo: new Color(0.28, 0.24, 0.10) });
 const ceilMat  = new Material({ albedo: new Color(0.88, 0.83, 0.50) });
 
 // ─── Main hallway surfaces ────────────────────────────────────────────────────
@@ -258,7 +258,7 @@ function makePanel(zCenter: number): Mesh {
   const y   = CEIL_H - 0.01;
   const mat = new Material({
     albedo:   new Color(1, 0.95, 0.8),
-    emissive: new Color(5, 4.2, 2.0),
+    emissive: new Color(7, 5.9, 2.8),
   });
 
   const p0 = new Vector(-LW, y, zCenter - LD);
@@ -272,7 +272,7 @@ function makePanel(zCenter: number): Mesh {
   return new Mesh({ name: "light", material: mat, meshObjects: [t1, t2] });
 }
 
-const lights = [2, 8, 14, 20, 28, 36, 44, 52].map(makePanel);
+const lights = [2, 8, 14, 20, 26, 32, 38, 44, 50, 56].map(makePanel);
 
 // ─── Side-room light ──────────────────────────────────────────────────────────
 // One dim panel centred in the side room — half the hallway brightness so it
