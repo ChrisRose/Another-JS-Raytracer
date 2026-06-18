@@ -3,16 +3,18 @@ import { Point } from "../Point.js";
 import { Vector } from "../Vector.js";
 import { Rectangle } from "../Rectangle.js";
 import { SceneObject } from "../types.js";
-import { getRotationXMatrix } from "../matrix.js";
+import { getRotationXMatrix, getRotationYMatrix } from "../matrix.js";
 import { Material } from "../Material.js";
 import { Mesh } from "../Mesh.js";
 import { Triangle } from "../Triangle.js";
 import { teapotLowRes as teapotMesh } from "../meshes/cornellBox/teapotLowRes.js";
 import { parseMesh } from "../meshUtils.js";
 
-export const cameraStart = new Point(0, 1.5, -1.5);
+export const cameraStart = new Point(-0.6, 1.35, -1.5);
 export const rotateCamera = (dir: Vector) =>
-  dir.multiplyWith3x3Matrix(getRotationXMatrix(3));
+  dir
+    .multiplyWith3x3Matrix(getRotationYMatrix(8))
+    .multiplyWith3x3Matrix(getRotationXMatrix(4));
 
 // ─── Hallway dimensions ───────────────────────────────────────────────────────
 // 4 units wide (x: -2..+2), 2.8 tall (y: 0..2.8), 63 deep (z: -3..60)
