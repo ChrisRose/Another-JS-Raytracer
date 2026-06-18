@@ -128,7 +128,7 @@ async function startRender(sceneName: string) {
   // Preload scene-specific sky images before spawning workers.
   const imageMaps: Record<string, ImageData> = {};
   if (sceneName === "chess") {
-    const skyUrl = new URL("./assets/sky.jpg", import.meta.url).href;
+    const skyUrl = new URL("./assets/milkyway.jpg", import.meta.url).href;
     const skyData = await loadImageData(skyUrl);
     if (skyData) imageMaps["sky"] = skyData;
   }
