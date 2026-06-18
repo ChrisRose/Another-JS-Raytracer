@@ -82,7 +82,7 @@ function renderScene(sceneId: string, sceneTitle: string) {
   app.innerHTML = `
     <div class="renderer-page">
       <div class="renderer-nav">
-        <a class="back-link" href="/">← All scenes</a>
+        <a class="back-link" href="${window.location.pathname}">← All scenes</a>
         <h1>${sceneTitle}</h1>
         <span class="render-status" id="render-status">Starting…</span>
       </div>
