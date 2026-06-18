@@ -7,7 +7,8 @@
     "skipLibCheck": true,
     "outDir": "src/public",
     "module": "ES2022",
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "types": ["vite/client"]
   },
-  "exclude": ["src/**/*.spec.ts", "*.config.ts"]
+  "exclude": ["src/**/*.spec.ts", "*.config.ts", "generate-thumbnails.mts"]
 }
