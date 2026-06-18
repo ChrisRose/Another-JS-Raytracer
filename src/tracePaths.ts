@@ -22,6 +22,7 @@ let sceneObjects: SceneObject[] = [];
 let cameraStart!: Point;
 let rotateCamera!: (dir: Vector) => Vector;
 let skyFn: ((dir: Vector) => Color) | undefined;
+let skyImageData: ImageData | undefined;
 /* eslint-enable prefer-const */
 
 async function importScene(name: string): Promise<{
@@ -29,6 +30,7 @@ async function importScene(name: string): Promise<{
   rotateCamera: (dir: Vector) => Vector;
   sceneObjects: SceneObject[];
   skyFn?: (dir: Vector) => Color;
+  skyImageKey?: string;
 }> {
   if (name === "cornellBox")         return import("./scenes/cornellBox.js");
   if (name === "globalIllumination") return import("./scenes/globalIllumination.js");
@@ -573,7 +575,24 @@ const traceRay = ({
       }
     }
   } else {
-    const skyColor = skyFn ? skyFn(ray.dir) : new Color(0.2, 0.2, 0.2);
+    let skyColor: Color;
+    if (skyImageData) {
+      const d = ray.dir;
+      const len = Math.sqrt(d.x * d.x + d.y * d.y + d.z * d.z);
+      const ny = d.y / len, nx = d.x / len, nz = d.z / len;
+      const theta = Math.acos(Math.max(-1, Math.min(1, ny)));
+      const phi   = Math.atan2(nz, nx);
+      const u = Math.floor(((phi + Math.PI) / (2 * Math.PI)) * skyImageData.width)  % skyImageData.width;
+      const v = Math.floor((theta / Math.PI)                  * skyImageData.height) % skyImageData.height;
+      const idx = (v * skyImageData.width + u) * 4;
+      skyColor = new Color(
+        skyImageData.data[idx]     / 255,
+        skyImageData.data[idx + 1] / 255,
+        skyImageData.data[idx + 2] / 255
+      );
+    } else {
+      skyColor = skyFn ? skyFn(ray.dir) : new Color(0.2, 0.2, 0.2);
+    }
     radiance = radiance.addWithColor(skyColor);
   }
 
@@ -592,6 +611,7 @@ onmessage = async (e: MessageEvent) => {
   cameraStart  = scene.cameraStart;
   rotateCamera = scene.rotateCamera;
   skyFn        = scene.skyFn;
+  skyImageData = scene.skyImageKey ? (imageMaps[scene.skyImageKey] as ImageData | undefined) : undefined;
 
   // Precompute base ray directions for the tile — same for every pass.
   type PixelDir = { i: number; j: number; rotatedDir: Vector };
