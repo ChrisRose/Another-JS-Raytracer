@@ -2,6 +2,8 @@ import { Color } from "./Color.js";
 
 // ─── Scene registry ──────────────────────────────────────────────────────────
 
+const BASE = import.meta.env.BASE_URL;
+
 const SCENES = [
   {
     id: "cornellBoxMeshes",
@@ -9,7 +11,7 @@ const SCENES = [
     tag: "Path Tracing",
     description:
       "Full path-traced Cornell box built from OBJ triangle meshes — two rotated boxes and the Utah teapot. Uses cosine-weighted hemisphere sampling and sphere-light next-event estimation.",
-    thumb: null as string | null,
+    thumb: `${BASE}thumbnails/cornellBoxMeshes.jpg` as string | null,
   },
   {
     id: "globalIllumination",
@@ -17,7 +19,7 @@ const SCENES = [
     tag: "Path Tracing",
     description:
       "Demonstrates indirect diffuse interreflection: a green sphere lit by a large emissive sphere light with colour bleeding onto the surrounding white walls.",
-    thumb: null,
+    thumb: `${BASE}thumbnails/globalIllumination.jpg` as string | null,
   },
   {
     id: "refraction",
@@ -25,7 +27,7 @@ const SCENES = [
     tag: "Dielectrics",
     description:
       "A glass sphere (IOR 1.5) refracts and inverts the scene behind it. Fresnel-weighted Russian roulette selects between specular reflection and transmission at each bounce.",
-    thumb: null as string | null,
+    thumb: `${BASE}thumbnails/refraction.jpg` as string | null,
   },
   {
     id: "metalBunny",
@@ -33,7 +35,7 @@ const SCENES = [
     tag: "Metallic BRDF",
     description:
       "Stanford Bunny rendered with a Disney-style Cook-Torrance GGX metallic BRDF. Gold F0 with roughness 0.25. BVH-accelerated intersection over 2000 triangles.",
-    thumb: null as string | null,
+    thumb: `${BASE}thumbnails/metalBunny.jpg` as string | null,
   },
   {
     id: "backrooms",
@@ -41,7 +43,7 @@ const SCENES = [
     tag: "Environment",
     description:
       "A fluorescent-lit hallway fading to darkness — inspired by Kane Pixels' Backrooms. Yellowed walls, moist carpet, and recessed ceiling panels lit by warm area lights with progressive path-traced global illumination.",
-    thumb: null as string | null,
+    thumb: `${BASE}thumbnails/backrooms.jpg` as string | null,
   },
   {
     id: "chess",
@@ -49,32 +51,39 @@ const SCENES = [
     tag: "Reflections",
     description:
       "Classic ray-tracing showcase: 32 pieces rendered as chrome, gold, silver, and glass spheres on an ivory-and-ebony checkerboard. Low dramatic camera angle with deep multi-bounce reflections between pieces.",
-    thumb: null as string | null,
+    thumb: `${BASE}thumbnails/chess.jpg` as string | null,
   },
 ];
 
 // ─── Gallery view ─────────────────────────────────────────────────────────────
 
 function renderGallery() {
-  // Populate thumbnails from localStorage before building HTML.
+  // Prefer user-rendered localStorage thumbnail over the static one.
   for (const s of SCENES) {
     const stored = localStorage.getItem('thumb_' + s.id);
     if (stored) s.thumb = stored;
   }
 
   const app = document.getElementById("app")!;
+  // Clone the inline prism SVG from the <template> element
+  const prismTemplate = document.getElementById("prism-svg") as HTMLTemplateElement | null;
+  const prismHTML = prismTemplate ? prismTemplate.innerHTML.trim() : "";
+
   app.innerHTML = `
     <div class="gallery">
       <div class="gallery-header">
-        <h1>JS Raytracer</h1>
-        <p>Monte Carlo path tracer — click a scene to render it in your browser</p>
+        ${prismHTML}
+        <div class="gallery-header-text">
+          <h1>JS Raytracer</h1>
+          <p>Monte Carlo path tracer — click a scene to render it in your browser</p>
+        </div>
       </div>
       <div class="scene-grid">
         ${SCENES.map(
           (s) => `
           <a class="scene-card" href="?scene=${s.id}">
             <div class="scene-thumb">
-              ${s.thumb ? `<img src="${s.thumb}" alt="${s.title}" />` : "◈"}
+              ${s.thumb ? `<img src="${s.thumb}" alt="${s.title}" onerror="this.replaceWith(document.createTextNode('◈'))" />` : "◈"}
             </div>
             <div class="scene-info">
               <span class="scene-tag">${s.tag}</span>
