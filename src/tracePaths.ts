@@ -21,12 +21,14 @@ import { intersectBVH } from "./BVH.js";
 let sceneObjects: SceneObject[] = [];
 let cameraStart!: Point;
 let rotateCamera!: (dir: Vector) => Vector;
+let skyFn: ((dir: Vector) => Color) | undefined;
 /* eslint-enable prefer-const */
 
 async function importScene(name: string): Promise<{
   cameraStart: Point;
   rotateCamera: (dir: Vector) => Vector;
   sceneObjects: SceneObject[];
+  skyFn?: (dir: Vector) => Color;
 }> {
   if (name === "cornellBox")         return import("./scenes/cornellBox.js");
   if (name === "globalIllumination") return import("./scenes/globalIllumination.js");
@@ -571,7 +573,7 @@ const traceRay = ({
       }
     }
   } else {
-    const skyColor = new Color(0.2, 0.2, 0.2);
+    const skyColor = skyFn ? skyFn(ray.dir) : new Color(0.2, 0.2, 0.2);
     radiance = radiance.addWithColor(skyColor);
   }
 
@@ -589,6 +591,7 @@ onmessage = async (e: MessageEvent) => {
   sceneObjects = scene.sceneObjects;
   cameraStart  = scene.cameraStart;
   rotateCamera = scene.rotateCamera;
+  skyFn        = scene.skyFn;
 
   // Precompute base ray directions for the tile — same for every pass.
   type PixelDir = { i: number; j: number; rotatedDir: Vector };
