@@ -115,11 +115,15 @@ const aboveDoor = new Rectangle({
   material: wallMat,
 });
 
+// Right doorway is offset 10 units further along the hall than the left.
+const RDOOR_Z0 = DOOR_Z0 + 10;   // 16
+const RDOOR_Z1 = DOOR_Z1 + 10;   // 18
+
 const rightWallPreDoor = new Rectangle({
   corner: new Point(HALF_W, 0, Z_START),
   v1: new Vector(0, 1, 0),
   v2: new Vector(0, 0, 1),
-  width:  DOOR_Z0 - Z_START,
+  width:  RDOOR_Z0 - Z_START,
   height: CEIL_H,
   normal: new Vector(-1, 0, 0),
   orientation: "yzAxis",
@@ -127,10 +131,10 @@ const rightWallPreDoor = new Rectangle({
 });
 
 const rightWallPostDoor = new Rectangle({
-  corner: new Point(HALF_W, 0, DOOR_Z1),
+  corner: new Point(HALF_W, 0, RDOOR_Z1),
   v1: new Vector(0, 1, 0),
   v2: new Vector(0, 0, 1),
-  width:  Z_END - DOOR_Z1,
+  width:  Z_END - RDOOR_Z1,
   height: CEIL_H,
   normal: new Vector(-1, 0, 0),
   orientation: "yzAxis",
@@ -138,10 +142,10 @@ const rightWallPostDoor = new Rectangle({
 });
 
 const aboveRightDoor = new Rectangle({
-  corner: new Point(HALF_W, DOOR_H, DOOR_Z0),
+  corner: new Point(HALF_W, DOOR_H, RDOOR_Z0),
   v1: new Vector(0, 1, 0),
   v2: new Vector(0, 0, 1),
-  width:  DOOR_Z1 - DOOR_Z0,
+  width:  RDOOR_Z1 - RDOOR_Z0,
   height: CEIL_H - DOOR_H,
   normal: new Vector(-1, 0, 0),
   orientation: "yzAxis",
@@ -154,8 +158,13 @@ const aboveRightDoor = new Rectangle({
 const ROOM_X0  = -10;
 const ROOM_Z0  = 4;
 const ROOM_Z1  = 22;
-const ROOM_D   = ROOM_Z1 - ROOM_Z0;  // 8
-const ROOM_W   = -HALF_W - ROOM_X0;  // 5  (x: -7..-2)
+const ROOM_D   = ROOM_Z1 - ROOM_Z0;
+const ROOM_W   = -HALF_W - ROOM_X0;  // 8  (x: -10..-2)
+
+// Right room z-range, offset 10 units further down the hall.
+const RROOM_Z0 = ROOM_Z0 + 10;   // 14
+const RROOM_Z1 = ROOM_Z1 + 10;   // 32
+const RROOM_D  = RROOM_Z1 - RROOM_Z0;
 
 const sideFloor = new Rectangle({
   corner: new Point(ROOM_X0, 0, ROOM_Z0),
@@ -264,35 +273,35 @@ const sideRoomLight = (() => {
   ]});
 })();
 
-// ─── Side room off the right: x = +2..+10, z = 4..22 ────────────────────────
+// ─── Side room off the right: x = +2..+10, z = 14..32 ───────────────────────
 
 const rightSideFloor = new Rectangle({
-  corner: new Point(HALF_W, 0, ROOM_Z0),
+  corner: new Point(HALF_W, 0, RROOM_Z0),
   v1: new Vector(1, 0, 0),
   v2: new Vector(0, 0, 1),
   width:  ROOM_W,
-  height: ROOM_D,
+  height: RROOM_D,
   normal: new Vector(0, 1, 0),
   orientation: "xzAxis",
   material: floorMat,
 });
 
 const rightSideCeiling = new Rectangle({
-  corner: new Point(HALF_W, CEIL_H, ROOM_Z0),
+  corner: new Point(HALF_W, CEIL_H, RROOM_Z0),
   v1: new Vector(1, 0, 0),
   v2: new Vector(0, 0, 1),
   width:  ROOM_W,
-  height: ROOM_D,
+  height: RROOM_D,
   normal: new Vector(0, -1, 0),
   orientation: "xzAxis",
   material: ceilMat,
 });
 
 const rightSideOuterWall = new Rectangle({
-  corner: new Point(HALF_W + ROOM_W, 0, ROOM_Z0),
+  corner: new Point(HALF_W + ROOM_W, 0, RROOM_Z0),
   v1: new Vector(0, 1, 0),
   v2: new Vector(0, 0, 1),
-  width:  ROOM_D,
+  width:  RROOM_D,
   height: CEIL_H,
   normal: new Vector(-1, 0, 0),
   orientation: "yzAxis",
@@ -300,7 +309,7 @@ const rightSideOuterWall = new Rectangle({
 });
 
 const rightSideNearWall = new Rectangle({
-  corner: new Point(HALF_W, 0, ROOM_Z0),
+  corner: new Point(HALF_W, 0, RROOM_Z0),
   v1: new Vector(1, 0, 0),
   v2: new Vector(0, 1, 0),
   width:  ROOM_W,
@@ -311,7 +320,7 @@ const rightSideNearWall = new Rectangle({
 });
 
 const rightSideFarWall = new Rectangle({
-  corner: new Point(HALF_W, 0, ROOM_Z1),
+  corner: new Point(HALF_W, 0, RROOM_Z1),
   v1: new Vector(1, 0, 0),
   v2: new Vector(0, 1, 0),
   width:  ROOM_W,
@@ -324,8 +333,8 @@ const rightSideFarWall = new Rectangle({
 const rightSideRoomLight = (() => {
   const LW  = 0.5;
   const LD  = 0.28;
-  const xc  = HALF_W + ROOM_W / 2;         // 6
-  const zc  = (ROOM_Z0 + ROOM_Z1) / 2;    // 13
+  const xc  = HALF_W + ROOM_W / 2;           // 6
+  const zc  = (RROOM_Z0 + RROOM_Z1) / 2;    // 23
   const y   = CEIL_H - 0.01;
   const mat = new Material({
     albedo:   new Color(1, 0.95, 0.8),
