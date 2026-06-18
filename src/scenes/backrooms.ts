@@ -52,19 +52,6 @@ const ceiling = new Rectangle({
   material: ceilMat,
 });
 
-// Right wall — unbroken
-// yzAxis: height = y extent, width = z extent
-const rightWall = new Rectangle({
-  corner: new Point(HALF_W, 0, Z_START),
-  v1: new Vector(0, 1, 0),
-  v2: new Vector(0, 0, 1),
-  width:  DEPTH,
-  height: CEIL_H,
-  normal: new Vector(-1, 0, 0),
-  orientation: "yzAxis",
-  material: wallMat,
-});
-
 // xyAxis: width = x extent, height = y extent
 const backWall = new Rectangle({
   corner: new Point(-HALF_W, 0, Z_END),
@@ -88,7 +75,7 @@ const frontWall = new Rectangle({
   material: wallMat,
 });
 
-// ─── Left wall: split around doorway at z = 6..8, y = 0..2.2 ────────────────
+// ─── Left + right walls: split around doorway at z = 6..8, y = 0..2.2 ────────
 
 const DOOR_Z0  = 6;
 const DOOR_Z1  = 8;
@@ -116,14 +103,47 @@ const leftWallPostDoor = new Rectangle({
   material: wallMat,
 });
 
-// Lintel above the door
+// Lintel above the left door
 const aboveDoor = new Rectangle({
   corner: new Point(-HALF_W, DOOR_H, DOOR_Z0),
   v1: new Vector(0, 1, 0),
   v2: new Vector(0, 0, 1),
-  width:  DOOR_Z1 - DOOR_Z0,   // z: 9..11
-  height: CEIL_H - DOOR_H,     // y: 2.2..2.8
+  width:  DOOR_Z1 - DOOR_Z0,
+  height: CEIL_H - DOOR_H,
   normal: new Vector(1, 0, 0),
+  orientation: "yzAxis",
+  material: wallMat,
+});
+
+const rightWallPreDoor = new Rectangle({
+  corner: new Point(HALF_W, 0, Z_START),
+  v1: new Vector(0, 1, 0),
+  v2: new Vector(0, 0, 1),
+  width:  DOOR_Z0 - Z_START,
+  height: CEIL_H,
+  normal: new Vector(-1, 0, 0),
+  orientation: "yzAxis",
+  material: wallMat,
+});
+
+const rightWallPostDoor = new Rectangle({
+  corner: new Point(HALF_W, 0, DOOR_Z1),
+  v1: new Vector(0, 1, 0),
+  v2: new Vector(0, 0, 1),
+  width:  Z_END - DOOR_Z1,
+  height: CEIL_H,
+  normal: new Vector(-1, 0, 0),
+  orientation: "yzAxis",
+  material: wallMat,
+});
+
+const aboveRightDoor = new Rectangle({
+  corner: new Point(HALF_W, DOOR_H, DOOR_Z0),
+  v1: new Vector(0, 1, 0),
+  v2: new Vector(0, 0, 1),
+  width:  DOOR_Z1 - DOOR_Z0,
+  height: CEIL_H - DOOR_H,
+  normal: new Vector(-1, 0, 0),
   orientation: "yzAxis",
   material: wallMat,
 });
@@ -200,8 +220,8 @@ const sideFarWall = new Rectangle({
 // Winding clockwise from above → stored normal (0, −1, 0).
 
 function makePanel(zCenter: number): Mesh {
-  const LW  = 0.8;
-  const LD  = 0.45;
+  const LW  = 0.5;
+  const LD  = 0.28;
   const y   = CEIL_H - 0.01;
   const mat = new Material({
     albedo:   new Color(1, 0.95, 0.8),
@@ -225,10 +245,87 @@ const lights = [2, 8, 14, 20, 28, 36, 44, 52].map(makePanel);
 // One dim panel centred in the side room — half the hallway brightness so it
 // reads as a different, gloomier space rather than pitch black.
 const sideRoomLight = (() => {
-  const LW  = 0.8;
-  const LD  = 0.45;
+  const LW  = 0.5;
+  const LD  = 0.28;
   const xc  = (ROOM_X0 - HALF_W) / 2;   // -4.5
   const zc  = (ROOM_Z0 + ROOM_Z1) / 2;  // 11
+  const y   = CEIL_H - 0.01;
+  const mat = new Material({
+    albedo:   new Color(1, 0.95, 0.8),
+    emissive: new Color(2.5, 2.1, 1.0),
+  });
+  const p0 = new Vector(xc - LW, y, zc - LD);
+  const p1 = new Vector(xc + LW, y, zc - LD);
+  const p2 = new Vector(xc + LW, y, zc + LD);
+  const p3 = new Vector(xc - LW, y, zc + LD);
+  return new Mesh({ name: "light", material: mat, meshObjects: [
+    new Triangle({ v1: p0, v2: p2, v3: p1, material: mat }),
+    new Triangle({ v1: p0, v2: p3, v3: p2, material: mat }),
+  ]});
+})();
+
+// ─── Side room off the right: x = +2..+10, z = 4..22 ────────────────────────
+
+const rightSideFloor = new Rectangle({
+  corner: new Point(HALF_W, 0, ROOM_Z0),
+  v1: new Vector(1, 0, 0),
+  v2: new Vector(0, 0, 1),
+  width:  ROOM_W,
+  height: ROOM_D,
+  normal: new Vector(0, 1, 0),
+  orientation: "xzAxis",
+  material: floorMat,
+});
+
+const rightSideCeiling = new Rectangle({
+  corner: new Point(HALF_W, CEIL_H, ROOM_Z0),
+  v1: new Vector(1, 0, 0),
+  v2: new Vector(0, 0, 1),
+  width:  ROOM_W,
+  height: ROOM_D,
+  normal: new Vector(0, -1, 0),
+  orientation: "xzAxis",
+  material: ceilMat,
+});
+
+const rightSideOuterWall = new Rectangle({
+  corner: new Point(HALF_W + ROOM_W, 0, ROOM_Z0),
+  v1: new Vector(0, 1, 0),
+  v2: new Vector(0, 0, 1),
+  width:  ROOM_D,
+  height: CEIL_H,
+  normal: new Vector(-1, 0, 0),
+  orientation: "yzAxis",
+  material: wallMat,
+});
+
+const rightSideNearWall = new Rectangle({
+  corner: new Point(HALF_W, 0, ROOM_Z0),
+  v1: new Vector(1, 0, 0),
+  v2: new Vector(0, 1, 0),
+  width:  ROOM_W,
+  height: CEIL_H,
+  normal: new Vector(0, 0, 1),
+  orientation: "xyAxis",
+  material: wallMat,
+});
+
+const rightSideFarWall = new Rectangle({
+  corner: new Point(HALF_W, 0, ROOM_Z1),
+  v1: new Vector(1, 0, 0),
+  v2: new Vector(0, 1, 0),
+  width:  ROOM_W,
+  height: CEIL_H,
+  normal: new Vector(0, 0, -1),
+  orientation: "xyAxis",
+  material: wallMat,
+});
+
+const rightSideRoomLight = (() => {
+  const LW  = 0.5;
+  const LD  = 0.28;
+  const xc  = HALF_W + ROOM_W / 2;         // 6
+  const zc  = (ROOM_Z0 + ROOM_Z1) / 2;    // 13
   const y   = CEIL_H - 0.01;
   const mat = new Material({
     albedo:   new Color(1, 0.95, 0.8),
@@ -260,15 +357,19 @@ const teapot = parseMesh({
 
 export const sceneObjects: SceneObject[] = [
   floor, ceiling,
-  rightWall,
   backWall, frontWall,
   // Left wall split around the door
   leftWallPreDoor, leftWallPostDoor, aboveDoor,
-  // Unlit side room
+  // Right wall split around the door
+  rightWallPreDoor, rightWallPostDoor, aboveRightDoor,
+  // Left side room
   sideFloor, sideCeiling, sideOuterWall, sideNearWall, sideFarWall,
+  // Right side room
+  rightSideFloor, rightSideCeiling, rightSideOuterWall, rightSideNearWall, rightSideFarWall,
   // Overhead lights
   ...lights,
   sideRoomLight,
+  rightSideRoomLight,
   // Teapot
   teapot,
 ];
