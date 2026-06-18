@@ -47,9 +47,21 @@ function chevronColor(point: Point, normal: Vector): Color {
   return onLine ? mark : base;
 }
 
+// Ceiling tile grid: 1.5 tiles per unit, 5% gap on each edge → ~90% tile coverage.
+// Grout is dark (simulates the recessed T-bar shadow), tile is the warm cream.
+function ceilingTileColor(point: Point, _normal: Vector): Color {
+  const tile  = new Color(0.88, 0.83, 0.50);
+  const grout = new Color(0.18, 0.16, 0.07);
+  const freq  = 1.5;
+  const gap   = 0.05;
+  const uf = ((point.x * freq) % 1 + 1) % 1;
+  const vf = ((point.z * freq) % 1 + 1) % 1;
+  return (uf < gap || uf > 1 - gap || vf < gap || vf > 1 - gap) ? grout : tile;
+}
+
 const wallMat  = new Material({ albedo: new Color(0.80, 0.70, 0.33), texture: chevronColor });
 const floorMat = new Material({ albedo: new Color(0.28, 0.24, 0.10) });
-const ceilMat  = new Material({ albedo: new Color(0.88, 0.83, 0.50) });
+const ceilMat  = new Material({ albedo: new Color(0.88, 0.83, 0.50), texture: ceilingTileColor });
 
 // ─── Main hallway surfaces ────────────────────────────────────────────────────
 
