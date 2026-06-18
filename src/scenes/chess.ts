@@ -67,6 +67,43 @@ sceneObjects.push(new Rectangle({
   material: new Material({ albedo: new Color(0.5, 0.5, 0.5), texture: boardColor })
 }));
 
+// ─── Board thickness ──────────────────────────────────────────────────────────
+const THICKNESS = 0.4;
+const darkWood = new Material({ albedo: new Color(0.15, 0.09, 0.04) });
+
+// Front face: z=0 plane, facing camera (z negative direction)
+sceneObjects.push(new Rectangle({
+  corner: new Point(-4, -THICKNESS, 0),
+  v1: new Vector(1, 0, 0),
+  v2: new Vector(0, 1, 0),
+  width: 8, height: THICKNESS,
+  normal: new Vector(0, 0, -1),
+  orientation: "xyAxis",
+  material: darkWood
+}));
+
+// Left face: x=-4 plane, facing left
+sceneObjects.push(new Rectangle({
+  corner: new Point(-4, -THICKNESS, 0),
+  v1: new Vector(0, 1, 0),
+  v2: new Vector(0, 0, 1),
+  width: 8, height: THICKNESS,
+  normal: new Vector(-1, 0, 0),
+  orientation: "yzAxis",
+  material: darkWood
+}));
+
+// Right face: x=4 plane, facing right
+sceneObjects.push(new Rectangle({
+  corner: new Point(4, -THICKNESS, 0),
+  v1: new Vector(0, 1, 0),
+  v2: new Vector(0, 0, 1),
+  width: 8, height: THICKNESS,
+  normal: new Vector(1, 0, 0),
+  orientation: "yzAxis",
+  material: darkWood
+}));
+
 // White Queen — e1
 const { x: qx, z: qz } = at(4, 0);
 sceneObjects.push(parseMesh({

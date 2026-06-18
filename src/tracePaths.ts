@@ -585,10 +585,11 @@ const traceRay = ({
       const u = Math.floor(((phi + Math.PI) / (2 * Math.PI)) * skyImageData.width)  % skyImageData.width;
       const v = Math.floor((theta / Math.PI)                  * skyImageData.height) % skyImageData.height;
       const idx = (v * skyImageData.width + u) * 4;
+      const fromSrgb = (v: number) => Math.pow(v / 255, 2.2);
       skyColor = new Color(
-        skyImageData.data[idx]     / 255,
-        skyImageData.data[idx + 1] / 255,
-        skyImageData.data[idx + 2] / 255
+        fromSrgb(skyImageData.data[idx]),
+        fromSrgb(skyImageData.data[idx + 1]),
+        fromSrgb(skyImageData.data[idx + 2])
       );
     } else {
       skyColor = skyFn ? skyFn(ray.dir) : new Color(0.2, 0.2, 0.2);
