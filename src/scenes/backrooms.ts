@@ -52,8 +52,8 @@ function chevronColor(point: Point, normal: Vector): Color {
 function ceilingTileColor(point: Point, _normal: Vector): Color {
   const tile  = new Color(0.88, 0.83, 0.50);
   const grout = new Color(0.18, 0.16, 0.07);
-  const freq  = 1.5;
-  const gap   = 0.05;
+  const freq  = 0.8;
+  const gap   = 0.025;
   const uf = ((point.x * freq) % 1 + 1) % 1;
   const vf = ((point.z * freq) % 1 + 1) % 1;
   return (uf < gap || uf > 1 - gap || vf < gap || vf > 1 - gap) ? grout : tile;
