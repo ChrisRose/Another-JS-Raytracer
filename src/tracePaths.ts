@@ -496,6 +496,20 @@ const traceRay = ({
       // Diffuse arm: fall through to texture + NEE below.
     }
 
+    // Subsurface scattering: jade, wax, skin.
+    // After the surface gloss has been Russian-rouletted, the body light can either
+    // scatter back out (diffuse, handled below) or pass through thin sections.
+    // Scatter direction is cosine-weighted around the INWARD normal, so light
+    // exits from the other side tinted by the material albedo.
+    if ((material.subsurface ?? 0) > 0 && Math.random() < (material.subsurface ?? 0)) {
+      const albedo = material.texture ? material.texture(intersected.point, normal) : material.albedo;
+      const scatterDir = getCosineWeightedSample(normal.multiply(-1));
+      const exitPt = intersected.point.add(normal.multiply(-epsilon).toPoint());
+      return albedo.multiplyWithColor(
+        traceRay({ ray: new Ray(exitPt, scatterDir), imageMaps, bounceDepth: bounceDepth + 1, includeEmission: true, i, j, k })
+      );
+    }
+
     let color = material.texture ? material.texture(intersected.point, normal) : material.albedo;
 
     // Single path sample per bounce (proper Monte Carlo path tracing).
