@@ -158,7 +158,11 @@ async function startRender(sceneName: string) {
 
   const width       = 600;
   const height      = 600;
-  const tiles       = 4;
+  // Heavy-mesh scenes (dragon, metalBunny) parse large OBJs in every worker.
+  // Use fewer tiles on memory-constrained devices to avoid tab crashes.
+  const heavyMesh = sceneName === "dragon" || sceneName === "metalBunny";
+  const mobile    = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+  const tiles       = heavyMesh && mobile ? 1 : heavyMesh ? 2 : 4;
   const totalPasses = 192;
 
   const canvas = document.getElementById("render-canvas") as HTMLCanvasElement;
