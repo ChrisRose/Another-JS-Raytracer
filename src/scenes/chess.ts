@@ -64,7 +64,7 @@ sceneObjects.push(new Rectangle({
   width: 8, height: 8,
   normal: new Vector(0, 1, 0),
   orientation: "xzAxis",
-  material: new Material({ albedo: new Color(0.5, 0.5, 0.5), texture: boardColor })
+  material: new Material({ albedo: new Color(0.5, 0.5, 0.5), texture: boardColor, roughness: 0.05 })
 }));
 
 // ─── Board thickness ──────────────────────────────────────────────────────────

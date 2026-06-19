@@ -467,6 +467,35 @@ const traceRay = ({
       return traceRay({ ray: refracted ?? reflected, imageMaps, bounceDepth: bounceDepth + 1, includeEmission: true, i, j, k });
     }
 
+    // Glossy dielectric: polished non-metal (lacquered wood, stone, plastic).
+    // Schlick Fresnel F0=0.04; Russian roulette picks specular vs diffuse.
+    // Diffuse arm falls through to the NEE path below (texture preserved).
+    if (material.roughness !== undefined && !material.metallic && !material.refractionIndex) {
+      const roughness = Math.max(0.01, material.roughness);
+      const alpha2 = roughness ** 4;
+      const ωo = ray.dir.multiply(-1).normalize();
+      const nDotO = Math.max(0, normal.dotProduct(ωo));
+      const fresnelP = 0.04 + 0.96 * Math.pow(1 - nDotO, 5);
+
+      if (Math.random() < fresnelP) {
+        const h = sampleGGX(normal, alpha2);
+        const oDotH = Math.max(0, ωo.dotProduct(h));
+        const ωi = h.multiply(2 * ωo.dotProduct(h)).subtract(ωo).normalize();
+        const nDotI = normal.dotProduct(ωi);
+        const nDotH = Math.max(0, normal.dotProduct(h));
+        if (nDotI > 0 && nDotH > 0 && nDotO > 0) {
+          const G = smithG1(nDotO, alpha2) * smithG1(nDotI, alpha2);
+          const weight = (G * oDotH) / (nDotO * nDotH);
+          const Li = traceRay({
+            ray: new Ray(intersected.point.add(normal.multiply(epsilon).toPoint()), ωi),
+            imageMaps, bounceDepth: bounceDepth + 1, includeEmission: true, i, j, k,
+          });
+          return new Color(1, 1, 1).multiply(weight).multiplyWithColor(Li);
+        }
+      }
+      // Diffuse arm: fall through to texture + NEE below.
+    }
+
     let color = material.texture ? material.texture(intersected.point, normal) : material.albedo;
 
     // Single path sample per bounce (proper Monte Carlo path tracing).
