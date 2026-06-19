@@ -582,7 +582,7 @@ const traceRay = ({
       const ny = d.y / len, nx = d.x / len, nz = d.z / len;
       const theta = Math.acos(Math.max(-1, Math.min(1, ny)));
       const phi   = Math.atan2(nz, nx);
-      const u = Math.floor(((phi + Math.PI) / (2 * Math.PI)) * skyImageData.width)  % skyImageData.width;
+      const u = Math.floor(((phi + Math.PI) / (2 * Math.PI)) * skyImageData.width * 2) % skyImageData.width;
       const v = Math.floor((theta / Math.PI)                  * skyImageData.height) % skyImageData.height;
       const idx = (v * skyImageData.width + u) * 4;
       const fromSrgb = (v: number) => Math.pow(v / 255, 2.2);
