@@ -45,7 +45,7 @@ const wallMat    = new Material({ albedo: new Color(0.75, 0.74, 0.72) });
 const floorMat   = new Material({ albedo: new Color(0.32, 0.31, 0.30) });
 const glassMat   = new Material({ albedo: new Color(0, 0, 0), refractionIndex: 1.5 });
 const capMat     = new Material({ albedo: new Color(0.95, 0.95, 0.95) });
-const flaskMat   = new Material({ albedo: new Color(0.60, 0.82, 0.70), roughness: 0.05 });
+const flaskMat   = new Material({ albedo: new Color(0.60, 0.82, 0.70), roughness: 0.25 });
 
 // Fewer, more saturated liquids — just four colours for a tighter palette
 const liquids = {
@@ -55,20 +55,7 @@ const liquids = {
   teal:   new Material({ albedo: new Color(0.04, 0.70, 0.60), emissive: new Color(0.03, 0.40, 0.34) }),
 };
 
-// ─── Paper texture ────────────────────────────────────────────────────────────
-// Placed at the left focal point (x ≈ -1, i.e. 1/3 from left at bench distance).
-// UV: u = x across paper width, v = 1 - z_fraction so "top" of image faces camera.
-const PAP_X0 = -2.20, PAP_Z0 = 0.30;
-const PAP_W  = 1.20,  PAP_D  = 1.50;
-const paperMat = new Material({
-  albedo: new Color(0.93, 0.91, 0.86),
-  roughness: 0.90,
-  imageMap: "paper",
-  imageMapUV: (p: Point): [number, number] => [
-    (p.x - PAP_X0) / PAP_W,
-    1 - (p.z - PAP_Z0) / PAP_D,
-  ],
-});
+const paperMat = new Material({ albedo: new Color(0.93, 0.91, 0.86), roughness: 0.90 });
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 // Thinner (r=0.09), taller (h=1.0) tubes
@@ -167,7 +154,7 @@ sceneObjects.push(new Rectangle({
 }));
 
 // ─── Back wall — split around alcove opening ──────────────────────────────────
-const AX0 = -1.5, AX1 = 1.5;   // alcove x extents
+const AX0 = -2.5, AX1 = 0.5;   // alcove x extents (shifted left)
 const AY0 =  0.5, AY1 = 3.8;   // alcove y extents
 const AZ0 =  7.0, AZ1 = 8.5;   // alcove z extents (depth 1.5)
 
@@ -259,8 +246,8 @@ sceneObjects.push(new Mesh({
   name: "alcoveLight",
   material: alcoveLightMat,
   meshObjects: [
-    new Triangle({ v1: new Vector(-0.65, AY1 - 0.14, AZ0 + 0.75), v2: new Vector(0.65, AY1 - 0.14, AZ0 + 0.75), v3: new Vector(0.65, AY1 - 0.14, AZ1 - 0.12), material: alcoveLightMat }),
-    new Triangle({ v1: new Vector(-0.65, AY1 - 0.14, AZ0 + 0.75), v2: new Vector(0.65, AY1 - 0.14, AZ1 - 0.12), v3: new Vector(-0.65, AY1 - 0.14, AZ1 - 0.12), material: alcoveLightMat }),
+    new Triangle({ v1: new Vector(AX0 + 0.85, AY1 - 0.14, AZ0 + 0.75), v2: new Vector(AX1 - 0.85, AY1 - 0.14, AZ0 + 0.75), v3: new Vector(AX1 - 0.85, AY1 - 0.14, AZ1 - 0.12), material: alcoveLightMat }),
+    new Triangle({ v1: new Vector(AX0 + 0.85, AY1 - 0.14, AZ0 + 0.75), v2: new Vector(AX1 - 0.85, AY1 - 0.14, AZ1 - 0.12), v3: new Vector(AX0 + 0.85, AY1 - 0.14, AZ1 - 0.12), material: alcoveLightMat }),
   ],
 }));
 
@@ -311,13 +298,16 @@ sceneObjects.push(new Mesh({
   ],
 }));
 
-// ─── Paper — at left focal point (≈ x=−1, 1/3 from left edge) ────────────────
-sceneObjects.push(new Rectangle({
-  corner: new Point(PAP_X0, 0.003, PAP_Z0),
-  v1: new Vector(1, 0, 0), v2: new Vector(0, 0, 1),
-  width: PAP_W, height: PAP_D,
-  normal: new Vector(0, 1, 0), orientation: "xzAxis",
+// ─── Paper — angled ~15° on the bench (edges not parallel to image plane) ─────
+// Corner coords derived from rotating a 1.2×1.5 sheet 15° CW around y-axis,
+// centred at (-1.9, 0, 1.0).
+sceneObjects.push(new Mesh({
+  name: "paper",
   material: paperMat,
+  meshObjects: [
+    new Triangle({ v1: new Vector(-2.286, 0.003, 0.121), v2: new Vector(-2.674, 0.003, 1.569), v3: new Vector(-1.514, 0.003, 1.879), material: paperMat }),
+    new Triangle({ v1: new Vector(-2.286, 0.003, 0.121), v2: new Vector(-1.514, 0.003, 1.879), v3: new Vector(-1.126, 0.003, 0.431), material: paperMat }),
+  ],
 }));
 
 // ─── Fill light — warm panel above/in-front to illuminate tube fronts ────────
@@ -353,6 +343,6 @@ sceneObjects.push(new Sphere({
 
 // ─── Erlenmeyer flasks ────────────────────────────────────────────────────────
 // Large flask (2× scale) closer to the camera as the dominant foreground object.
-for (const obj of makeErlenmeyer( 0.3, 0.8, 2.0, flaskMat, liquids.amber)) sceneObjects.push(obj);
+for (const obj of makeErlenmeyer( 1.5, 0.8, 2.0, flaskMat, liquids.amber)) sceneObjects.push(obj);
 // Normal flask further back, right side
 for (const obj of makeErlenmeyer( 1.8, 3.8, 1.0, flaskMat, liquids.blue )) sceneObjects.push(obj);
