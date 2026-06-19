@@ -104,10 +104,11 @@ export class Triangle {
     const n3 = vertextNormals[2];
 
     // interpolate normal at point
+    // Barycentric weights from getUVW: u→v2, v→v3, w→v1
     const normal = n1
-      .multiply(u)
-      .add(n2.multiply(v))
-      .add(n3.multiply(w))
+      .multiply(w)
+      .add(n2.multiply(u))
+      .add(n3.multiply(v))
       .normalize();
 
     return normal;
