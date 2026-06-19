@@ -45,7 +45,7 @@ export class Box {
       v1: new Vector(1, 0, 0),
       v2: new Vector(0, 0, 1),
       orientation: "xzAxis",
-      normal: new Vector(0, -1, 0),
+      normal: new Vector(0, 1, 0),
       material
     });
 
@@ -56,7 +56,7 @@ export class Box {
       width: this.width,
       height: this.height,
       orientation: "xzAxis",
-      normal: new Vector(0, 1, 0),
+      normal: new Vector(0, -1, 0),
       material
     });
 
@@ -122,7 +122,7 @@ export class Box {
       const intersection = side.intersection(ray);
       if (intersection && intersection.t < closestIntersection) {
         closestIntersection = intersection.t;
-        return { ...intersection, normal: side.normal };
+        return { ...intersection, side };
       }
     }
   }

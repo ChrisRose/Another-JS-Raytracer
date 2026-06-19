@@ -10,15 +10,7 @@ export class Color {
   }
 
   multiply(factor: number) {
-    return new Color(
-      Math.min(this.r * factor, 255),
-      Math.min(this.g * factor, 255),
-      Math.min(this.b * factor, 255)
-    );
-  }
-
-  add(color: Color) {
-    return new Color(this.r + color.r, this.g + color.g, this.b + color.b);
+    return new Color(this.r * factor, this.g * factor, this.b * factor);
   }
 
   divide(factor: number) {
@@ -29,11 +21,22 @@ export class Color {
     return new Color(this.r - color.r, this.g - color.g, this.b - color.b);
   }
 
+  addWithColor(color: Color) {
+    return new Color(this.r + color.r, this.g + color.g, this.b + color.b);
+  }
+
+  multiplyWithColor(color?: Color) {
+    if (!color) {
+      return new Color(this.r, this.g, this.b);
+    }
+    return new Color(this.r * color.r, this.g * color.g, this.b * color.b);
+  }
+
   clamp() {
     return new Color(
-      Math.floor(Math.min(Math.max(this.r, 0), 255)),
-      Math.floor(Math.min(Math.max(this.g, 0), 255)),
-      Math.floor(Math.min(Math.max(this.b, 0), 255))
+      Math.min(Math.max(this.r, 0), 1),
+      Math.min(Math.max(this.g, 0), 1),
+      Math.min(Math.max(this.b, 0), 1)
     );
   }
 }

@@ -17,56 +17,85 @@ function setPixel({
 }) {
   var index;
   index = x * width * 4 + y * 4;
-  imageData.data[index + 0] = color.r;
-  imageData.data[index + 1] = color.g;
-  imageData.data[index + 2] = color.b;
+  imageData.data[index + 0] = color.r * 255;
+  imageData.data[index + 1] = color.g * 255;
+  imageData.data[index + 2] = color.b * 255;
   imageData.data[index + 3] = a;
 }
 
-// load image
-let imageMap: ImageData;
-const image = new Image();
-image.src = "/assets/sf.jpg";
-image.onload = () => {
-  const canvas = document.getElementById("imageCanvas") as HTMLCanvasElement;
-  if (!canvas) {
-    return;
-  }
-  canvas.width = image.width;
-  canvas.height = image.height;
-  const context = canvas.getContext("2d");
-  if (context) {
-    context.drawImage(image, 0, 0);
-    imageMap = context.getImageData(0, 0, image.width, image.height);
-  }
-  const t0 = performance.now();
-  traceRays();
-  const t1 = performance.now();
-  console.log("Call to traceRays took " + (t1 - t0) + " milliseconds.");
+let imageMaps: { [key: string]: ImageData } = {};
+const loadImage = (src: string): Promise<ImageData> => {
+  return new Promise((resolve, reject) => {
+    let imageMap: ImageData;
+    let image = new Image();
+    image.src = src;
+
+    image.onload = () => {
+      let canvas = document.getElementById("imageCanvas") as HTMLCanvasElement;
+
+      if (!canvas) {
+        return reject("No canvas");
+      }
+
+      let context = canvas.getContext("2d", { willReadFrequently: true });
+
+      if (context) {
+        context.drawImage(image, 0, 0);
+        imageMap = context.getImageData(0, 0, image.width, image.height);
+      }
+
+      resolve(imageMap);
+    };
+  });
 };
 
-function traceRays() {
+const earth = await loadImage("/src/assets/earth.jpg");
+const sf = await loadImage("/src/assets/sf.jpg");
+
+imageMaps.earth = earth;
+imageMaps.sf = sf;
+
+traceRays(imageMaps);
+
+function traceRays(imageMaps: { [key: string]: ImageData }) {
   const canvas = document.getElementById("canvas") as HTMLCanvasElement;
   const context = canvas?.getContext("2d");
-  const width = canvas.width;
-  const height = canvas.height;
+  const width = 400;
+  const height = 400;
+  const squares = 4;
   const imageData = context?.createImageData(width, height) as ImageData;
-  for (let i = 0; i <= 7; i++) {
-    const iStart = (i * width) / 8;
-    const iEnd = ((i + 1) * width) / 8;
-    for (let j = 0; j <= 7; j++) {
-      const jStart = (j * height) / 8;
-      const jEnd = ((j + 1) * height) / 8;
-      const worker = new Worker("tracePaths.js", { type: "module" });
+  let workerCount = 0;
+  let times: { [workerIndex: string]: number } = {};
+  for (let i = 0; i <= squares - 1; i++) {
+    const iStart = (i * width) / squares;
+    const iEnd = ((i + 1) * width) / squares;
+    for (let j = 0; j <= squares - 1; j++) {
+      const jStart = (j * height) / squares;
+      const jEnd = ((j + 1) * height) / squares;
+      const worker = new Worker(new URL("./tracePaths.ts", import.meta.url), {
+        type: "module"
+      });
+      const time = performance.now();
+      const workerIndex = `${i}${j}`;
+      times[workerIndex] = time;
       worker.postMessage({
         iStart,
         iEnd,
         jStart,
         jEnd,
         width,
-        imageMap
+        imageMaps
       });
       worker.onmessage = (e) => {
+        const time2 = performance.now();
+
+        times[workerIndex] = (time2 - times[workerIndex]) / 1000;
+
+        console.log(`worker ${workerIndex} took ${times[workerIndex]}s`);
+
+        if (workerCount === 64) {
+          console.log(times[workerIndex]);
+        }
         const { pixelColors } = e.data;
 
         for (let k = 0; k < pixelColors.length; k++) {

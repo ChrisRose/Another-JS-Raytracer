@@ -3,17 +3,15 @@ import { Point } from "../Point.js";
 import { Sphere } from "../Sphere.js";
 import { Vector } from "../Vector.js";
 import { Plane } from "../Plane.js";
-import { SceneObjects } from "../types.js";
+import { SceneObject } from "../types.js";
 import { AmbientLight, AreaLight, Light } from "../Light.js";
-import { checkerBoardTexture } from "../textures.js";
+import { checkerboardTexture } from "../textures.js";
 import { Material } from "../Material.js";
 
 export const cameraStart = new Point(0, 0.4, -9);
 export const rotateCamera = (dir: Vector) => {
   return dir;
 };
-
-const ambient1 = new AmbientLight({ intensity: 0.1 });
 
 const ceilingLight = new AreaLight({
   corner: new Point(0, 3.5, 1.5),
@@ -23,15 +21,12 @@ const ceilingLight = new AreaLight({
   vSteps: 4,
   intensity: 0.6,
   size: 1,
-  material: new Material({
-    albedo: new Color(255, 255, 159)
-  })
+  color: new Color(1, 1, 1)
 });
 export const lights: Light[] = [];
-lights.push(ambient1);
 lights.push(ceilingLight);
 
-export const sceneObjects: SceneObjects = [];
+export const sceneObjects: SceneObject[] = [];
 
 const plane1 = new Plane({
   center: new Point(0, -1, 0),
@@ -39,8 +34,8 @@ const plane1 = new Plane({
   size: 3,
   material: new Material({
     reflectivity: 0,
-    texture: checkerBoardTexture,
-    albedo: new Color(255, 255, 255)
+    texture: checkerboardTexture,
+    albedo: new Color(1, 1, 1)
   })
 });
 
@@ -61,36 +56,25 @@ const sphere2 = new Sphere({
   radius: 0.8,
   name: "blue",
   material: new Material({
-    albedo: new Color(132, 198, 250),
+    albedo: new Color(1, 0, 0),
     specular: 100,
-    reflectivity: 0.2
+    reflectivity: 0
   })
 });
 
 const sphere3 = new Sphere({
   center: new Point(-1.5, -0.2, -2),
   radius: 0.8,
-  name: "pink",
+  name: "green",
   material: new Material({
-    albedo: new Color(255, 153, 255),
+    albedo: new Color(1, 153, 1),
     specular: 100,
-    reflectivity: 0.2
-  })
-});
-const sphere4 = new Sphere({
-  center: new Point(0, -0.6, -2),
-  radius: 0.4,
-  name: "glass",
-  material: new Material({
-    albedo: new Color(255, 255, 255),
-    specular: 0,
-    reflectivity: 0,
-    refractionIndex: 1.5
+    reflectivity: 0.8
   })
 });
 
 sceneObjects.push(sphere1);
 sceneObjects.push(sphere2);
 sceneObjects.push(sphere3);
-sceneObjects.push(sphere4);
 sceneObjects.push(plane1);
+sceneObjects.push(ceilingLight);

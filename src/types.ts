@@ -1,28 +1,40 @@
-import { AreaLight } from "./Light.js";
+import { AreaLight, LightBall, LightType } from "./Light.js";
 import { Sphere } from "./Sphere.js";
 import { Plane } from "./Plane.js";
 import { Rectangle } from "./Rectangle.js";
 import { Point } from "./Point.js";
 import { Box } from "./Box.js";
 import { Vector } from "./Vector.js";
+import { Triangle } from "./Triangle.js";
+import { Mesh } from "./Mesh.js";
+import { Quad } from "./Quad.js";
 
-export type Shape = Plane | Sphere | Rectangle | Box;
+export type Shape =
+  | Sphere
+  | Plane
+  | Rectangle
+  | Box
+  | Triangle
+  | Quad
+  | AreaLight
+  | LightBall;
+export type Primitive = Sphere | Plane | Rectangle | Triangle | Quad;
+export type SceneObject = Shape | Mesh | AreaLight | LightBall;
 
-export type SceneObjects = (Shape | AreaLight)[];
+export type LightPatch = {
+  patch: { x: number; y: number; z: number }[];
+  center: Point;
+};
 
-export type Intersected =
-  | {
-      point: Point;
-      object: Shape | AreaLight;
-      inside?: boolean;
-      intersection?: Intersection;
-    }
-  | undefined;
+export type Intersected = {
+  point: Point;
+  object?: Primitive | AreaLight | LightBall;
+  intersection?: Intersection;
+} | null;
 
 export type Intersection =
   | {
       t: number;
-      inside?: boolean;
-      normal?: Vector;
+      side?: Primitive;
     }
   | undefined;
