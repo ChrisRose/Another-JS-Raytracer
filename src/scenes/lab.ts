@@ -41,6 +41,7 @@ const wallMat    = new Material({ albedo: new Color(0.75, 0.74, 0.72) });
 const floorMat   = new Material({ albedo: new Color(0.32, 0.31, 0.30) });
 const glassMat   = new Material({ albedo: new Color(0, 0, 0), refractionIndex: 1.5 });
 const capMat     = new Material({ albedo: new Color(0.95, 0.95, 0.95) });
+const flaskMat   = new Material({ albedo: new Color(0.60, 0.82, 0.70), roughness: 0.05 });
 
 const liquids = {
   red:    new Material({ albedo: new Color(0.80, 0.04, 0.04), emissive: new Color(0.45, 0.02, 0.02) }),
@@ -59,6 +60,62 @@ function testTube(x: number, z: number, liquid: Material): SceneObject[] {
     new Cylinder({ center: new Point(x, 0,    z), radius: 0.12,  height: 0.75, material: glassMat }),
     new Cylinder({ center: new Point(x, 0,    z), radius: 0.085, height: 0.50, material: liquid  }),
     new Cylinder({ center: new Point(x, 0.68, z), radius: 0.13,  height: 0.12, material: capMat  }),
+  ];
+}
+
+// Erlenmeyer flask built as a revolved profile mesh.
+// Profile (radius, y): wide conical body tapering to a narrow cylindrical neck.
+function makeErlenmeyer(cx: number, cz: number, flaskMat: Material, liquidMat: Material): SceneObject[] {
+  const SEGS = 18;
+  const profile: [number, number][] = [
+    [0.00, 0.000],  // bottom centre
+    [0.30, 0.000],  // bottom rim
+    [0.32, 0.060],  // slight base flare
+    [0.32, 0.340],  // body at max width
+    [0.22, 0.480],  // shoulder taper
+    [0.07, 0.600],  // neck base
+    [0.07, 0.880],  // neck top (open)
+  ];
+
+  const tris: Triangle[] = [];
+  const PI2 = Math.PI * 2;
+
+  for (let pi = 0; pi < profile.length - 1; pi++) {
+    const [r0, y0] = profile[pi];
+    const [r1, y1] = profile[pi + 1];
+    for (let s = 0; s < SEGS; s++) {
+      const a0 = (s / SEGS) * PI2;
+      const a1 = ((s + 1) / SEGS) * PI2;
+      const p00 = new Vector(cx + r0 * Math.cos(a0), y0, cz + r0 * Math.sin(a0));
+      const p01 = new Vector(cx + r0 * Math.cos(a1), y0, cz + r0 * Math.sin(a1));
+      const p10 = new Vector(cx + r1 * Math.cos(a0), y1, cz + r1 * Math.sin(a0));
+      const p11 = new Vector(cx + r1 * Math.cos(a1), y1, cz + r1 * Math.sin(a1));
+      if (r0 < 0.001) {
+        tris.push(new Triangle({ v1: p00, v2: p10, v3: p11, material: flaskMat }));
+      } else {
+        tris.push(new Triangle({ v1: p00, v2: p10, v3: p11, material: flaskMat }));
+        tris.push(new Triangle({ v1: p00, v2: p11, v3: p01, material: flaskMat }));
+      }
+    }
+  }
+
+  // Bottom disk cap
+  const baseR = profile[1][0];
+  for (let s = 0; s < SEGS; s++) {
+    const a0 = (s / SEGS) * PI2;
+    const a1 = ((s + 1) / SEGS) * PI2;
+    tris.push(new Triangle({
+      v1: new Vector(cx, 0, cz),
+      v2: new Vector(cx + baseR * Math.cos(a1), 0, cz + baseR * Math.sin(a1)),
+      v3: new Vector(cx + baseR * Math.cos(a0), 0, cz + baseR * Math.sin(a0)),
+      material: flaskMat,
+    }));
+  }
+
+  return [
+    new Mesh({ name: "erlenmeyer", material: flaskMat, meshObjects: tris }),
+    // Liquid fill: cylinder inside the body
+    new Cylinder({ center: new Point(cx, 0.005, cz), radius: 0.26, height: 0.22, material: liquidMat }),
   ];
 }
 
@@ -170,3 +227,7 @@ const tubes: [number, number, Material][] = [
 for (const [x, z, mat] of tubes) {
   for (const obj of testTube(x, z, mat)) sceneObjects.push(obj);
 }
+
+// ─── Erlenmeyer flasks ────────────────────────────────────────────────────────
+for (const obj of makeErlenmeyer(-1.5, 4.2, flaskMat, liquids.amber)) sceneObjects.push(obj);
+for (const obj of makeErlenmeyer( 1.1, 4.5, flaskMat, liquids.purple)) sceneObjects.push(obj);
