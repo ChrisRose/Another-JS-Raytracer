@@ -4,7 +4,6 @@ import { Sphere } from "../Sphere.js";
 import { Vector } from "../Vector.js";
 import { Rectangle } from "../Rectangle.js";
 import { SceneObject } from "../types.js";
-import { Light, LightBall } from "../Light.js";
 import { getRotationXMatrix } from "../matrix.js";
 import { Material } from "../Material.js";
 
@@ -13,17 +12,16 @@ export const rotateCamera = (dir: Vector) => {
   return dir.multiplyWith3x3Matrix(getRotationXMatrix(1));
 };
 
-const lightBall = new LightBall({
-  position: new Point(-1, 1, 0),
+// Emissive sphere light — compatible with the path tracer's NEE sampling.
+const lightBall = new Sphere({
+  center: new Point(-1, 1, 0),
   radius: 1,
-  intensity: 1,
-  color: new Color(1, 1, 1),
-  uSteps: 5,
-  vSteps: 5
+  name: "lightBall",
+  material: new Material({
+    albedo: new Color(1, 1, 1),
+    emissive: new Color(4, 4, 4)
+  })
 });
-
-export const lights: Light[] = [];
-lights.push(lightBall);
 
 export const sceneObjects: SceneObject[] = [];
 

@@ -94,7 +94,7 @@ export class Rectangle {
       const x0 = this.corner.x;
       const x1 = this.corner.x + this.v1.x * this.width;
       const z0 = this.corner.z;
-      const z1 = this.corner.z + this.v2.z * this.width;
+      const z1 = this.corner.z + this.v2.z * this.height;
 
       if (
         hitPoint.x > x0 &&
