@@ -59,7 +59,7 @@ export async function init() {
     material: new Material({
       albedo: new Color(0.08, 0.48, 0.22),  // jade green
       roughness: 0.08,                       // waxy polished surface
-      subsurface: 0.45,                      // translucency — light bleeds through thin sections
+      subsurface: 0.62,                      // translucency — light bleeds through thin sections
     }),
     scale: 4,
     translate: { x: 0, y: 2.34, z: 1 },
