@@ -565,6 +565,17 @@ const traceRay = ({
     }
 
     let color = material.texture ? material.texture(intersected.point, normal) : material.albedo;
+    if (material.imageMap && material.imageMapUV) {
+      const img = imageMaps[material.imageMap] as ImageData | undefined;
+      if (img) {
+        const [u, v] = material.imageMapUV(intersected.point);
+        const px = Math.max(0, Math.min(img.width  - 1, Math.floor(u * img.width)));
+        const py = Math.max(0, Math.min(img.height - 1, Math.floor(v * img.height)));
+        const idx = (py * img.width + px) * 4;
+        const lin = (c: number) => Math.pow(c / 255, 2.2);
+        color = new Color(lin(img.data[idx]), lin(img.data[idx + 1]), lin(img.data[idx + 2]));
+      }
+    }
 
     // Single path sample per bounce (proper Monte Carlo path tracing).
     // With cosine-weighted sampling, PDF = cos(θ)/π and BRDF = albedo/π,

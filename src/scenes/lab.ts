@@ -9,14 +9,17 @@ import { Triangle } from "../Triangle.js";
 import { Cylinder } from "../Cylinder.js";
 import { getRotationXMatrix } from "../matrix.js";
 
-export const cameraStart = new Point(0, 2.8, -2.5);
+// Camera: slightly higher so the bench top sits at the lower third.
+// 18° tilt puts the horizon (bench surface) at ~1/3 from the bottom
+// for a 600×600 canvas at FoV ≈ 55°.
+export const cameraStart = new Point(0, 3.2, -3.2);
 export const rotateCamera = (dir: Vector) =>
-  dir.multiplyWith3x3Matrix(getRotationXMatrix(16));
+  dir.multiplyWith3x3Matrix(getRotationXMatrix(18));
 
 // Participating media: atmospheric dust that makes the sun shaft visible.
-export const sigma_t = 0.07;  // extinction (scattering + absorption)
-export const sigma_s = 0.055; // scattering  (albedo ≈ 0.79)
-export const phaseG  = 0.45;  // forward-scattering (Mie-like dust)
+export const sigma_t = 0.07;
+export const sigma_s = 0.055;
+export const phaseG  = 0.45;
 
 // ─── Wood grain texture ───────────────────────────────────────────────────────
 function woodGrain(point: Point): Color {
@@ -43,79 +46,88 @@ const glassMat   = new Material({ albedo: new Color(0, 0, 0), refractionIndex: 1
 const capMat     = new Material({ albedo: new Color(0.95, 0.95, 0.95) });
 const flaskMat   = new Material({ albedo: new Color(0.60, 0.82, 0.70), roughness: 0.05 });
 
+// Fewer, more saturated liquids — just four colours for a tighter palette
 const liquids = {
-  red:    new Material({ albedo: new Color(0.80, 0.04, 0.04), emissive: new Color(0.45, 0.02, 0.02) }),
-  blue:   new Material({ albedo: new Color(0.04, 0.08, 0.85), emissive: new Color(0.02, 0.04, 0.50) }),
-  green:  new Material({ albedo: new Color(0.04, 0.75, 0.10), emissive: new Color(0.02, 0.40, 0.05) }),
-  amber:  new Material({ albedo: new Color(0.90, 0.55, 0.04), emissive: new Color(0.50, 0.28, 0.02) }),
-  purple: new Material({ albedo: new Color(0.52, 0.04, 0.72), emissive: new Color(0.28, 0.02, 0.38) }),
-  cyan:   new Material({ albedo: new Color(0.04, 0.72, 0.82), emissive: new Color(0.02, 0.36, 0.42) }),
-  rose:   new Material({ albedo: new Color(0.88, 0.22, 0.45), emissive: new Color(0.45, 0.10, 0.22) }),
-  teal:   new Material({ albedo: new Color(0.05, 0.55, 0.48), emissive: new Color(0.03, 0.28, 0.24) }),
+  red:    new Material({ albedo: new Color(0.80, 0.04, 0.04), emissive: new Color(0.55, 0.02, 0.02) }),
+  blue:   new Material({ albedo: new Color(0.04, 0.08, 0.90), emissive: new Color(0.02, 0.04, 0.58) }),
+  amber:  new Material({ albedo: new Color(0.90, 0.55, 0.04), emissive: new Color(0.58, 0.30, 0.02) }),
+  teal:   new Material({ albedo: new Color(0.04, 0.70, 0.60), emissive: new Color(0.03, 0.40, 0.34) }),
 };
 
+// ─── Paper texture ────────────────────────────────────────────────────────────
+// Placed at the left focal point (x ≈ -1, i.e. 1/3 from left at bench distance).
+// UV: u = x across paper width, v = 1 - z_fraction so "top" of image faces camera.
+const PAP_X0 = -2.20, PAP_Z0 = 0.30;
+const PAP_W  = 1.20,  PAP_D  = 1.50;
+const paperMat = new Material({
+  albedo: new Color(0.93, 0.91, 0.86),
+  roughness: 0.90,
+  imageMap: "paper",
+  imageMapUV: (p: Point): [number, number] => [
+    (p.x - PAP_X0) / PAP_W,
+    1 - (p.z - PAP_Z0) / PAP_D,
+  ],
+});
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+// Thinner (r=0.09), taller (h=1.0) tubes
 function testTube(x: number, z: number, liquid: Material): SceneObject[] {
   return [
-    new Cylinder({ center: new Point(x, 0,    z), radius: 0.12,  height: 0.75, material: glassMat }),
-    new Cylinder({ center: new Point(x, 0,    z), radius: 0.085, height: 0.50, material: liquid  }),
-    new Cylinder({ center: new Point(x, 0.68, z), radius: 0.13,  height: 0.12, material: capMat  }),
+    new Cylinder({ center: new Point(x, 0,    z), radius: 0.09,  height: 1.00, material: glassMat }),
+    new Cylinder({ center: new Point(x, 0,    z), radius: 0.062, height: 0.65, material: liquid  }),
+    new Cylinder({ center: new Point(x, 0.90, z), radius: 0.10,  height: 0.12, material: capMat  }),
   ];
 }
 
-// Erlenmeyer flask built as a revolved profile mesh.
-// Profile (radius, y): wide conical body tapering to a narrow cylindrical neck.
-function makeErlenmeyer(cx: number, cz: number, flaskMat: Material, liquidMat: Material): SceneObject[] {
+// Erlenmeyer flask — revolved profile mesh.
+function makeErlenmeyer(
+  cx: number, cz: number,
+  scale: number,
+  flaskM: Material, liquidM: Material
+): SceneObject[] {
   const SEGS = 18;
   const profile: [number, number][] = [
-    [0.00, 0.000],  // bottom centre
-    [0.30, 0.000],  // bottom rim
-    [0.32, 0.060],  // slight base flare
-    [0.32, 0.340],  // body at max width
-    [0.22, 0.480],  // shoulder taper
-    [0.07, 0.600],  // neck base
-    [0.07, 0.880],  // neck top (open)
+    [0.00, 0.000],
+    [0.30, 0.000],
+    [0.32, 0.060],
+    [0.32, 0.340],
+    [0.22, 0.480],
+    [0.07, 0.600],
+    [0.07, 0.880],
   ];
-
   const tris: Triangle[] = [];
   const PI2 = Math.PI * 2;
-
   for (let pi = 0; pi < profile.length - 1; pi++) {
     const [r0, y0] = profile[pi];
     const [r1, y1] = profile[pi + 1];
     for (let s = 0; s < SEGS; s++) {
-      const a0 = (s / SEGS) * PI2;
-      const a1 = ((s + 1) / SEGS) * PI2;
-      const p00 = new Vector(cx + r0 * Math.cos(a0), y0, cz + r0 * Math.sin(a0));
-      const p01 = new Vector(cx + r0 * Math.cos(a1), y0, cz + r0 * Math.sin(a1));
-      const p10 = new Vector(cx + r1 * Math.cos(a0), y1, cz + r1 * Math.sin(a0));
-      const p11 = new Vector(cx + r1 * Math.cos(a1), y1, cz + r1 * Math.sin(a1));
+      const a0 = (s / SEGS) * PI2, a1 = ((s + 1) / SEGS) * PI2;
+      const p00 = new Vector(cx + scale*r0*Math.cos(a0), scale*y0, cz + scale*r0*Math.sin(a0));
+      const p01 = new Vector(cx + scale*r0*Math.cos(a1), scale*y0, cz + scale*r0*Math.sin(a1));
+      const p10 = new Vector(cx + scale*r1*Math.cos(a0), scale*y1, cz + scale*r1*Math.sin(a0));
+      const p11 = new Vector(cx + scale*r1*Math.cos(a1), scale*y1, cz + scale*r1*Math.sin(a1));
       if (r0 < 0.001) {
-        tris.push(new Triangle({ v1: p00, v2: p10, v3: p11, material: flaskMat }));
+        tris.push(new Triangle({ v1: p00, v2: p10, v3: p11, material: flaskM }));
       } else {
-        tris.push(new Triangle({ v1: p00, v2: p10, v3: p11, material: flaskMat }));
-        tris.push(new Triangle({ v1: p00, v2: p11, v3: p01, material: flaskMat }));
+        tris.push(new Triangle({ v1: p00, v2: p10, v3: p11, material: flaskM }));
+        tris.push(new Triangle({ v1: p00, v2: p11, v3: p01, material: flaskM }));
       }
     }
   }
-
-  // Bottom disk cap
-  const baseR = profile[1][0];
+  // Bottom cap
+  const baseR = profile[1][0] * scale;
   for (let s = 0; s < SEGS; s++) {
-    const a0 = (s / SEGS) * PI2;
-    const a1 = ((s + 1) / SEGS) * PI2;
+    const a0 = (s / SEGS) * PI2, a1 = ((s + 1) / SEGS) * PI2;
     tris.push(new Triangle({
       v1: new Vector(cx, 0, cz),
-      v2: new Vector(cx + baseR * Math.cos(a1), 0, cz + baseR * Math.sin(a1)),
-      v3: new Vector(cx + baseR * Math.cos(a0), 0, cz + baseR * Math.sin(a0)),
-      material: flaskMat,
+      v2: new Vector(cx + baseR*Math.cos(a1), 0, cz + baseR*Math.sin(a1)),
+      v3: new Vector(cx + baseR*Math.cos(a0), 0, cz + baseR*Math.sin(a0)),
+      material: flaskM,
     }));
   }
-
   return [
-    new Mesh({ name: "erlenmeyer", material: flaskMat, meshObjects: tris }),
-    // Liquid fill: cylinder inside the body
-    new Cylinder({ center: new Point(cx, 0.005, cz), radius: 0.26, height: 0.22, material: liquidMat }),
+    new Mesh({ name: "erlenmeyer", material: flaskM, meshObjects: tris }),
+    new Cylinder({ center: new Point(cx, 0.005, cz), radius: 0.26*scale, height: 0.22*scale, material: liquidM }),
   ];
 }
 
@@ -166,7 +178,6 @@ sceneObjects.push(new Rectangle({
 const WY0 = 0.3, WY1 = 4.5;
 const WZ0 = 0.2, WZ1 = 4.0;
 
-// Below window
 sceneObjects.push(new Rectangle({
   corner: new Point(5, -0.6, -3),
   v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
@@ -174,7 +185,6 @@ sceneObjects.push(new Rectangle({
   normal: new Vector(-1, 0, 0), orientation: "yzAxis",
   material: wallMat,
 }));
-// Above window
 sceneObjects.push(new Rectangle({
   corner: new Point(5, WY1, -3),
   v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
@@ -182,7 +192,6 @@ sceneObjects.push(new Rectangle({
   normal: new Vector(-1, 0, 0), orientation: "yzAxis",
   material: wallMat,
 }));
-// In front of window (z: -3 to WZ0)
 sceneObjects.push(new Rectangle({
   corner: new Point(5, WY0, -3),
   v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
@@ -191,7 +200,6 @@ sceneObjects.push(new Rectangle({
   normal: new Vector(-1, 0, 0), orientation: "yzAxis",
   material: wallMat,
 }));
-// Behind window (z: WZ1 to 10)
 sceneObjects.push(new Rectangle({
   corner: new Point(5, WY0, WZ1),
   v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
@@ -213,21 +221,29 @@ sceneObjects.push(new Mesh({
   ],
 }));
 
-// ─── Test tubes ───────────────────────────────────────────────────────────────
+// ─── Paper — at left focal point (≈ x=−1, 1/3 from left edge) ────────────────
+sceneObjects.push(new Rectangle({
+  corner: new Point(PAP_X0, 0.003, PAP_Z0),
+  v1: new Vector(1, 0, 0), v2: new Vector(0, 0, 1),
+  width: PAP_W, height: PAP_D,
+  normal: new Vector(0, 1, 0), orientation: "xzAxis",
+  material: paperMat,
+}));
+
+// ─── Test tubes — four colours, right of centre (right focal zone) ────────────
+// Cluster near x=+0.8..+1.8, z=1.5..3.0 — the right horizontal focal point.
 const tubes: [number, number, Material][] = [
-  [-1.7, 1.8, liquids.red   ],
-  [-0.9, 1.3, liquids.blue  ],
-  [-0.1, 2.0, liquids.green ],
-  [ 0.6, 1.5, liquids.amber ],
-  [ 1.3, 1.9, liquids.purple],
-  [ 1.8, 2.6, liquids.cyan  ],
-  [-1.3, 2.8, liquids.rose  ],
-  [ 0.4, 3.1, liquids.teal  ],
+  [ 0.9, 1.6, liquids.red  ],
+  [ 1.4, 2.0, liquids.blue ],
+  [ 1.9, 1.4, liquids.amber],
+  [ 1.5, 2.7, liquids.teal ],
 ];
 for (const [x, z, mat] of tubes) {
   for (const obj of testTube(x, z, mat)) sceneObjects.push(obj);
 }
 
 // ─── Erlenmeyer flasks ────────────────────────────────────────────────────────
-for (const obj of makeErlenmeyer(-1.5, 4.2, flaskMat, liquids.amber)) sceneObjects.push(obj);
-for (const obj of makeErlenmeyer( 1.1, 4.5, flaskMat, liquids.purple)) sceneObjects.push(obj);
+// Large flask (2× scale) closer to the camera as the dominant foreground object.
+for (const obj of makeErlenmeyer( 0.3, 0.8, 2.0, flaskMat, liquids.amber)) sceneObjects.push(obj);
+// Normal flask further back, right side
+for (const obj of makeErlenmeyer( 1.8, 3.8, 1.0, flaskMat, liquids.blue )) sceneObjects.push(obj);

@@ -163,6 +163,11 @@ async function startRender(sceneName: string) {
     const skyData = await loadImageData(skyUrl);
     if (skyData) imageMaps["sky"] = skyData;
   }
+  if (sceneName === "lab") {
+    const paperUrl = `${BASE}textures/paper.png`;
+    const paperData = await loadImageData(paperUrl);
+    if (paperData) imageMaps["paper"] = paperData;
+  }
 
   const width       = 600;
   const height      = 600;
