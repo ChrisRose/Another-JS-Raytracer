@@ -166,13 +166,102 @@ sceneObjects.push(new Rectangle({
   material: wallMat,
 }));
 
-// ─── Back wall (solid) ────────────────────────────────────────────────────────
+// ─── Back wall — split around alcove opening ──────────────────────────────────
+const AX0 = -1.5, AX1 = 1.5;   // alcove x extents
+const AY0 =  0.5, AY1 = 3.8;   // alcove y extents
+const AZ0 =  7.0, AZ1 = 8.5;   // alcove z extents (depth 1.5)
+
+const alcoveMat      = new Material({ albedo: new Color(0.70, 0.68, 0.65) });
+const shelfMat       = new Material({ albedo: new Color(0.50, 0.38, 0.18) });
+const alcoveLightMat = new Material({ albedo: new Color(0.90, 0.85, 0.70), emissive: new Color(1.0, 0.88, 0.60) });
+
+// Top strip (above alcove)
 sceneObjects.push(new Rectangle({
-  corner: new Point(-5, -0.6, 7),
+  corner: new Point(-5, AY1, AZ0),
   v1: new Vector(1, 0, 0), v2: new Vector(0, 1, 0),
-  width: 10, height: 13,
+  width: 10, height: 12.4 - AY1,
   normal: new Vector(0, 0, -1), orientation: "xyAxis",
   material: wallMat,
+}));
+// Left flank
+sceneObjects.push(new Rectangle({
+  corner: new Point(-5, -0.6, AZ0),
+  v1: new Vector(1, 0, 0), v2: new Vector(0, 1, 0),
+  width: AX0 + 5, height: AY1 + 0.6,
+  normal: new Vector(0, 0, -1), orientation: "xyAxis",
+  material: wallMat,
+}));
+// Right flank
+sceneObjects.push(new Rectangle({
+  corner: new Point(AX1, -0.6, AZ0),
+  v1: new Vector(1, 0, 0), v2: new Vector(0, 1, 0),
+  width: 5 - AX1, height: AY1 + 0.6,
+  normal: new Vector(0, 0, -1), orientation: "xyAxis",
+  material: wallMat,
+}));
+// Bottom strip (below alcove opening)
+sceneObjects.push(new Rectangle({
+  corner: new Point(AX0, -0.6, AZ0),
+  v1: new Vector(1, 0, 0), v2: new Vector(0, 1, 0),
+  width: AX1 - AX0, height: AY0 + 0.6,
+  normal: new Vector(0, 0, -1), orientation: "xyAxis",
+  material: wallMat,
+}));
+
+// ─── Alcove interior ──────────────────────────────────────────────────────────
+// Left wall
+sceneObjects.push(new Rectangle({
+  corner: new Point(AX0, AY0, AZ0),
+  v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
+  width: AZ1 - AZ0, height: AY1 - AY0,
+  normal: new Vector(1, 0, 0), orientation: "yzAxis",
+  material: alcoveMat,
+}));
+// Right wall
+sceneObjects.push(new Rectangle({
+  corner: new Point(AX1, AY0, AZ0),
+  v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
+  width: AZ1 - AZ0, height: AY1 - AY0,
+  normal: new Vector(-1, 0, 0), orientation: "yzAxis",
+  material: alcoveMat,
+}));
+// Back wall
+sceneObjects.push(new Rectangle({
+  corner: new Point(AX0, AY0, AZ1),
+  v1: new Vector(1, 0, 0), v2: new Vector(0, 1, 0),
+  width: AX1 - AX0, height: AY1 - AY0,
+  normal: new Vector(0, 0, -1), orientation: "xyAxis",
+  material: alcoveMat,
+}));
+// Ceiling (v2.z = depth/width so xzAxis covers the right z extent)
+sceneObjects.push(new Rectangle({
+  corner: new Point(AX0, AY1, AZ0),
+  v1: new Vector(1, 0, 0), v2: new Vector(0, 0, (AZ1 - AZ0) / (AX1 - AX0)),
+  width: AX1 - AX0, height: AZ1 - AZ0,
+  normal: new Vector(0, -1, 0), orientation: "xzAxis",
+  material: alcoveMat,
+}));
+
+// ─── Alcove shelf ─────────────────────────────────────────────────────────────
+const SY  = 1.9;                           // shelf surface height
+const SX0 = AX0 + 0.06, SX1 = AX1 - 0.06; // slightly inset from side walls
+const SZ0 = AZ0 + 0.05, SZ1 = AZ1 - 0.15; // slightly inset front and back
+sceneObjects.push(new Rectangle({
+  corner: new Point(SX0, SY, SZ0),
+  v1: new Vector(1, 0, 0), v2: new Vector(0, 0, (SZ1 - SZ0) / (SX1 - SX0)),
+  width: SX1 - SX0, height: SZ1 - SZ0,
+  normal: new Vector(0, 1, 0), orientation: "xzAxis",
+  material: shelfMat,
+}));
+
+// ─── Alcove dim light (warm panel tucked at the top-back) ─────────────────────
+sceneObjects.push(new Mesh({
+  name: "alcoveLight",
+  material: alcoveLightMat,
+  meshObjects: [
+    new Triangle({ v1: new Vector(-0.65, AY1 - 0.14, AZ0 + 0.75), v2: new Vector(0.65, AY1 - 0.14, AZ0 + 0.75), v3: new Vector(0.65, AY1 - 0.14, AZ1 - 0.12), material: alcoveLightMat }),
+    new Triangle({ v1: new Vector(-0.65, AY1 - 0.14, AZ0 + 0.75), v2: new Vector(0.65, AY1 - 0.14, AZ1 - 0.12), v3: new Vector(-0.65, AY1 - 0.14, AZ1 - 0.12), material: alcoveLightMat }),
+  ],
 }));
 
 // ─── Right wall with window hole ──────────────────────────────────────────────
