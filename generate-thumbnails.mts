@@ -255,6 +255,39 @@ function traceRay({ ray, sceneObjects, skyFn, skyImageData, bounceDepth = 0, inc
     return traceRay({ ray: refracted ?? reflected, sceneObjects, skyFn, skyImageData, bounceDepth: bounceDepth+1, includeEmission: true });
   }
 
+  // Glossy dielectric: roughness set, not metallic, not glass.
+  if (material.roughness !== undefined && !material.metallic && !material.refractionIndex) {
+    const roughness = Math.max(0.01, material.roughness);
+    const alpha2 = roughness ** 4;
+    const ωo = ray.dir.multiply(-1).normalize();
+    const nDotO = Math.max(0, normal.dotProduct(ωo));
+    const fresnelP = 0.04 + 0.96 * Math.pow(1 - nDotO, 5);
+    if (Math.random() < fresnelP) {
+      const h = sampleGGX(normal, alpha2);
+      const oDotH = Math.max(0, ωo.dotProduct(h));
+      const ωi = h.multiply(2 * ωo.dotProduct(h)).subtract(ωo).normalize();
+      const nDotI = normal.dotProduct(ωi);
+      const nDotH = Math.max(0, normal.dotProduct(h));
+      if (nDotI > 0 && nDotH > 0 && nDotO > 0) {
+        const G = smithG1(nDotO, alpha2) * smithG1(nDotI, alpha2);
+        const weight = (G * oDotH) / (nDotO * nDotH);
+        const Li = traceRay({ ray: new Ray(intersected.point.add(normal.multiply(epsilon).toPoint()), ωi), sceneObjects, skyFn, skyImageData, bounceDepth: bounceDepth+1, includeEmission: true });
+        return new Color(1, 1, 1).multiply(weight).multiplyWithColor(Li);
+      }
+    }
+    // Diffuse arm falls through.
+  }
+
+  // Subsurface scattering: jade, wax, skin.
+  if ((material.subsurface ?? 0) > 0 && Math.random() < (material.subsurface ?? 0)) {
+    const albedo = material.texture ? material.texture(intersected.point, normal) : material.albedo;
+    const scatterDir = getCosineWeightedSample(normal.multiply(-1));
+    const exitPt = intersected.point.add(normal.multiply(-epsilon).toPoint());
+    return albedo.multiplyWithColor(
+      traceRay({ ray: new Ray(exitPt, scatterDir), sceneObjects, skyFn, skyImageData, bounceDepth: bounceDepth+1, includeEmission: true })
+    );
+  }
+
   const color = material.texture ? material.texture(intersected.point, normal) : material.albedo;
   const randomDir = getCosineWeightedSample(normal);
   const shiftedPoint = intersected.point.add(normal.multiply(epsilon).toPoint());
@@ -336,7 +369,7 @@ for (const { id, scene } of scenesToRender) {
     const dragon = parseMesh({
       mesh: objText,
       name: 'dragon',
-      material: new Material({ albedo: new Color(0.95, 0.64, 0.54), metallic: 1, roughness: 0.15 }),
+      material: new Material({ albedo: new Color(0.08, 0.48, 0.22), roughness: 0.08, subsurface: 0.45 }),
       scale: 4,
       translate: { x: 0, y: 2.34, z: 1 },
     });
