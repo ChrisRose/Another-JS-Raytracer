@@ -46,6 +46,14 @@ const SCENES = [
     thumb: `${BASE}thumbnails/backrooms.jpg` as string | null,
   },
   {
+    id: "dragon",
+    title: "Stanford Dragon",
+    tag: "Metallic BRDF",
+    description:
+      "Stanford Dragon (100k triangles) rendered with a polished copper Cook-Torrance GGX BRDF. The mesh is fetched at runtime and BVH-accelerated, making it the highest-geometry scene in the collection.",
+    thumb: null as string | null,
+  },
+  {
     id: "chess",
     title: "Chess Board",
     tag: "Reflections",

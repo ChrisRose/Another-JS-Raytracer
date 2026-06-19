@@ -106,3 +106,15 @@ export const parseMesh = ({
 
   return sceneMesh;
 };
+
+type ParseMeshOptions = Omit<Parameters<typeof parseMesh>[0], "mesh">;
+
+export const fetchAndParseMesh = async (
+  url: string,
+  options: ParseMeshOptions
+): Promise<Mesh> => {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`Failed to fetch mesh ${url}: ${r.status}`);
+  const mesh = await r.text();
+  return parseMesh({ mesh, ...options });
+};

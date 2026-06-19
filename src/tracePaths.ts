@@ -32,15 +32,20 @@ async function importScene(name: string): Promise<{
   skyFn?: (dir: Vector) => Color;
   skyImageKey?: string;
 }> {
-  if (name === "cornellBox")         return import("./scenes/cornellBox.js");
-  if (name === "globalIllumination") return import("./scenes/globalIllumination.js");
-  if (name === "furnaceTest")        return import("./scenes/furnaceTest.js");
-  if (name === "teapot")             return import("./scenes/teapot.js");
-  if (name === "refraction")         return import("./scenes/refraction.js");
-  if (name === "metalBunny")         return import("./scenes/metalBunny.js");
-  if (name === "backrooms")          return import("./scenes/backrooms.js");
-  if (name === "chess")              return import("./scenes/chess.js");
-  return import("./scenes/cornellBoxMeshes.js");
+  let mod: any;
+  if (name === "cornellBox")         mod = await import("./scenes/cornellBox.js");
+  else if (name === "globalIllumination") mod = await import("./scenes/globalIllumination.js");
+  else if (name === "furnaceTest")   mod = await import("./scenes/furnaceTest.js");
+  else if (name === "teapot")        mod = await import("./scenes/teapot.js");
+  else if (name === "refraction")    mod = await import("./scenes/refraction.js");
+  else if (name === "metalBunny")    mod = await import("./scenes/metalBunny.js");
+  else if (name === "backrooms")     mod = await import("./scenes/backrooms.js");
+  else if (name === "chess")         mod = await import("./scenes/chess.js");
+  else if (name === "dragon")        mod = await import("./scenes/dragon.js");
+  else                               mod = await import("./scenes/cornellBoxMeshes.js");
+
+  if (typeof mod.init === "function") await mod.init();
+  return mod;
 }
 
 export function findClosestIntersection({
