@@ -23,6 +23,8 @@ let cameraStart!: Point;
 let rotateCamera!: (dir: Vector) => Vector;
 let skyFn: ((dir: Vector) => Color) | undefined;
 let skyImageData: ImageData | undefined;
+let lensRadius = 0;
+let focusDistance = 0;
 /* eslint-enable prefer-const */
 
 async function importScene(name: string): Promise<{
@@ -31,6 +33,8 @@ async function importScene(name: string): Promise<{
   sceneObjects: SceneObject[];
   skyFn?: (dir: Vector) => Color;
   skyImageKey?: string;
+  lensRadius?: number;
+  focusDistance?: number;
 }> {
   let mod: any;
   if (name === "cornellBox")         mod = await import("./scenes/cornellBox.js");
@@ -661,6 +665,12 @@ onmessage = async (e: MessageEvent) => {
   rotateCamera = scene.rotateCamera;
   skyFn        = scene.skyFn;
   skyImageData = scene.skyImageKey ? (imageMaps[scene.skyImageKey] as ImageData | undefined) : undefined;
+  lensRadius   = scene.lensRadius   ?? 0;
+  focusDistance = scene.focusDistance ?? 0;
+
+  // Camera basis vectors for DOF lens-disk sampling.
+  const cameraRight = rotateCamera(new Vector(1, 0, 0));
+  const cameraUp    = rotateCamera(new Vector(0, 1, 0));
 
   // Precompute base ray directions for the tile — same for every pass.
   type PixelDir = { i: number; j: number; rotatedDir: Vector };
@@ -686,7 +696,32 @@ onmessage = async (e: MessageEvent) => {
         rotatedDir.y + yJitter,
         rotatedDir.z
       );
-      const color = traceRay({ ray: new Ray(cameraStart, jitteredDir), imageMaps, i, j });
+
+      let rayOrigin: Point = cameraStart;
+      let rayDir: Vector = jitteredDir;
+
+      if (lensRadius > 0 && focusDistance > 0) {
+        // Thin-lens DOF: sample a point on the aperture disk, then aim at
+        // the focal point (where the pinhole ray hits the focus plane).
+        const r = Math.sqrt(Math.random()) * lensRadius;
+        const phi = Math.random() * 2 * Math.PI;
+        const dx = r * Math.cos(phi);
+        const dy = r * Math.sin(phi);
+        rayOrigin = new Point(
+          cameraStart.x + cameraRight.x * dx + cameraUp.x * dy,
+          cameraStart.y + cameraRight.y * dx + cameraUp.y * dy,
+          cameraStart.z + cameraRight.z * dx + cameraUp.z * dy
+        );
+        const dn = jitteredDir.normalize();
+        const fp = new Point(
+          cameraStart.x + dn.x * focusDistance,
+          cameraStart.y + dn.y * focusDistance,
+          cameraStart.z + dn.z * focusDistance
+        );
+        rayDir = new Vector(fp.x - rayOrigin.x, fp.y - rayOrigin.y, fp.z - rayOrigin.z);
+      }
+
+      const color = traceRay({ ray: new Ray(rayOrigin, rayDir), imageMaps, i, j });
       pixelColors.push({ i, j, r: color.r, g: color.g, b: color.b });
     }
 

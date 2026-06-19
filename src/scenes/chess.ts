@@ -16,6 +16,11 @@ export const cameraStart = new Point(0, 1.6, -3);
 export const rotateCamera = (dir: Vector) =>
   dir.multiplyWith3x3Matrix(getRotationXMatrix(14));
 
+// Depth of field: focus on the front row (z≈0.5, ~3.6 units from camera).
+// Back of board (z≈7.5) and pawns at row 2 will be softly blurred.
+export const lensRadius = 0.15;
+export const focusDistance = 3.6;
+
 // Sky image key: main thread loads this and passes it to workers in imageMaps.
 export const skyImageKey = "sky";
 
