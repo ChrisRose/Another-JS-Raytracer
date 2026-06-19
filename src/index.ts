@@ -48,9 +48,9 @@ const SCENES = [
   {
     id: "dragon",
     title: "Stanford Dragon",
-    tag: "Metallic BRDF",
+    tag: "Subsurface Scattering",
     description:
-      "Stanford Dragon (100k triangles) rendered with a polished copper Cook-Torrance GGX BRDF. The mesh is fetched at runtime and BVH-accelerated, making it the highest-geometry scene in the collection.",
+      "Stanford Dragon (100k triangles) in translucent jade. A waxy GGX gloss coat sits over a subsurface scattering body — 45% of body bounces pass through thin sections and exit the far side tinted green, making fins and claws glow when backlit.",
     thumb: `${BASE}thumbnails/dragon.jpg` as string | null,
   },
   {
@@ -58,7 +58,7 @@ const SCENES = [
     title: "Chess Board",
     tag: "Reflections",
     description:
-      "A Qe1# checkmate position: White Queen, White King, and Black King as polished silver and dark gunmetal metallic mesh pieces with two pawns on an ivory-and-ebony checkerboard with dark wood edge panels. A Milky Way equirectangular sky texture provides the environment light.",
+      "A Qe1# checkmate position: polished silver and dark gunmetal pieces on a semi-reflective lacquered board — piece silhouettes and the Milky Way sky reflect faintly in the ivory-and-ebony squares via a Fresnel-weighted GGX gloss layer.",
     thumb: `${BASE}thumbnails/chess.jpg` as string | null,
   },
 ];
