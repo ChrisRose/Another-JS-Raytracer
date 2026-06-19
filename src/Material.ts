@@ -11,7 +11,6 @@ export class Material {
   texture?: (point: Point, normal: Vector) => Color;
   emissive?: Color;
   imageMap?: string;
-  imageMapUV?: (point: Point) => [number, number];
   metallic?: number;    // 1 = fully metallic (F0 = albedo, no diffuse)
   roughness?: number;   // GGX α² parameter; 0 = mirror, 1 = fully rough
   subsurface?: number;  // 0–1 fraction of body bounces that scatter through (jade, wax, skin)
@@ -25,7 +24,6 @@ export class Material {
     texture,
     emissive,
     imageMap,
-    imageMapUV,
     metallic,
     roughness,
     subsurface,
@@ -38,7 +36,6 @@ export class Material {
     texture?: (point: Point, normal: Vector) => Color;
     emissive?: Color;
     imageMap?: string;
-    imageMapUV?: (point: Point) => [number, number];
     metallic?: number;
     roughness?: number;
     subsurface?: number;
@@ -51,7 +48,6 @@ export class Material {
     this.texture = texture;
     this.emissive = emissive;
     this.imageMap = imageMap;
-    this.imageMapUV = imageMapUV;
     this.metallic = metallic;
     this.roughness = roughness;
     this.subsurface = subsurface;

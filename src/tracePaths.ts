@@ -25,9 +25,9 @@ let skyFn: ((dir: Vector) => Color) | undefined;
 let skyImageData: ImageData | undefined;
 let lensRadius   = 0;
 let focusDistance = 0;
-let sigma_t = 0;
-let sigma_s = 0;
-let phaseG  = 0;
+let sigma_t = 0; // extinction coefficient (scattering + absorption)
+let sigma_s = 0; // scattering coefficient
+let phaseG  = 0; // Henyey-Greenstein anisotropy (-1…1)
 /* eslint-enable prefer-const */
 
 async function importScene(name: string): Promise<{
@@ -278,6 +278,8 @@ const sampleGGX = (normal: Vector, alpha2: number): Vector => {
     .normalize();
 };
 
+// Henyey-Greenstein phase function importance sampling.
+// g=0 → isotropic, g>0 → forward scatter (dust), g<0 → back scatter.
 const sampleHenyeyGreenstein = (inDir: Vector, g: number): Vector => {
   const u = Math.random();
   const v = Math.random();
@@ -290,7 +292,7 @@ const sampleHenyeyGreenstein = (inDir: Vector, g: number): Vector => {
   }
   const sinTheta = Math.sqrt(Math.max(0, 1 - cosTheta * cosTheta));
   const phi = 2 * Math.PI * v;
-  const w = inDir;
+  const w = inDir; // caller must normalize
   const up = Math.abs(w.y) < 0.999 ? new Vector(0, 1, 0) : new Vector(1, 0, 0);
   const tu = up.crossProduct(w).normalize();
   const tv = w.crossProduct(tu);
@@ -563,17 +565,6 @@ const traceRay = ({
     }
 
     let color = material.texture ? material.texture(intersected.point, normal) : material.albedo;
-    if (material.imageMap && material.imageMapUV) {
-      const img = imageMaps[material.imageMap] as ImageData | undefined;
-      if (img) {
-        const [u, v] = material.imageMapUV(intersected.point);
-        const px = Math.max(0, Math.min(img.width  - 1, Math.floor(u * img.width)));
-        const py = Math.max(0, Math.min(img.height - 1, Math.floor(v * img.height)));
-        const idx = (py * img.width + px) * 4;
-        const lin = (c: number) => Math.pow(c / 255, 2.2);
-        color = new Color(lin(img.data[idx]), lin(img.data[idx + 1]), lin(img.data[idx + 2]));
-      }
-    }
 
     // Single path sample per bounce (proper Monte Carlo path tracing).
     // With cosine-weighted sampling, PDF = cos(θ)/π and BRDF = albedo/π,
@@ -733,9 +724,9 @@ onmessage = async (e: MessageEvent) => {
   sigma_s = scene.sigma_s ?? 0;
   phaseG  = scene.phaseG  ?? 0;
 
+  // Camera basis vectors for DOF lens-disk sampling.
   const cameraRight = rotateCamera(new Vector(1, 0, 0));
   const cameraUp    = rotateCamera(new Vector(0, 1, 0));
-
 
   // Precompute base ray directions for the tile — same for every pass.
   type PixelDir = { i: number; j: number; rotatedDir: Vector };
@@ -766,6 +757,8 @@ onmessage = async (e: MessageEvent) => {
       let rayDir: Vector = jitteredDir;
 
       if (lensRadius > 0 && focusDistance > 0) {
+        // Thin-lens DOF: sample a point on the aperture disk, then aim at
+        // the focal point (where the pinhole ray hits the focus plane).
         const r = Math.sqrt(Math.random()) * lensRadius;
         const phi = Math.random() * 2 * Math.PI;
         const dx = r * Math.cos(phi);

@@ -67,7 +67,7 @@ const SCENES = [
     tag: "Volumetrics",
     description:
       "A lab bench with eight glass test tubes of coloured luminous liquids, procedural wood-grain surface, and atmospheric dust that scatters a warm shaft of sunlight through the window — Henyey-Greenstein phase function, Beer's law shadow transmittance.",
-    thumb: `${BASE}thumbnails/lab.jpg` as string | null,
+    thumb: null as string | null,
   },
 ];
 
@@ -163,11 +163,6 @@ async function startRender(sceneName: string) {
     const skyData = await loadImageData(skyUrl);
     if (skyData) imageMaps["sky"] = skyData;
   }
-  if (sceneName === "lab") {
-    const paperUrl = `${BASE}textures/paper.png`;
-    const paperData = await loadImageData(paperUrl);
-    if (paperData) imageMaps["paper"] = paperData;
-  }
 
   const width       = 600;
   const height      = 600;
@@ -209,11 +204,13 @@ async function startRender(sceneName: string) {
     }
   }
 
+  // ACES filmic tone mapping (Hill/Unreal approximation).
+  // Maps unbounded linear HDR values to [0,1] before gamma correction,
+  // preserving colour relationships in highlights instead of hard-clamping.
   const aces = (x: number) => {
     x = Math.max(0, x);
     return Math.min(1, (x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14));
   };
-
 
   function redraw() {
     redrawPending = false;

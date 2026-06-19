@@ -21,7 +21,6 @@ export const rotateCamera = (dir: Vector) =>
 export const lensRadius = 0.15;
 export const focusDistance = 3.6;
 
-
 // Sky image key: main thread loads this and passes it to workers in imageMaps.
 export const skyImageKey = "sky";
 
