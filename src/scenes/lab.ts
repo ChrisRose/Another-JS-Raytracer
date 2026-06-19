@@ -231,6 +231,17 @@ sceneObjects.push(new Rectangle({
   material: paperMat,
 }));
 
+// ─── Fill light — warm panel above/in-front to illuminate tube fronts ────────
+const fillMat = new Material({ albedo: new Color(1, 0.92, 0.80), emissive: new Color(2.5, 2.2, 1.8) });
+sceneObjects.push(new Mesh({
+  name: "fillLight",
+  material: fillMat,
+  meshObjects: [
+    new Triangle({ v1: new Vector(-1.5, 5, -1), v2: new Vector(1.5, 5, -1), v3: new Vector(1.5, 5, 1), material: fillMat }),
+    new Triangle({ v1: new Vector(-1.5, 5, -1), v2: new Vector(1.5, 5,  1), v3: new Vector(-1.5, 5, 1), material: fillMat }),
+  ],
+}));
+
 // ─── Test tubes — four colours, right of centre (right focal zone) ────────────
 // Cluster near x=+0.8..+1.8, z=1.5..3.0 — the right horizontal focal point.
 const tubes: [number, number, Material][] = [
