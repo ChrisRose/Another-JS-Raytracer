@@ -22,4 +22,8 @@ export class Point {
   multiply(factor: number): Point {
     return new Point(this.x * factor, this.y * factor, this.z * factor);
   }
+
+  toVector(): Vector {
+    return new Vector(this.x, this.y, this.z);
+  }
 }

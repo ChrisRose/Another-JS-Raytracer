@@ -1,3 +1,5 @@
+import { Point } from "./Point";
+
 export class Vector {
   x: number;
   y: number;
@@ -63,5 +65,9 @@ export class Vector {
       }
     }
     return new Vector(result[0], result[1], result[2]);
+  }
+
+  toPoint() {
+    return new Point(this.x, this.y, this.z);
   }
 }

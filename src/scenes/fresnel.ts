@@ -3,10 +3,10 @@ import { Point } from "../Point.js";
 import { Sphere } from "../Sphere.js";
 import { Vector } from "../Vector.js";
 import { Rectangle } from "../Rectangle.js";
-import { SceneObjects } from "../types.js";
+import { SceneObject } from "../types.js";
 import { AmbientLight, AreaLight, Light } from "../Light.js";
 import { getRotationXMatrix } from "../matrix.js";
-import { checkerBoardTexture } from "../textures.js";
+import { checkerboardTexture } from "../textures.js";
 import { Material } from "../Material.js";
 
 export const cameraStart = new Point(0, 0.25, -10);
@@ -14,7 +14,10 @@ export const rotateCamera = (dir: Vector) => {
   return dir.multiplyWith3x3Matrix(getRotationXMatrix(0));
 };
 
-const ambient1 = new AmbientLight({ intensity: 0.2 });
+const ambient1 = new AmbientLight({
+  color: new Color(1, 1, 1),
+  intensity: 0.2
+});
 
 const ceilingLight = new AreaLight({
   corner: new Point(-1, 10, -1),
@@ -24,16 +27,14 @@ const ceilingLight = new AreaLight({
   vSteps: 4,
   intensity: 0.8,
   size: 2,
-  material: new Material({
-    albedo: new Color(255, 255, 255)
-  })
+  color: new Color(1, 1, 1)
 });
 
 export const lights: Light[] = [];
 lights.push(ambient1);
 lights.push(ceilingLight);
 
-export const sceneObjects: SceneObjects = [];
+export const sceneObjects: SceneObject[] = [];
 
 const floor = new Rectangle({
   corner: new Point(-50, 0, -50),
@@ -44,9 +45,9 @@ const floor = new Rectangle({
   width: 100,
   height: 100,
   material: new Material({
-    albedo: new Color(255, 255, 255),
+    albedo: new Color(1, 1, 1),
     reflectivity: 0.8
-    // texture: checkerBoardTexture
+    // texture: checkerboardTexture
   })
 });
 
@@ -55,7 +56,7 @@ const ball1 = new Sphere({
   radius: 3,
   name: "",
   material: new Material({
-    albedo: new Color(255, 0, 0),
+    albedo: new Color(1, 0, 0),
     specular: 200,
     reflectivity: 0,
     refractionIndex: 0

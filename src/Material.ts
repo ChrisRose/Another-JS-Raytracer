@@ -1,4 +1,6 @@
 import { Color } from "./Color.js";
+import { Point } from "./Point.js";
+import { Intersected } from "./types.js";
 
 export class Material {
   albedo: Color;
@@ -6,7 +8,9 @@ export class Material {
   reflectivity?: number;
   refractionIndex?: number;
   glossiness?: number;
-  texture?: (x: number, y: number) => Color | undefined;
+  texture?: (intersected: Intersected) => Color;
+  emissive?: Color;
+  imageMap?: string;
 
   constructor({
     albedo = new Color(0, 0, 0),
@@ -14,14 +18,18 @@ export class Material {
     reflectivity = 0,
     refractionIndex = 0,
     glossiness = 0,
-    texture
+    texture,
+    emissive,
+    imageMap
   }: {
     albedo: Color;
     specular?: number;
     reflectivity?: number;
     refractionIndex?: number;
     glossiness?: number;
-    texture?: (x: number, y: number) => Color | undefined;
+    texture?: (intersected: Intersected) => Color;
+    emissive?: Color;
+    imageMap?: string;
   }) {
     this.albedo = albedo;
     this.specular = specular;
@@ -29,5 +37,7 @@ export class Material {
     this.refractionIndex = refractionIndex;
     this.glossiness = glossiness;
     this.texture = texture;
+    this.emissive = emissive;
+    this.imageMap = imageMap;
   }
 }
