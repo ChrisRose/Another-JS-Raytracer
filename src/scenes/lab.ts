@@ -7,6 +7,7 @@ import { Material } from "../Material.js";
 import { Mesh } from "../Mesh.js";
 import { Triangle } from "../Triangle.js";
 import { Cylinder } from "../Cylinder.js";
+import { Sphere } from "../Sphere.js";
 import { getRotationXMatrix } from "../matrix.js";
 
 // Camera: slightly higher so the bench top sits at the lower third.
@@ -241,6 +242,14 @@ const tubes: [number, number, Material][] = [
 for (const [x, z, mat] of tubes) {
   for (const obj of testTube(x, z, mat)) sceneObjects.push(obj);
 }
+
+// ─── Glass sphere ─────────────────────────────────────────────────────────────
+// Sits on the bench between the paper and the tube cluster; refracts the scene behind it.
+sceneObjects.push(new Sphere({
+  center: new Point(-0.3, 0.28, 1.6),
+  radius: 0.28,
+  material: new Material({ albedo: new Color(0, 0, 0), refractionIndex: 1.5 }),
+}));
 
 // ─── Erlenmeyer flasks ────────────────────────────────────────────────────────
 // Large flask (2× scale) closer to the camera as the dominant foreground object.
