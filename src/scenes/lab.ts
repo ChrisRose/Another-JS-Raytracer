@@ -20,7 +20,6 @@ export const phaseG  = 0.45;  // forward-scattering (Mie-like dust)
 
 // ─── Wood grain texture ───────────────────────────────────────────────────────
 function woodGrain(point: Point): Color {
-  // Flat-sawn plank grain running along z; sine turbulence adds knot waviness.
   const grain = point.x
     + Math.sin(point.z * 3.1) * 0.35
     + Math.sin(point.z * 7.3 + point.x * 2.1) * 0.12
@@ -41,6 +40,7 @@ const benchSide  = new Material({ albedo: new Color(0.28, 0.18, 0.07) });
 const wallMat    = new Material({ albedo: new Color(0.75, 0.74, 0.72) });
 const floorMat   = new Material({ albedo: new Color(0.32, 0.31, 0.30) });
 const glassMat   = new Material({ albedo: new Color(0, 0, 0), refractionIndex: 1.5 });
+const capMat     = new Material({ albedo: new Color(0.95, 0.95, 0.95) });
 
 const liquids = {
   red:    new Material({ albedo: new Color(0.80, 0.04, 0.04), emissive: new Color(0.45, 0.02, 0.02) }),
@@ -56,8 +56,9 @@ const liquids = {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function testTube(x: number, z: number, liquid: Material): SceneObject[] {
   return [
-    new Cylinder({ center: new Point(x, 0, z), radius: 0.12,  height: 0.75, material: glassMat }),
-    new Cylinder({ center: new Point(x, 0, z), radius: 0.085, height: 0.50, material: liquid  }),
+    new Cylinder({ center: new Point(x, 0,    z), radius: 0.12,  height: 0.75, material: glassMat }),
+    new Cylinder({ center: new Point(x, 0,    z), radius: 0.085, height: 0.50, material: liquid  }),
+    new Cylinder({ center: new Point(x, 0.68, z), radius: 0.13,  height: 0.12, material: capMat  }),
   ];
 }
 
@@ -90,65 +91,68 @@ sceneObjects.push(new Rectangle({
 sceneObjects.push(new Rectangle({
   corner: new Point(-5, -0.6, -3),
   v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
-  width: 6, height: 13,
+  width: 13, height: 13,
   normal: new Vector(1, 0, 0), orientation: "yzAxis",
   material: wallMat,
 }));
+
+// ─── Back wall (solid) ────────────────────────────────────────────────────────
 sceneObjects.push(new Rectangle({
-  corner: new Point(5, -0.6, -3),
-  v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
-  width: 6, height: 13,
-  normal: new Vector(-1, 0, 0), orientation: "yzAxis",
+  corner: new Point(-5, -0.6, 7),
+  v1: new Vector(1, 0, 0), v2: new Vector(0, 1, 0),
+  width: 10, height: 13,
+  normal: new Vector(0, 0, -1), orientation: "xyAxis",
   material: wallMat,
 }));
 
-// ─── Back wall with window hole ───────────────────────────────────────────────
-const BZ     = 7;
-const WX0 = -1.2, WX1 = 1.2;
-const WY0 =  1.5, WY1 = 4.5;
+// ─── Right wall with window hole ──────────────────────────────────────────────
+const WY0 = 0.3, WY1 = 4.5;
+const WZ0 = 0.2, WZ1 = 4.0;
 
 // Below window
 sceneObjects.push(new Rectangle({
-  corner: new Point(-5, -0.6, BZ),
-  v1: new Vector(1, 0, 0), v2: new Vector(0, 1, 0),
-  width: 10, height: WY0 + 0.6,
-  normal: new Vector(0, 0, -1), orientation: "xyAxis",
+  corner: new Point(5, -0.6, -3),
+  v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
+  width: 13, height: WY0 + 0.6,
+  normal: new Vector(-1, 0, 0), orientation: "yzAxis",
   material: wallMat,
 }));
 // Above window
 sceneObjects.push(new Rectangle({
-  corner: new Point(-5, WY1, BZ),
-  v1: new Vector(1, 0, 0), v2: new Vector(0, 1, 0),
-  width: 10, height: 5 - WY1,
-  normal: new Vector(0, 0, -1), orientation: "xyAxis",
+  corner: new Point(5, WY1, -3),
+  v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
+  width: 13, height: 13 - WY1,
+  normal: new Vector(-1, 0, 0), orientation: "yzAxis",
   material: wallMat,
 }));
-// Left of window
+// In front of window (z: -3 to WZ0)
 sceneObjects.push(new Rectangle({
-  corner: new Point(-5, WY0, BZ),
-  v1: new Vector(1, 0, 0), v2: new Vector(0, 1, 0),
-  width: WX0 + 5, height: WY1 - WY0,
-  normal: new Vector(0, 0, -1), orientation: "xyAxis",
+  corner: new Point(5, WY0, -3),
+  v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
+  width: WZ0 + 3,
+  height: WY1 - WY0,
+  normal: new Vector(-1, 0, 0), orientation: "yzAxis",
   material: wallMat,
 }));
-// Right of window
+// Behind window (z: WZ1 to 10)
 sceneObjects.push(new Rectangle({
-  corner: new Point(WX1, WY0, BZ),
-  v1: new Vector(1, 0, 0), v2: new Vector(0, 1, 0),
-  width: 5 - WX1, height: WY1 - WY0,
-  normal: new Vector(0, 0, -1), orientation: "xyAxis",
+  corner: new Point(5, WY0, WZ1),
+  v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
+  width: 10 - WZ1,
+  height: WY1 - WY0,
+  normal: new Vector(-1, 0, 0), orientation: "yzAxis",
   material: wallMat,
 }));
 
-// ─── Window — emissive mesh representing sunlight ─────────────────────────────
-const LZ     = BZ - 0.05;
+// ─── Window light — emissive plane just outside the right wall ────────────────
+const LX = 5.05;
 const sunMat = new Material({ albedo: new Color(1, 0.95, 0.80), emissive: new Color(7, 6.5, 5) });
 sceneObjects.push(new Mesh({
   name: "windowLight",
   material: sunMat,
   meshObjects: [
-    new Triangle({ v1: new Vector(WX0, WY0, LZ), v2: new Vector(WX1, WY0, LZ), v3: new Vector(WX1, WY1, LZ), material: sunMat }),
-    new Triangle({ v1: new Vector(WX0, WY0, LZ), v2: new Vector(WX1, WY1, LZ), v3: new Vector(WX0, WY1, LZ), material: sunMat }),
+    new Triangle({ v1: new Vector(LX, WY0, WZ0), v2: new Vector(LX, WY0, WZ1), v3: new Vector(LX, WY1, WZ1), material: sunMat }),
+    new Triangle({ v1: new Vector(LX, WY0, WZ0), v2: new Vector(LX, WY1, WZ1), v3: new Vector(LX, WY1, WZ0), material: sunMat }),
   ],
 }));
 
