@@ -13,7 +13,7 @@ permissions:
 # One deployment per workflow+branch at a time; cancel in-progress runs on new push.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
