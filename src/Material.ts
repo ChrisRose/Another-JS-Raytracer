@@ -11,8 +11,9 @@ export class Material {
   texture?: (point: Point, normal: Vector) => Color;
   emissive?: Color;
   imageMap?: string;
-  metallic?: number;   // 1 = fully metallic (F0 = albedo, no diffuse)
-  roughness?: number;  // GGX α² parameter; 0 = mirror, 1 = fully rough
+  metallic?: number;    // 1 = fully metallic (F0 = albedo, no diffuse)
+  roughness?: number;   // GGX α² parameter; 0 = mirror, 1 = fully rough
+  subsurface?: number;  // 0–1 fraction of body bounces that scatter through (jade, wax, skin)
 
   constructor({
     albedo = new Color(0, 0, 0),
@@ -24,7 +25,8 @@ export class Material {
     emissive,
     imageMap,
     metallic,
-    roughness
+    roughness,
+    subsurface,
   }: {
     albedo: Color;
     specular?: number;
@@ -36,6 +38,7 @@ export class Material {
     imageMap?: string;
     metallic?: number;
     roughness?: number;
+    subsurface?: number;
   }) {
     this.albedo = albedo;
     this.specular = specular;
@@ -47,5 +50,6 @@ export class Material {
     this.imageMap = imageMap;
     this.metallic = metallic;
     this.roughness = roughness;
+    this.subsurface = subsurface;
   }
 }
