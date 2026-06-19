@@ -23,6 +23,11 @@ let cameraStart!: Point;
 let rotateCamera!: (dir: Vector) => Vector;
 let skyFn: ((dir: Vector) => Color) | undefined;
 let skyImageData: ImageData | undefined;
+let lensRadius   = 0;
+let focusDistance = 0;
+let sigma_t = 0;
+let sigma_s = 0;
+let phaseG  = 0;
 /* eslint-enable prefer-const */
 
 async function importScene(name: string): Promise<{
@@ -31,6 +36,11 @@ async function importScene(name: string): Promise<{
   sceneObjects: SceneObject[];
   skyFn?: (dir: Vector) => Color;
   skyImageKey?: string;
+  lensRadius?: number;
+  focusDistance?: number;
+  sigma_t?: number;
+  sigma_s?: number;
+  phaseG?: number;
 }> {
   let mod: any;
   if (name === "cornellBox")         mod = await import("./scenes/cornellBox.js");
@@ -42,6 +52,7 @@ async function importScene(name: string): Promise<{
   else if (name === "backrooms")     mod = await import("./scenes/backrooms.js");
   else if (name === "chess")         mod = await import("./scenes/chess.js");
   else if (name === "dragon")        mod = await import("./scenes/dragon.js");
+  else if (name === "lab")           mod = await import("./scenes/lab.js");
   else                               mod = await import("./scenes/cornellBoxMeshes.js");
 
   if (typeof mod.init === "function") await mod.init();
@@ -267,6 +278,28 @@ const sampleGGX = (normal: Vector, alpha2: number): Vector => {
     .normalize();
 };
 
+const sampleHenyeyGreenstein = (inDir: Vector, g: number): Vector => {
+  const u = Math.random();
+  const v = Math.random();
+  let cosTheta: number;
+  if (Math.abs(g) < 1e-3) {
+    cosTheta = 1 - 2 * u;
+  } else {
+    const s = (1 - g * g) / (1 - g + 2 * g * u);
+    cosTheta = (1 + g * g - s * s) / (2 * g);
+  }
+  const sinTheta = Math.sqrt(Math.max(0, 1 - cosTheta * cosTheta));
+  const phi = 2 * Math.PI * v;
+  const w = inDir;
+  const up = Math.abs(w.y) < 0.999 ? new Vector(0, 1, 0) : new Vector(1, 0, 0);
+  const tu = up.crossProduct(w).normalize();
+  const tv = w.crossProduct(tu);
+  return tu.multiply(sinTheta * Math.cos(phi))
+    .add(tv.multiply(sinTheta * Math.sin(phi)))
+    .add(w.multiply(cosTheta))
+    .normalize();
+};
+
 const getCosineWeightedSample = (normal: Vector) => {
   const u = Math.random();
   const v = Math.random();
@@ -382,6 +415,25 @@ const traceRay = ({
   }
 
   let intersected = castRay({ ray, sceneObjects, i, j });
+
+  // ─── Participating media (dust / fog) ────────────────────────────────────────
+  // Sample a free-flight distance from Exp(σ_t). If it falls before the nearest
+  // surface the ray scatters in the volume; otherwise proceed to surface shading.
+  // With exponential sampling the transmittance cancels, so no explicit Beer's
+  // law weight is needed here — only in the NEE shadow-ray contributions below.
+  if (sigma_t > 0) {
+    const tScatter = -Math.log(1 - Math.random()) / sigma_t;
+    const tSurface = intersected ? distance(intersected.point, ray.start) : Infinity;
+    if (tScatter < tSurface) {
+      const scatterPt = ray.getPoint(tScatter);
+      const newDir = sampleHenyeyGreenstein(ray.dir.normalize(), phaseG);
+      const sa = sigma_s / sigma_t; // single-scatter albedo
+      return new Color(sa, sa, sa).multiplyWithColor(
+        traceRay({ ray: new Ray(scatterPt, newDir), imageMaps, bounceDepth: bounceDepth + 1, includeEmission: true, i, j, k })
+      );
+    }
+  }
+  // ─────────────────────────────────────────────────────────────────────────────
 
   let normal: Vector;
   if (intersected?.object) {
@@ -550,7 +602,9 @@ const traceRay = ({
           if (shadowHit?.object?.name === "lightBall") {
             const emission = lightSphere.material.emissive ?? new Color(0, 0, 0);
             const weight = cosTheta * solidAngle / Math.PI;
-            radiance = radiance.addWithColor(color.multiply(weight).multiplyWithColor(emission));
+            const lightDist = lightSphere.center.subtract(intersected.point).toVector().length();
+            const T = sigma_t > 0 ? Math.exp(-sigma_t * lightDist) : 1;
+            radiance = radiance.addWithColor(color.multiply(weight * T).multiplyWithColor(emission));
           }
         }
       }
@@ -617,7 +671,8 @@ const traceRay = ({
           });
           if (!shadowHit) {
             const weight = cosTheta * cosThetaLight * totalArea / (dist * dist * Math.PI);
-            radiance = radiance.addWithColor(color.multiply(weight).multiplyWithColor(emission));
+            const T = sigma_t > 0 ? Math.exp(-sigma_t * dist) : 1;
+            radiance = radiance.addWithColor(color.multiply(weight * T).multiplyWithColor(emission));
           }
         }
       }
@@ -661,6 +716,15 @@ onmessage = async (e: MessageEvent) => {
   rotateCamera = scene.rotateCamera;
   skyFn        = scene.skyFn;
   skyImageData = scene.skyImageKey ? (imageMaps[scene.skyImageKey] as ImageData | undefined) : undefined;
+  lensRadius    = scene.lensRadius   ?? 0;
+  focusDistance = scene.focusDistance ?? 0;
+  sigma_t = scene.sigma_t ?? 0;
+  sigma_s = scene.sigma_s ?? 0;
+  phaseG  = scene.phaseG  ?? 0;
+
+  const cameraRight = rotateCamera(new Vector(1, 0, 0));
+  const cameraUp    = rotateCamera(new Vector(0, 1, 0));
+
 
   // Precompute base ray directions for the tile — same for every pass.
   type PixelDir = { i: number; j: number; rotatedDir: Vector };
@@ -686,7 +750,30 @@ onmessage = async (e: MessageEvent) => {
         rotatedDir.y + yJitter,
         rotatedDir.z
       );
-      const color = traceRay({ ray: new Ray(cameraStart, jitteredDir), imageMaps, i, j });
+
+      let rayOrigin: Point = cameraStart;
+      let rayDir: Vector = jitteredDir;
+
+      if (lensRadius > 0 && focusDistance > 0) {
+        const r = Math.sqrt(Math.random()) * lensRadius;
+        const phi = Math.random() * 2 * Math.PI;
+        const dx = r * Math.cos(phi);
+        const dy = r * Math.sin(phi);
+        rayOrigin = new Point(
+          cameraStart.x + cameraRight.x * dx + cameraUp.x * dy,
+          cameraStart.y + cameraRight.y * dx + cameraUp.y * dy,
+          cameraStart.z + cameraRight.z * dx + cameraUp.z * dy
+        );
+        const dn = jitteredDir.normalize();
+        const fp = new Point(
+          cameraStart.x + dn.x * focusDistance,
+          cameraStart.y + dn.y * focusDistance,
+          cameraStart.z + dn.z * focusDistance
+        );
+        rayDir = new Vector(fp.x - rayOrigin.x, fp.y - rayOrigin.y, fp.z - rayOrigin.z);
+      }
+
+      const color = traceRay({ ray: new Ray(rayOrigin, rayDir), imageMaps, i, j });
       pixelColors.push({ i, j, r: color.r, g: color.g, b: color.b });
     }
 
