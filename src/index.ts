@@ -61,6 +61,14 @@ const SCENES = [
       "A Qe1# checkmate position: polished silver and dark gunmetal pieces on a semi-reflective lacquered board — piece silhouettes and the Milky Way sky reflect faintly in the ivory-and-ebony squares via a Fresnel-weighted GGX gloss layer.",
     thumb: `${BASE}thumbnails/chess.jpg` as string | null,
   },
+  {
+    id: "lab",
+    title: "Laboratory",
+    tag: "Volumetrics",
+    description:
+      "A lab bench with eight glass test tubes of coloured luminous liquids, procedural wood-grain surface, and atmospheric dust that scatters a warm shaft of sunlight through the window — Henyey-Greenstein phase function, Beer's law shadow transmittance.",
+    thumb: null as string | null,
+  },
 ];
 
 // ─── Gallery view ─────────────────────────────────────────────────────────────
