@@ -196,6 +196,14 @@ async function startRender(sceneName: string) {
     }
   }
 
+  // ACES filmic tone mapping (Hill/Unreal approximation).
+  // Maps unbounded linear HDR values to [0,1] before gamma correction,
+  // preserving colour relationships in highlights instead of hard-clamping.
+  const aces = (x: number) => {
+    x = Math.max(0, x);
+    return Math.min(1, (x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14));
+  };
+
   function redraw() {
     redrawPending = false;
     const inv = 1 / 2.2;
@@ -204,9 +212,9 @@ async function startRender(sceneName: string) {
         const idx = pi * width + pj;
         const n = sampleCounts[idx];
         if (n === 0) continue;
-        const r = Math.min(1, Math.pow(Math.max(0, accumR[idx] / n), inv));
-        const g = Math.min(1, Math.pow(Math.max(0, accumG[idx] / n), inv));
-        const b = Math.min(1, Math.pow(Math.max(0, accumB[idx] / n), inv));
+        const r = Math.pow(aces(accumR[idx] / n), inv);
+        const g = Math.pow(aces(accumG[idx] / n), inv);
+        const b = Math.pow(aces(accumB[idx] / n), inv);
         const p = idx * 4;
         imageData.data[p]     = r * 255;
         imageData.data[p + 1] = g * 255;
