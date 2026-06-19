@@ -3,9 +3,8 @@ import { Point } from "../Point.js";
 import { Sphere } from "../Sphere.js";
 import { Vector } from "../Vector.js";
 import { Rectangle } from "../Rectangle.js";
-import { SceneObjects } from "../types.js";
+import { SceneObject } from "../types.js";
 import { AmbientLight, AreaLight, DirectionalLight, Light } from "../Light.js";
-import { checkerBoardTexture } from "../textures.js";
 import { getRotationXMatrix } from "../matrix.js";
 import { Material } from "../Material.js";
 
@@ -14,7 +13,7 @@ export const rotateCamera = (dir: Vector) => {
   return dir.multiplyWith3x3Matrix(getRotationXMatrix(1));
 };
 
-const ambient1 = new AmbientLight({ intensity: 0.2 });
+const ambient1 = new AmbientLight({ color: new Color(1, 1, 1), intensity: 0.2 });
 
 const directionalLight = new DirectionalLight({
   dir: new Vector(0, 0, 1),
@@ -29,9 +28,7 @@ const ceilingLight = new AreaLight({
   vSteps: 4,
   intensity: 0.4,
   size: 5,
-  material: new Material({
-    albedo: new Color(255, 255, 255)
-  })
+  color: new Color(1, 1, 1),
 });
 
 export const lights: Light[] = [];
@@ -39,7 +36,7 @@ lights.push(ambient1);
 lights.push(ceilingLight);
 //lights.push(directionalLight);
 
-export const sceneObjects: SceneObjects = [];
+export const sceneObjects: SceneObject[] = [];
 
 const metalBall = new Sphere({
   center: new Point(-1.1, 1, 0),
