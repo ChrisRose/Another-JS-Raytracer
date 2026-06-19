@@ -14,9 +14,9 @@ export const rotateCamera = (dir: Vector) =>
 
 // ─── Room ────────────────────────────────────────────────────────────────────
 
-const roomMat  = new Material({ albedo: new Color(0.9, 0.9, 0.9) });
-const redMat   = new Material({ albedo: new Color(0.65, 0.1, 0.1) });
-const greenMat = new Material({ albedo: new Color(0.1, 0.4, 0.15) });
+const roomMat   = new Material({ albedo: new Color(0.9, 0.9, 0.9) });
+const blueMat   = new Material({ albedo: new Color(0.1, 0.25, 0.75) });
+const yellowMat = new Material({ albedo: new Color(0.85, 0.75, 0.1) });
 
 const floor = new Rectangle({
   corner: new Point(-6, 0, -16), v1: new Vector(1, 0, 0), v2: new Vector(0, 0, 1),
@@ -32,11 +32,11 @@ const backWall = new Rectangle({
 });
 const leftWall = new Rectangle({
   corner: new Point(-6, 0, -16), v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
-  width: 30, height: 14, normal: new Vector(1, 0, 0), orientation: "yzAxis", material: redMat,
+  width: 30, height: 14, normal: new Vector(1, 0, 0), orientation: "yzAxis", material: blueMat,
 });
 const rightWall = new Rectangle({
   corner: new Point(6, 0, -16), v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
-  width: 30, height: 14, normal: new Vector(-1, 0, 0), orientation: "yzAxis", material: greenMat,
+  width: 30, height: 14, normal: new Vector(-1, 0, 0), orientation: "yzAxis", material: yellowMat,
 });
 
 const lightBall = new Sphere({

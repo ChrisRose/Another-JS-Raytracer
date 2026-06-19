@@ -4,7 +4,7 @@
  */
 
 import { createCanvas, loadImage } from 'canvas';
-import { writeFile, mkdir } from 'fs/promises';
+import { writeFile, mkdir, readFile } from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -15,9 +15,12 @@ import * as refractionScene         from './src/scenes/refraction.js';
 import * as metalBunnyScene         from './src/scenes/metalBunny.js';
 import * as backroomsScene          from './src/scenes/backrooms.js';
 import * as chessScene              from './src/scenes/chess.js';
+import * as dragonScene             from './src/scenes/dragon.js';
 
 // Raytracer utilities
-import { Color }   from './src/Color.js';
+import { Color }    from './src/Color.js';
+import { Material } from './src/Material.js';
+import { parseMesh } from './src/meshUtils.js';
 import { Vector }  from './src/Vector.js';
 import { Ray }     from './src/Ray.js';
 import { Point }   from './src/Point.js';
@@ -38,6 +41,7 @@ const SCENES = [
   { id: 'metalBunny',         scene: metalBunnyScene         },
   { id: 'backrooms',          scene: backroomsScene          },
   { id: 'chess',              scene: chessScene              },
+  { id: 'dragon',             scene: dragonScene             },
 ];
 
 const WIDTH   = 600;
@@ -196,7 +200,7 @@ function traceRay({ ray, sceneObjects, skyFn, skyImageData, bounceDepth = 0, inc
       const len = Math.sqrt(d.x*d.x + d.y*d.y + d.z*d.z);
       const theta = Math.acos(Math.max(-1, Math.min(1, d.y/len)));
       const phi   = Math.atan2(d.z/len, d.x/len);
-      const u = Math.floor(((phi + Math.PI) / (2 * Math.PI)) * skyImageData.width)  % skyImageData.width;
+      const u = Math.floor(((phi + Math.PI) / (2 * Math.PI)) * skyImageData.width * 2) % skyImageData.width;
       const v = Math.floor((theta / Math.PI)                  * skyImageData.height) % skyImageData.height;
       const idx = (v * skyImageData.width + u) * 4;
       const fromSrgb = (x: number) => Math.pow(x / 255, 2.2);
@@ -325,6 +329,21 @@ const targetId = process.argv[2];
 const scenesToRender = targetId ? SCENES.filter(s => s.id === targetId) : SCENES;
 
 for (const { id, scene } of scenesToRender) {
+  // Dragon OBJ is served via fetch in the browser; in Node.js we read it from disk.
+  if (id === 'dragon' && dragonScene.sceneObjects.length === 6) {
+    console.log('[dragon] Loading OBJ from disk…');
+    const objText = await readFile(path.join(__dirname, 'public', 'meshes', 'dragon.obj'), 'utf-8');
+    const dragon = parseMesh({
+      mesh: objText,
+      name: 'dragon',
+      material: new Material({ albedo: new Color(0.95, 0.64, 0.54), metallic: 1, roughness: 0.15 }),
+      scale: 4,
+      translate: { x: 0, y: 2.34, z: 1 },
+    });
+    dragonScene.sceneObjects.push(dragon);
+    console.log(`[dragon] ${dragon.meshObjects.length} triangles, BVH built`);
+  }
+
   const { cameraStart, rotateCamera, sceneObjects, skyFn, skyImageKey } = scene as any;
   console.log(`[${id}] Rendering  (${PASSES} passes)`);
 
