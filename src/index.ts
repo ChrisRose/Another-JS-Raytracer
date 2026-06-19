@@ -67,7 +67,7 @@ const SCENES = [
     tag: "Volumetrics",
     description:
       "A lab bench with eight glass test tubes of coloured luminous liquids, procedural wood-grain surface, and atmospheric dust that scatters a warm shaft of sunlight through the window — Henyey-Greenstein phase function, Beer's law shadow transmittance.",
-    thumb: null as string | null,
+    thumb: `${BASE}thumbnails/lab.jpg` as string | null,
   },
 ];
 

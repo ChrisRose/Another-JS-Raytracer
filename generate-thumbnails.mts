@@ -16,6 +16,7 @@ import * as metalBunnyScene         from './src/scenes/metalBunny.js';
 import * as backroomsScene          from './src/scenes/backrooms.js';
 import * as chessScene              from './src/scenes/chess.js';
 import * as dragonScene             from './src/scenes/dragon.js';
+import * as labScene               from './src/scenes/lab.js';
 
 // Raytracer utilities
 import { Color }    from './src/Color.js';
@@ -42,6 +43,7 @@ const SCENES = [
   { id: 'backrooms',          scene: backroomsScene          },
   { id: 'chess',              scene: chessScene              },
   { id: 'dragon',             scene: dragonScene             },
+  { id: 'lab',               scene: labScene               },
 ];
 
 const WIDTH   = 600;
