@@ -98,9 +98,7 @@ export const parseMesh = ({
   }
   const sceneMesh = new Mesh({
     name,
-    material: new Material({
-      albedo: new Color(1, 0, 0)
-    }),
+    material,
     meshObjects: meshObjects
   });
 

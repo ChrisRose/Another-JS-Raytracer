@@ -8,6 +8,7 @@ import { Vector } from "./Vector.js";
 import { Triangle } from "./Triangle.js";
 import { Mesh } from "./Mesh.js";
 import { Quad } from "./Quad.js";
+import { Cylinder } from "./Cylinder.js";
 
 export type Shape =
   | Sphere
@@ -17,8 +18,9 @@ export type Shape =
   | Triangle
   | Quad
   | AreaLight
-  | LightBall;
-export type Primitive = Sphere | Plane | Rectangle | Triangle | Quad;
+  | LightBall
+  | Cylinder;
+export type Primitive = Sphere | Plane | Rectangle | Triangle | Quad | Cylinder;
 export type SceneObject = Shape | Mesh | AreaLight | LightBall;
 
 export type LightPatch = {
