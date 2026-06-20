@@ -55,7 +55,7 @@ const liquids = {
   teal:   new Material({ albedo: new Color(0.04, 0.70, 0.60), emissive: new Color(0.03, 0.40, 0.34) }),
 };
 
-const paperMat = new Material({ albedo: new Color(0.93, 0.91, 0.86), roughness: 0.90 });
+const paperMat = new Material({ albedo: new Color(0.93, 0.91, 0.86) });
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 // Thinner (r=0.09), taller (h=1.0) tubes
