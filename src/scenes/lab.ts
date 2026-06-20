@@ -45,7 +45,7 @@ const wallMat    = new Material({ albedo: new Color(0.75, 0.74, 0.72) });
 const floorMat   = new Material({ albedo: new Color(0.32, 0.31, 0.30) });
 const glassMat   = new Material({ albedo: new Color(0, 0, 0), refractionIndex: 1.5 });
 const capMat     = new Material({ albedo: new Color(0.95, 0.95, 0.95) });
-const flaskMat   = new Material({ albedo: new Color(0.60, 0.82, 0.70), roughness: 0.25 });
+const flaskMat   = new Material({ albedo: new Color(0.18, 0.52, 0.28), roughness: 0.55, subsurface: 0.35 });
 
 // Fewer, more saturated liquids — just four colours for a tighter palette
 const liquids = {
