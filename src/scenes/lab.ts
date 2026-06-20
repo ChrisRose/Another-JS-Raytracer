@@ -17,10 +17,10 @@ export const cameraStart = new Point(0, 3.2, -3.2);
 export const rotateCamera = (dir: Vector) =>
   dir.multiplyWith3x3Matrix(getRotationXMatrix(18));
 
-// Participating media: atmospheric dust that makes the sun shaft visible.
-export const sigma_t = 0.09;
-export const sigma_s = 0.08;
-export const phaseG  = 0.65;
+// Participating media: dense dust for a visible shaft.
+export const sigma_t = 0.28;
+export const sigma_s = 0.25;
+export const phaseG  = 0.75;
 
 // Dark sky so escaped rays don't brighten the room from above.
 export const skyFn = (_dir: Vector) => new Color(0, 0, 0);
@@ -246,8 +246,8 @@ sceneObjects.push(new Rectangle({
 
 
 // ─── Right wall with window hole ──────────────────────────────────────────────
-const WY0 = 0.3, WY1 = 4.5;
-const WZ0 = 0.2, WZ1 = 4.0;
+const WY0 = 0.5, WY1 = 2.8;
+const WZ0 = 1.0, WZ1 = 3.2;
 
 sceneObjects.push(new Rectangle({
   corner: new Point(5, -0.6, -3),
@@ -282,7 +282,7 @@ sceneObjects.push(new Rectangle({
 
 // ─── Window light — emissive plane just outside the right wall ────────────────
 const LX = 5.05;
-const sunMat = new Material({ albedo: new Color(1, 0.95, 0.80), emissive: new Color(16, 14, 10) });
+const sunMat = new Material({ albedo: new Color(1, 0.95, 0.80), emissive: new Color(40, 36, 26) });
 sceneObjects.push(new Mesh({
   name: "windowLight",
   material: sunMat,
