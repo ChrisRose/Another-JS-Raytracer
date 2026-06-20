@@ -24,11 +24,11 @@ export const phaseG  = 0.45;
 
 // ─── Wood grain texture ───────────────────────────────────────────────────────
 function woodGrain(point: Point): Color {
-  const grain = point.x
-    + Math.sin(point.z * 3.1) * 0.35
-    + Math.sin(point.z * 7.3 + point.x * 2.1) * 0.12
-    + Math.sin(point.x * 5.7 - point.z * 1.9) * 0.08;
-  const t = Math.pow((Math.sin(grain * 4.5) + 1) * 0.5, 2);
+  const grain = point.x * 2.0
+    + Math.sin(point.z * 6.0) * 0.30
+    + Math.sin(point.z * 14.0 + point.x * 4.0) * 0.10
+    + Math.sin(point.x * 11.0 - point.z * 3.8) * 0.07;
+  const t = Math.pow((Math.sin(grain * 9.0) + 1) * 0.5, 2);
   const light = new Color(0.68, 0.48, 0.26);
   const dark  = new Color(0.35, 0.22, 0.09);
   return new Color(
@@ -45,7 +45,8 @@ const wallMat    = new Material({ albedo: new Color(0.75, 0.74, 0.72) });
 const floorMat   = new Material({ albedo: new Color(0.32, 0.31, 0.30) });
 const glassMat   = new Material({ albedo: new Color(0, 0, 0), refractionIndex: 1.5 });
 const capMat     = new Material({ albedo: new Color(0.95, 0.95, 0.95) });
-const flaskMat   = new Material({ albedo: new Color(0.18, 0.52, 0.28), roughness: 0.55, subsurface: 0.35 });
+const flaskMat     = new Material({ albedo: new Color(0.18, 0.52, 0.28), roughness: 0.55, subsurface: 0.35 });
+const backFlaskMat = new Material({ albedo: new Color(0.42, 0.02, 0.08), roughness: 0.30, subsurface: 0.20 });
 
 // Fewer, more saturated liquids — just four colours for a tighter palette
 const liquids = {
@@ -160,7 +161,6 @@ const AZ0 =  7.0, AZ1 = 8.5;   // alcove z extents (depth 1.5)
 
 const alcoveMat      = new Material({ albedo: new Color(0.70, 0.68, 0.65) });
 const shelfMat       = new Material({ albedo: new Color(0.50, 0.38, 0.18) });
-const alcoveLightMat = new Material({ albedo: new Color(0.90, 0.85, 0.70), emissive: new Color(1.0, 0.88, 0.60) });
 
 // Top strip (above alcove)
 sceneObjects.push(new Rectangle({
@@ -241,15 +241,6 @@ sceneObjects.push(new Rectangle({
   material: shelfMat,
 }));
 
-// ─── Alcove dim light (warm panel tucked at the top-back) ─────────────────────
-sceneObjects.push(new Mesh({
-  name: "alcoveLight",
-  material: alcoveLightMat,
-  meshObjects: [
-    new Triangle({ v1: new Vector(AX0 + 0.85, AY1 - 0.14, AZ0 + 0.75), v2: new Vector(AX1 - 0.85, AY1 - 0.14, AZ0 + 0.75), v3: new Vector(AX1 - 0.85, AY1 - 0.14, AZ1 - 0.12), material: alcoveLightMat }),
-    new Triangle({ v1: new Vector(AX0 + 0.85, AY1 - 0.14, AZ0 + 0.75), v2: new Vector(AX1 - 0.85, AY1 - 0.14, AZ1 - 0.12), v3: new Vector(AX0 + 0.85, AY1 - 0.14, AZ1 - 0.12), material: alcoveLightMat }),
-  ],
-}));
 
 // ─── Right wall with window hole ──────────────────────────────────────────────
 const WY0 = 0.3, WY1 = 4.5;
@@ -288,7 +279,7 @@ sceneObjects.push(new Rectangle({
 
 // ─── Window light — emissive plane just outside the right wall ────────────────
 const LX = 5.05;
-const sunMat = new Material({ albedo: new Color(1, 0.95, 0.80), emissive: new Color(7, 6.5, 5) });
+const sunMat = new Material({ albedo: new Color(1, 0.95, 0.80), emissive: new Color(16, 14, 10) });
 sceneObjects.push(new Mesh({
   name: "windowLight",
   material: sunMat,
@@ -310,16 +301,6 @@ sceneObjects.push(new Mesh({
   ],
 }));
 
-// ─── Fill light — warm panel above/in-front to illuminate tube fronts ────────
-const fillMat = new Material({ albedo: new Color(1, 0.92, 0.80), emissive: new Color(2.5, 2.2, 1.8) });
-sceneObjects.push(new Mesh({
-  name: "fillLight",
-  material: fillMat,
-  meshObjects: [
-    new Triangle({ v1: new Vector(-1.5, 5, -1), v2: new Vector(1.5, 5, -1), v3: new Vector(1.5, 5, 1), material: fillMat }),
-    new Triangle({ v1: new Vector(-1.5, 5, -1), v2: new Vector(1.5, 5,  1), v3: new Vector(-1.5, 5, 1), material: fillMat }),
-  ],
-}));
 
 // ─── Test tubes — four colours, right of centre (right focal zone) ────────────
 // Cluster near x=+0.8..+1.8, z=1.5..3.0 — the right horizontal focal point.
@@ -345,4 +326,4 @@ sceneObjects.push(new Sphere({
 // Large flask (2× scale) closer to the camera as the dominant foreground object.
 for (const obj of makeErlenmeyer( 1.5, 0.8, 2.0, flaskMat, liquids.amber)) sceneObjects.push(obj);
 // Normal flask further back, right side
-for (const obj of makeErlenmeyer( 1.8, 3.8, 1.0, flaskMat, liquids.blue )) sceneObjects.push(obj);
+for (const obj of makeErlenmeyer( 0.3, 3.5, 1.0, backFlaskMat, liquids.red )) sceneObjects.push(obj);
