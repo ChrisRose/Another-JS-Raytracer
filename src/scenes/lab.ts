@@ -305,8 +305,8 @@ sceneObjects.push(new Mesh({
   name: "paper",
   material: paperMat,
   meshObjects: [
-    new Triangle({ v1: new Vector(-2.286, 0.003, 0.121), v2: new Vector(-2.674, 0.003, 1.569), v3: new Vector(-1.514, 0.003, 1.879), material: paperMat }),
-    new Triangle({ v1: new Vector(-2.286, 0.003, 0.121), v2: new Vector(-1.514, 0.003, 1.879), v3: new Vector(-1.126, 0.003, 0.431), material: paperMat }),
+    new Triangle({ v1: new Vector(-2.286, 0.003, 0.121), v2: new Vector(-1.514, 0.003, 1.879), v3: new Vector(-2.674, 0.003, 1.569), material: paperMat }),
+    new Triangle({ v1: new Vector(-2.286, 0.003, 0.121), v2: new Vector(-1.126, 0.003, 0.431), v3: new Vector(-1.514, 0.003, 1.879), material: paperMat }),
   ],
 }));
 
