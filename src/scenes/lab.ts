@@ -7,11 +7,16 @@ import { Material } from "../Material.js";
 import { Mesh } from "../Mesh.js";
 import { Triangle } from "../Triangle.js";
 import { Cylinder } from "../Cylinder.js";
+import { Sphere } from "../Sphere.js";
 import { getRotationXMatrix } from "../matrix.js";
 
-export const cameraStart = new Point(0, 2.8, -2.5);
+export const cameraStart = new Point(0, 2.0, -2.5);
 export const rotateCamera = (dir: Vector) =>
   dir.multiplyWith3x3Matrix(getRotationXMatrix(16));
+
+// DOF: wide aperture focused on the jade sphere for dramatic separation.
+export const lensRadius    = 0.30;
+export const focusDistance = 4.7;
 
 // Participating media: atmospheric dust that makes the sun shaft visible.
 export const sigma_t = 0.07;  // extinction (scattering + absorption)
@@ -166,3 +171,28 @@ const tubes: [number, number, Material][] = [
 for (const [x, z, mat] of tubes) {
   for (const obj of testTube(x, z, mat)) sceneObjects.push(obj);
 }
+
+// ─── Jade sphere ──────────────────────────────────────────────────────────────
+// Dragon material: jade green waxy gloss coat over SSS body.
+// Sits center-table as the focal subject; wide DOF blurs the tubes behind it.
+sceneObjects.push(new Sphere({
+  center: new Point(0, 0.40, 2.0),
+  radius: 0.40,
+  material: new Material({
+    albedo:    new Color(0.08, 0.48, 0.22),
+    roughness: 0.08,
+    subsurface: 0.62,
+  }),
+}));
+
+// ─── Fill light ───────────────────────────────────────────────────────────────
+// Warm overhead panel illuminates front faces of glass; sampled by area-light NEE.
+const fillMat = new Material({ albedo: new Color(1, 0.92, 0.80), emissive: new Color(2.5, 2.2, 1.8) });
+sceneObjects.push(new Mesh({
+  name: "fillLight",
+  material: fillMat,
+  meshObjects: [
+    new Triangle({ v1: new Vector(-1.5, 5, -1), v2: new Vector(1.5, 5, -1), v3: new Vector(1.5, 5, 1), material: fillMat }),
+    new Triangle({ v1: new Vector(-1.5, 5, -1), v2: new Vector(1.5, 5,  1), v3: new Vector(-1.5, 5, 1), material: fillMat }),
+  ],
+}));
