@@ -18,9 +18,12 @@ export const rotateCamera = (dir: Vector) =>
   dir.multiplyWith3x3Matrix(getRotationXMatrix(18));
 
 // Participating media: atmospheric dust that makes the sun shaft visible.
-export const sigma_t = 0.07;
-export const sigma_s = 0.055;
-export const phaseG  = 0.45;
+export const sigma_t = 0.09;
+export const sigma_s = 0.08;
+export const phaseG  = 0.65;
+
+// Dark sky so escaped rays don't brighten the room from above.
+export const skyFn = (_dir: Vector) => new Color(0, 0, 0);
 
 // ─── Wood grain texture ───────────────────────────────────────────────────────
 function woodGrain(point: Point): Color {
@@ -41,8 +44,8 @@ function woodGrain(point: Point): Color {
 // ─── Materials ────────────────────────────────────────────────────────────────
 const benchTop   = new Material({ albedo: new Color(0.5, 0.35, 0.15), texture: (p) => woodGrain(p), roughness: 0.40 });
 const benchSide  = new Material({ albedo: new Color(0.28, 0.18, 0.07) });
-const wallMat    = new Material({ albedo: new Color(0.75, 0.74, 0.72) });
-const floorMat   = new Material({ albedo: new Color(0.32, 0.31, 0.30) });
+const wallMat    = new Material({ albedo: new Color(0.22, 0.21, 0.20) });
+const floorMat   = new Material({ albedo: new Color(0.12, 0.11, 0.10) });
 const glassMat   = new Material({ albedo: new Color(0, 0, 0), refractionIndex: 1.5 });
 const capMat     = new Material({ albedo: new Color(0.95, 0.95, 0.95) });
 const flaskMat     = new Material({ albedo: new Color(0.18, 0.52, 0.28), roughness: 0.55, subsurface: 0.35 });
@@ -159,7 +162,7 @@ const AX0 = -2.5, AX1 = 0.5;   // alcove x extents (shifted left)
 const AY0 =  0.5, AY1 = 3.8;   // alcove y extents
 const AZ0 =  7.0, AZ1 = 8.5;   // alcove z extents (depth 1.5)
 
-const alcoveMat      = new Material({ albedo: new Color(0.70, 0.68, 0.65) });
+const alcoveMat      = new Material({ albedo: new Color(0.22, 0.21, 0.20) });
 const shelfMat       = new Material({ albedo: new Color(0.50, 0.38, 0.18) });
 
 // Top strip (above alcove)
