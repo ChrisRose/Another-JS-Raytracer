@@ -131,20 +131,20 @@ export const sceneObjects: SceneObject[] = [];
 
 // ─── Table — narrow, lifted on legs ──────────────────────────────────────────
 sceneObjects.push(new Rectangle({
-  corner: new Point(-1.5, 0, 0),
+  corner: new Point(-2.3, 0, 0),
   v1: new Vector(1, 0, 0), v2: new Vector(0, 0, 1),
   width: 3, height: 5.5,
   normal: new Vector(0, 1, 0), orientation: "xzAxis",
   material: benchTop,
 }));
 sceneObjects.push(new Rectangle({
-  corner: new Point(-1.5, -0.12, 0),
+  corner: new Point(-2.3, -0.12, 0),
   v1: new Vector(1, 0, 0), v2: new Vector(0, 1, 0),
   width: 3, height: 0.12,
   normal: new Vector(0, 0, -1), orientation: "xyAxis",
   material: benchSide,
 }));
-for (const [lx, lz] of [[-1.38, 0.14], [1.38, 0.14], [-1.38, 5.36], [1.38, 5.36]] as [number,number][]) {
+for (const [lx, lz] of [[-2.18, 0.14], [0.58, 0.14], [-2.18, 5.36], [0.58, 5.36]] as [number,number][]) {
   sceneObjects.push(new Cylinder({ center: new Point(lx, -0.6, lz), radius: 0.05, height: 0.48, material: legMat }));
 }
 
@@ -358,8 +358,8 @@ sceneObjects.push(new Mesh({
 sceneObjects.push(new Mesh({
   name: "paper", material: paperMat,
   meshObjects: [
-    new Triangle({ v1: new Vector(-0.974, 0.003, 0.930), v2: new Vector(0.574, 0.003, 2.070), v3: new Vector(-0.586, 0.003, 2.380), material: paperMat }),
-    new Triangle({ v1: new Vector(-0.974, 0.003, 0.930), v2: new Vector( 0.186, 0.003, 0.620), v3: new Vector( 0.574, 0.003, 2.070), material: paperMat }),
+    new Triangle({ v1: new Vector(-1.774, 0.003, 0.930), v2: new Vector(-0.226, 0.003, 2.070), v3: new Vector(-1.386, 0.003, 2.380), material: paperMat }),
+    new Triangle({ v1: new Vector(-1.774, 0.003, 0.930), v2: new Vector(-0.614, 0.003, 0.620), v3: new Vector(-0.226, 0.003, 2.070), material: paperMat }),
   ],
 }));
 
@@ -367,18 +367,18 @@ sceneObjects.push(new Mesh({
 
 // Test tubes ×4 — scattered positions
 const tubeLayout: [number, number, Material][] = [
-  [ 1.1, 1.2, liquids.red  ],
-  [-0.8, 2.3, liquids.teal ],
-  [ 0.3, 4.6, liquids.amber],
-  [-0.2, 1.9, liquids.blue ],
+  [ 0.3, 1.2, liquids.red  ],
+  [-1.6, 2.3, liquids.teal ],
+  [-0.5, 4.6, liquids.amber],
+  [-1.0, 1.9, liquids.blue ],
 ];
 for (const [x, z, mat] of tubeLayout) {
   for (const o of testTube(x, z, mat)) sceneObjects.push(o);
 }
 
 // Erlenmeyers ×2
-for (const o of makeErlenmeyer( 0.7, 0.6, 1.8, flaskMat,     liquids.amber)) sceneObjects.push(o);
-for (const o of makeErlenmeyer(-0.6, 3.5, 1.0, backFlaskMat, liquids.red  )) sceneObjects.push(o);
+for (const o of makeErlenmeyer(-0.1, 0.6, 1.8, flaskMat,     liquids.amber)) sceneObjects.push(o);
+for (const o of makeErlenmeyer(-1.4, 3.5, 1.0, backFlaskMat, liquids.red  )) sceneObjects.push(o);
 
 // Faceted crystal ball (icosahedron, IOR 1.9)
 sceneObjects.push(parseMesh({
@@ -386,19 +386,25 @@ sceneObjects.push(parseMesh({
   material: new Material({ albedo: new Color(0, 0, 0), refractionIndex: 1.9 }),
   name: "crystalBall",
   scale: 0.30,
-  translate: { x: -0.5, y: 0.32, z: 1.8 },
+  translate: { x: -1.3, y: 0.32, z: 1.8 },
 }));
 
 // Frosted glass sphere
 sceneObjects.push(new Sphere({
-  center: new Point(-0.9, 0.22, 3.1),
+  center: new Point(-1.7, 0.22, 3.1),
   radius: 0.22,
   material: frostedWhite,
 }));
 
 // Frosted green vase (tall cylinder)
-sceneObjects.push(new Cylinder({ center: new Point(0.4, 0, 4.3), radius: 0.11, height: 0.70, material: frostedGreen }));
+sceneObjects.push(new Cylinder({ center: new Point(-0.4, 0, 4.3), radius: 0.11, height: 0.70, material: frostedGreen }));
 
 // Candles on table ×2
-for (const o of candle(-1.1, 0, 0.8)) sceneObjects.push(o);
-for (const o of candle(-0.5, 0, 3.5)) sceneObjects.push(o);
+for (const o of candle(-1.9, 0, 0.8)) sceneObjects.push(o);
+for (const o of candle(-1.3, 0, 3.5)) sceneObjects.push(o);
+
+// ─── Stool (right of table) ───────────────────────────────────────────────────
+sceneObjects.push(new Cylinder({ center: new Point(2.3, -0.16, 2.2), radius: 0.32, height: 0.07, material: benchTop }));
+for (const [sx, sz] of [[2.06, 1.96], [2.54, 1.96], [2.06, 2.44], [2.54, 2.44]] as [number,number][]) {
+  sceneObjects.push(new Cylinder({ center: new Point(sx, -0.6, sz), radius: 0.04, height: 0.44, material: legMat }));
+}
