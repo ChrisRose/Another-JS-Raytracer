@@ -150,14 +150,14 @@ for (const [lx, lz] of [[-2.18, 0.14], [0.58, 0.14], [-2.18, 5.36], [0.58, 5.36]
 
 // ─── Room ─────────────────────────────────────────────────────────────────────
 sceneObjects.push(new Rectangle({
-  corner: new Point(-6, -0.6, -3),
+  corner: new Point(-4, -0.6, -3),
   v1: new Vector(1, 0, 0), v2: new Vector(0, 0, 1),
-  width: 12, height: 13,
+  width: 8, height: 13,
   normal: new Vector(0, 1, 0), orientation: "xzAxis",
   material: floorMat,
 }));
 sceneObjects.push(new Rectangle({
-  corner: new Point(-5, -0.6, -3),
+  corner: new Point(-4, -0.6, -3),
   v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
   width: 13, height: 13,
   normal: new Vector(1, 0, 0), orientation: "yzAxis",
@@ -165,23 +165,23 @@ sceneObjects.push(new Rectangle({
 }));
 
 // ─── Back wall — almost entirely alcove ───────────────────────────────────────
-const AX0 = -4.2, AX1 = 4.2;
+const AX0 = -3.4, AX1 = 3.4;
 const AY0 =  0.5, AY1 = 4.0;
 const AZ0 =  7.0, AZ1 = 8.5;
 
 // Top strip
 sceneObjects.push(new Rectangle({
-  corner: new Point(-5, AY1, AZ0),
+  corner: new Point(-4, AY1, AZ0),
   v1: new Vector(1, 0, 0), v2: new Vector(0, 1, 0),
-  width: 10, height: 12.4 - AY1,
+  width: 8, height: 12.4 - AY1,
   normal: new Vector(0, 0, -1), orientation: "xyAxis",
   material: wallMat,
 }));
 // Left flank
 sceneObjects.push(new Rectangle({
-  corner: new Point(-5, -0.6, AZ0),
+  corner: new Point(-4, -0.6, AZ0),
   v1: new Vector(1, 0, 0), v2: new Vector(0, 1, 0),
-  width: AX0 + 5, height: AY1 + 0.6,
+  width: AX0 + 4, height: AY1 + 0.6,
   normal: new Vector(0, 0, -1), orientation: "xyAxis",
   material: wallMat,
 }));
@@ -189,7 +189,7 @@ sceneObjects.push(new Rectangle({
 sceneObjects.push(new Rectangle({
   corner: new Point(AX1, -0.6, AZ0),
   v1: new Vector(1, 0, 0), v2: new Vector(0, 1, 0),
-  width: 5 - AX1, height: AY1 + 0.6,
+  width: 4 - AX1, height: AY1 + 0.6,
   normal: new Vector(0, 0, -1), orientation: "xyAxis",
   material: wallMat,
 }));
@@ -232,6 +232,26 @@ sceneObjects.push(new Rectangle({
   material: alcoveMat,
 }));
 
+// ─── Alcove glass panes ───────────────────────────────────────────────────────
+// Two tall panes with a gap in the centre; slight green tint of thick glass
+const GAP      = 0.22;
+const PANE_T   = 0.10;
+const paneMat  = new Material({ albedo: new Color(0.82, 0.94, 0.88), refractionIndex: 1.52 });
+
+for (const [px0, px1, innerNX] of [
+  [AX0,   -GAP,  1],   // left pane  — inner edge faces +x
+  [ GAP,  AX1,  -1],   // right pane — inner edge faces -x
+] as [number, number, number][]) {
+  const pw = px1 - px0;
+  // front face (facing camera)
+  sceneObjects.push(new Rectangle({ corner: new Point(px0, AY0, AZ0),          v1: new Vector(1,0,0), v2: new Vector(0,1,0), width: pw,     height: AY1-AY0, normal: new Vector(0,0,-1),    orientation: "xyAxis", material: paneMat }));
+  // back face (facing alcove interior)
+  sceneObjects.push(new Rectangle({ corner: new Point(px0, AY0, AZ0+PANE_T),   v1: new Vector(1,0,0), v2: new Vector(0,1,0), width: pw,     height: AY1-AY0, normal: new Vector(0,0, 1),    orientation: "xyAxis", material: paneMat }));
+  // inner edge (the cut face visible through the gap)
+  const ex = innerNX > 0 ? px1 : px0;
+  sceneObjects.push(new Rectangle({ corner: new Point(ex, AY0, AZ0),            v1: new Vector(0,1,0), v2: new Vector(0,0,1), height: AY1-AY0, width: PANE_T, normal: new Vector(innerNX,0,0), orientation: "yzAxis", material: paneMat }));
+}
+
 // ─── Alcove shelves ───────────────────────────────────────────────────────────
 const SY1 = 1.5, SY2 = 2.8;
 const SZmid = (AZ0 + AZ1) / 2;
@@ -252,17 +272,17 @@ let ti = 0;
 
 // Lower shelf — 11 items, chaotic spacing, varied z depth
 const lowerItems: [number, number, 'candle'|'tube'|'flask'][] = [
-  [-3.9, 7.32, 'candle'],
-  [-3.2, 7.90, 'tube'  ],
-  [-2.6, 8.08, 'candle'],
-  [-1.8, 7.50, 'flask' ],
-  [-1.1, 7.82, 'candle'],
-  [-0.4, 8.16, 'tube'  ],
+  [-3.1, 7.32, 'candle'],
+  [-2.5, 7.90, 'tube'  ],
+  [-1.9, 8.08, 'candle'],
+  [-1.4, 7.50, 'flask' ],
+  [-0.8, 7.82, 'candle'],
+  [-0.2, 8.16, 'tube'  ],
   [ 0.4, 7.38, 'flask' ],
   [ 1.0, 7.95, 'candle'],
-  [ 1.8, 7.60, 'tube'  ],
-  [ 2.8, 8.08, 'candle'],
-  [ 3.6, 7.44, 'candle'],
+  [ 1.6, 7.60, 'tube'  ],
+  [ 2.4, 8.08, 'candle'],
+  [ 3.1, 7.44, 'candle'],
 ];
 for (const [x, z, type] of lowerItems) {
   if (type === 'candle') {
@@ -276,16 +296,16 @@ for (const [x, z, type] of lowerItems) {
 
 // Upper shelf — 10 items, varied types, chaotic z depth
 const upperItems: [number, number, 'candle'|'vase'|'tube'][] = [
-  [-3.7, 7.84, 'vase'  ],
-  [-2.9, 7.50, 'candle'],
-  [-2.1, 8.10, 'tube'  ],
-  [-1.3, 7.36, 'vase'  ],
-  [-0.4, 7.78, 'candle'],
-  [ 0.5, 8.14, 'vase'  ],
-  [ 1.3, 7.55, 'tube'  ],
-  [ 2.1, 7.92, 'candle'],
-  [ 3.0, 7.40, 'vase'  ],
-  [ 3.8, 8.06, 'candle'],
+  [-3.0, 7.84, 'vase'  ],
+  [-2.3, 7.50, 'candle'],
+  [-1.6, 8.10, 'tube'  ],
+  [-0.9, 7.36, 'vase'  ],
+  [-0.2, 7.78, 'candle'],
+  [ 0.6, 8.14, 'vase'  ],
+  [ 1.2, 7.55, 'tube'  ],
+  [ 1.9, 7.92, 'candle'],
+  [ 2.6, 7.40, 'vase'  ],
+  [ 3.2, 8.06, 'candle'],
 ];
 for (const [x, z, type] of upperItems) {
   if (type === 'candle') {
@@ -302,28 +322,28 @@ const WY0 = 0.5, WY1 = 4.5;
 const WZ0 = 0.5, WZ1 = 3.7;
 
 sceneObjects.push(new Rectangle({
-  corner: new Point(5, -0.6, -3),
+  corner: new Point(4, -0.6, -3),
   v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
   width: 13, height: WY0 + 0.6,
   normal: new Vector(-1, 0, 0), orientation: "yzAxis",
   material: wallMat,
 }));
 sceneObjects.push(new Rectangle({
-  corner: new Point(5, WY1, -3),
+  corner: new Point(4, WY1, -3),
   v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
   width: 13, height: 13 - WY1,
   normal: new Vector(-1, 0, 0), orientation: "yzAxis",
   material: wallMat,
 }));
 sceneObjects.push(new Rectangle({
-  corner: new Point(5, WY0, -3),
+  corner: new Point(4, WY0, -3),
   v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
   width: WZ0 + 3, height: WY1 - WY0,
   normal: new Vector(-1, 0, 0), orientation: "yzAxis",
   material: wallMat,
 }));
 sceneObjects.push(new Rectangle({
-  corner: new Point(5, WY0, WZ1),
+  corner: new Point(4, WY0, WZ1),
   v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
   width: 10 - WZ1, height: WY1 - WY0,
   normal: new Vector(-1, 0, 0), orientation: "yzAxis",
@@ -334,7 +354,7 @@ sceneObjects.push(new Rectangle({
 // Vertical dividers (z)
 for (const zs of [WZ0 + (WZ1-WZ0)/3, WZ0 + 2*(WZ1-WZ0)/3]) {
   sceneObjects.push(new Rectangle({
-    corner: new Point(4.90, WY0, zs - 0.04),
+    corner: new Point(3.90, WY0, zs - 0.04),
     v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
     height: WY1 - WY0, width: 0.08,
     normal: new Vector(-1, 0, 0), orientation: "yzAxis",
@@ -344,7 +364,7 @@ for (const zs of [WZ0 + (WZ1-WZ0)/3, WZ0 + 2*(WZ1-WZ0)/3]) {
 // Horizontal dividers (y)
 for (const ys of [WY0 + (WY1-WY0)/4, WY0 + 2*(WY1-WY0)/4, WY0 + 3*(WY1-WY0)/4]) {
   sceneObjects.push(new Rectangle({
-    corner: new Point(4.90, ys - 0.04, WZ0),
+    corner: new Point(3.90, ys - 0.04, WZ0),
     v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
     height: 0.08, width: WZ1 - WZ0,
     normal: new Vector(-1, 0, 0), orientation: "yzAxis",
@@ -353,7 +373,7 @@ for (const ys of [WY0 + (WY1-WY0)/4, WY0 + 2*(WY1-WY0)/4, WY0 + 3*(WY1-WY0)/4]) 
 }
 
 // ─── Window light ─────────────────────────────────────────────────────────────
-const LX = 5.05;
+const LX = 4.05;
 const sunMat = new Material({ albedo: new Color(1, 0.95, 0.80), emissive: new Color(22, 20, 14) });
 sceneObjects.push(new Mesh({
   name: "windowLight",
