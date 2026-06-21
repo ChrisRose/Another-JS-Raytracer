@@ -206,22 +206,24 @@ function makeErlenmeyer(
 
 export const sceneObjects: SceneObject[] = [];
 
-// ─── Table — narrow, lifted on legs ──────────────────────────────────────────
+// ─── Table — rotated 90° CW (viewed from above) ──────────────────────────────
+// Transform: x' = z − 3.55,  z' = 1.95 − x  (pivot = table centre −0.8, 2.75)
+// Resulting footprint: x −3.55…1.95, z 1.25…4.25
 sceneObjects.push(new Rectangle({
-  corner: new Point(-2.3, 0, 0),
+  corner: new Point(-3.55, 0, 1.25),
   v1: new Vector(1, 0, 0), v2: new Vector(0, 0, 1),
-  width: 3, height: 5.5,
+  width: 5.5, height: 3,
   normal: new Vector(0, 1, 0), orientation: "xzAxis",
   material: benchTop,
 }));
 sceneObjects.push(new Rectangle({
-  corner: new Point(-2.3, -0.12, 0),
+  corner: new Point(-3.55, -0.12, 1.25),
   v1: new Vector(1, 0, 0), v2: new Vector(0, 1, 0),
-  width: 3, height: 0.12,
+  width: 5.5, height: 0.12,
   normal: new Vector(0, 0, -1), orientation: "xyAxis",
   material: benchSide,
 }));
-for (const [lx, lz] of [[-2.18, 0.14], [0.58, 0.14], [-2.18, 5.36], [0.58, 5.36]] as [number,number][]) {
+for (const [lx, lz] of [[-3.41, 4.13], [-3.41, 1.37], [1.81, 4.13], [1.81, 1.37]] as [number,number][]) {
   sceneObjects.push(new Cylinder({ center: new Point(lx, -0.6, lz), radius: 0.05, height: 0.48, material: legMat }));
 }
 
@@ -455,20 +457,10 @@ sceneObjects.push(new Mesh({
   ],
 }));
 
-// ─── Paper ────────────────────────────────────────────────────────────────────
-// 1.2×1.5 sheet rotated 15° CW around y, centred at (-0.2, 0, 1.5)
-sceneObjects.push(new Mesh({
-  name: "paper", material: paperMat,
-  meshObjects: [
-    new Triangle({ v1: new Vector(-1.774, 0.003, 0.930), v2: new Vector(-0.226, 0.003, 2.070), v3: new Vector(-1.386, 0.003, 2.380), material: paperMat }),
-    new Triangle({ v1: new Vector(-1.774, 0.003, 0.930), v2: new Vector(-0.614, 0.003, 0.620), v3: new Vector(-0.226, 0.003, 2.070), material: paperMat }),
-  ],
-}));
-
 // ─── Table items ──────────────────────────────────────────────────────────────
 
-// Test tubes in a wooden rack, rotated 20° around y-axis
-const RACK_CX = 0.1, RACK_CZ = 2.5, RACK_N = 4, RACK_SP = 0.25, RACK_ANG = 20;
+// Test tubes in a wooden rack (rack angle = 20° − 90° = −70° after table rotation)
+const RACK_CX = -1.05, RACK_CZ = 1.85, RACK_N = 4, RACK_SP = 0.25, RACK_ANG = -70;
 const rack_θ = RACK_ANG * Math.PI / 180;
 for (const o of tubeRack(RACK_CX, RACK_CZ, RACK_N, RACK_SP, RACK_ANG)) sceneObjects.push(o);
 const rackLiquids = [liquids.red, liquids.teal, liquids.amber, liquids.blue];
@@ -480,8 +472,8 @@ for (let i = 0; i < RACK_N; i++) {
 }
 
 // Erlenmeyers ×2
-for (const o of makeErlenmeyer(-1.7, 0.6, 1.8, flaskMat,     liquids.amber)) sceneObjects.push(o);
-for (const o of makeErlenmeyer(-1.4, 3.5, 1.0, backFlaskMat, liquids.red  )) sceneObjects.push(o);
+for (const o of makeErlenmeyer(-2.95, 3.65, 1.8, flaskMat,     liquids.amber)) sceneObjects.push(o);
+for (const o of makeErlenmeyer(-0.05, 3.35, 1.0, backFlaskMat, liquids.red  )) sceneObjects.push(o);
 
 // Faceted crystal ball (icosahedron, IOR 1.9)
 sceneObjects.push(parseMesh({
@@ -489,40 +481,48 @@ sceneObjects.push(parseMesh({
   material: new Material({ albedo: new Color(0, 0, 0), refractionIndex: 1.9 }),
   name: "crystalBall",
   scale: 0.30,
-  translate: { x: -1.3, y: 0.32, z: 1.8 },
+  translate: { x: -1.75, y: 0.32, z: 3.25 },
 }));
 
 // Frosted glass sphere
 sceneObjects.push(new Sphere({
-  center: new Point(-1.7, 0.22, 3.1),
+  center: new Point(-0.45, 0.22, 3.65),
   radius: 0.22,
   material: frostedWhite,
 }));
 
 // Frosted green vase (tall cylinder)
-sceneObjects.push(new Cylinder({ center: new Point(-2.0, 0, 4.3), radius: 0.11, height: 0.70, material: frostedGreen }));
+sceneObjects.push(new Cylinder({ center: new Point(0.75, 0, 3.95), radius: 0.11, height: 0.70, material: frostedGreen }));
 
 // Candles on table ×2
-for (const o of candle(-1.9, 0, 0.8)) sceneObjects.push(o);
-for (const o of candle(-1.3, 0, 3.5)) sceneObjects.push(o);
+for (const o of candle(-2.75, 0, 3.85)) sceneObjects.push(o);
+for (const o of candle(-0.05, 0, 3.25)) sceneObjects.push(o);
 
-// ─── Stool (right of table) ───────────────────────────────────────────────────
-sceneObjects.push(new Cylinder({ center: new Point(0.85, -0.12, 2.2), radius: 0.32, height: 0.07, material: benchTop }));
-for (const [sx, sz] of [[0.63, 1.98], [1.07, 1.98], [0.63, 2.42], [1.07, 2.42]] as [number,number][]) {
+// ─── Stool (front of table) ───────────────────────────────────────────────────
+sceneObjects.push(new Cylinder({ center: new Point(-1.35, -0.12, 1.10), radius: 0.32, height: 0.07, material: benchTop }));
+for (const [sx, sz] of [[-1.57, 1.32], [-1.57, 0.88], [-1.13, 1.32], [-1.13, 0.88]] as [number,number][]) {
   sceneObjects.push(new Cylinder({ center: new Point(sx, -0.6, sz), radius: 0.04, height: 0.48, material: legMat }));
 }
 
+// ─── Paper ────────────────────────────────────────────────────────────────────
+// Original 1.2×1.5 sheet, now 90° CW rotated with the table
+sceneObjects.push(new Mesh({
+  name: "paper", material: paperMat,
+  meshObjects: [
+    new Triangle({ v1: new Vector(-2.620, 0.003, 3.724), v2: new Vector(-1.480, 0.003, 2.176), v3: new Vector(-1.170, 0.003, 3.336), material: paperMat }),
+    new Triangle({ v1: new Vector(-2.620, 0.003, 3.724), v2: new Vector(-2.930, 0.003, 2.564), v3: new Vector(-1.480, 0.003, 2.176), material: paperMat }),
+  ],
+}));
+
 // ─── Pencil (diagonal, half on paper) ────────────────────────────────────────
-// dir = normalize(0.456, 0, 1.174) ≈ (0.362, 0, 0.932); perp = (-0.932, 0, 0.362)
-// A = off-paper end, B = on-paper end; hw = 0.015 half-width
 const pencilMat   = new Material({ albedo: new Color(0.96, 0.83, 0.10), roughness: 0.50 });
 const graphiteMat = new Material({ albedo: new Color(0.22, 0.20, 0.18) });
 {
-  const c1   = new Vector(-1.242, 0.006, 0.368);  // A + hw*perp
-  const c2   = new Vector(-1.214, 0.006, 0.358);  // A - hw*perp
-  const c3   = new Vector(-0.786, 0.006, 1.542);  // B + hw*perp
-  const c4   = new Vector(-0.758, 0.006, 1.532);  // B - hw*perp
-  const cTip = new Vector(-1.242, 0.006, 0.326);  // A - 0.04*dir (graphite tip)
+  const c1   = new Vector(-3.182, 0.006, 3.192);
+  const c2   = new Vector(-3.192, 0.006, 3.164);
+  const c3   = new Vector(-2.008, 0.006, 2.736);
+  const c4   = new Vector(-2.018, 0.006, 2.708);
+  const cTip = new Vector(-3.224, 0.006, 3.192);
   sceneObjects.push(new Mesh({
     name: "pencil", material: pencilMat,
     meshObjects: [
