@@ -428,7 +428,7 @@ sceneObjects.push(new Sphere({
 }));
 
 // Frosted green vase (tall cylinder)
-sceneObjects.push(new Cylinder({ center: new Point(-1.5, 0, 4.3), radius: 0.11, height: 0.70, material: frostedGreen }));
+sceneObjects.push(new Cylinder({ center: new Point(-2.0, 0, 4.3), radius: 0.11, height: 0.70, material: frostedGreen }));
 
 // Candles on table ×2
 for (const o of candle(-1.9, 0, 0.8)) sceneObjects.push(o);
