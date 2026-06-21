@@ -247,18 +247,23 @@ for (const sy of [SY1, SY2]) {
 }
 
 // ─── Alcove shelf items ───────────────────────────────────────────────────────
-// Lower shelf: irregular x spacing + z-depth scatter
-const lowerItems: [number, number, 'candle'|'tube'|'flask'][] = [
-  [-3.7, 7.58, 'candle'],
-  [-2.6, 7.88, 'tube'  ],
-  [-1.7, 7.64, 'candle'],
-  [-0.3, 7.82, 'flask' ],
-  [ 0.9, 7.60, 'candle'],
-  [ 2.2, 7.90, 'tube'  ],
-  [ 3.3, 7.72, 'candle'],
-];
 const tubeColors = [liquids.red, liquids.teal, liquids.amber, liquids.blue];
 let ti = 0;
+
+// Lower shelf — 11 items, chaotic spacing, varied z depth
+const lowerItems: [number, number, 'candle'|'tube'|'flask'][] = [
+  [-3.9, 7.32, 'candle'],
+  [-3.2, 7.90, 'tube'  ],
+  [-2.6, 8.08, 'candle'],
+  [-1.8, 7.50, 'flask' ],
+  [-1.1, 7.82, 'candle'],
+  [-0.4, 8.16, 'tube'  ],
+  [ 0.4, 7.38, 'flask' ],
+  [ 1.0, 7.95, 'candle'],
+  [ 1.8, 7.60, 'tube'  ],
+  [ 2.8, 8.08, 'candle'],
+  [ 3.6, 7.44, 'candle'],
+];
 for (const [x, z, type] of lowerItems) {
   if (type === 'candle') {
     for (const o of candle(x, SY1, z)) sceneObjects.push(o);
@@ -269,18 +274,24 @@ for (const [x, z, type] of lowerItems) {
   }
 }
 
-// Upper shelf: irregular x spacing + z-depth scatter
-const upperItems: [number, number, 'candle'|'vase'][] = [
-  [-3.3, 7.76, 'vase'  ],
-  [-1.8, 7.58, 'candle'],
-  [-0.6, 7.88, 'vase'  ],
-  [ 0.7, 7.65, 'candle'],
-  [ 1.9, 7.84, 'vase'  ],
-  [ 3.1, 7.60, 'candle'],
+// Upper shelf — 10 items, varied types, chaotic z depth
+const upperItems: [number, number, 'candle'|'vase'|'tube'][] = [
+  [-3.7, 7.84, 'vase'  ],
+  [-2.9, 7.50, 'candle'],
+  [-2.1, 8.10, 'tube'  ],
+  [-1.3, 7.36, 'vase'  ],
+  [-0.4, 7.78, 'candle'],
+  [ 0.5, 8.14, 'vase'  ],
+  [ 1.3, 7.55, 'tube'  ],
+  [ 2.1, 7.92, 'candle'],
+  [ 3.0, 7.40, 'vase'  ],
+  [ 3.8, 8.06, 'candle'],
 ];
 for (const [x, z, type] of upperItems) {
   if (type === 'candle') {
     for (const o of candle(x, SY2, z)) sceneObjects.push(o);
+  } else if (type === 'tube') {
+    for (const o of alcoveTube(x, SY2, z, tubeColors[ti++ % 4])) sceneObjects.push(o);
   } else {
     sceneObjects.push(new Cylinder({ center: new Point(x, SY2, z), radius: 0.065, height: 0.38, material: frostedWhite }));
   }
