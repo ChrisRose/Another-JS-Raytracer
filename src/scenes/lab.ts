@@ -61,21 +61,37 @@ const liquids = {
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-function tubeRack(cx: number, cz: number, n: number, spacing: number): SceneObject[] {
+function tubeRack(cx: number, cz: number, n: number, spacing: number, angleDeg = 0): SceneObject[] {
+  const θ = angleDeg * Math.PI / 180;
+  const cosT = Math.cos(θ), sinT = Math.sin(θ);
+  // local rack coords → world (rotate around y-axis about rack centre)
+  const p = (lx: number, ly: number, lz: number) =>
+    new Vector(cx + lx * cosT - lz * sinT, ly, cz + lx * sinT + lz * cosT);
+
   const hw = (n - 1) * spacing / 2 + 0.14;
-  const x0 = cx - hw, x1 = cx + hw;
-  const d = 0.20, z0 = cz - d / 2;
+  const d = 0.20;
   const m = rackMat;
+  const tris: Triangle[] = [];
+
+  // Build top face + front face for a horizontal bar
+  const bar = (ly0: number, ly1: number) => {
+    // top face (normal +y): winding for (v1-v2)×(v3-v2) = +y
+    tris.push(new Triangle({ v1: p(-hw, ly1, -d/2), v2: p( hw, ly1,  d/2), v3: p(-hw, ly1,  d/2), material: m }));
+    tris.push(new Triangle({ v1: p(-hw, ly1, -d/2), v2: p( hw, ly1, -d/2), v3: p( hw, ly1,  d/2), material: m }));
+    // front face (local -z, normal toward camera): winding for -z local normal
+    tris.push(new Triangle({ v1: p(-hw, ly0, -d/2), v2: p( hw, ly1, -d/2), v3: p(-hw, ly1, -d/2), material: m }));
+    tris.push(new Triangle({ v1: p(-hw, ly0, -d/2), v2: p( hw, ly0, -d/2), v3: p( hw, ly1, -d/2), material: m }));
+  };
+
+  bar(-0.05, 0.10);  // bottom bar
+  bar(0.50,  0.57);  // top bar
+
+  const lp = p(-hw + 0.07, -0.05, 0);
+  const rp = p( hw - 0.07, -0.05, 0);
   return [
-    // Bottom bar (top face + front face)
-    new Rectangle({ corner: new Point(x0, 0.10, z0), v1: new Vector(1,0,0), v2: new Vector(0,0,1), width: x1-x0, height: d, normal: new Vector(0,1,0), orientation: "xzAxis", material: m }),
-    new Rectangle({ corner: new Point(x0, -0.05, z0), v1: new Vector(1,0,0), v2: new Vector(0,1,0), width: x1-x0, height: 0.15, normal: new Vector(0,0,-1), orientation: "xyAxis", material: m }),
-    // Top bar (top face + front face)
-    new Rectangle({ corner: new Point(x0, 0.57, z0), v1: new Vector(1,0,0), v2: new Vector(0,0,1), width: x1-x0, height: d, normal: new Vector(0,1,0), orientation: "xzAxis", material: m }),
-    new Rectangle({ corner: new Point(x0, 0.50, z0), v1: new Vector(1,0,0), v2: new Vector(0,1,0), width: x1-x0, height: 0.07, normal: new Vector(0,0,-1), orientation: "xyAxis", material: m }),
-    // End posts
-    new Cylinder({ center: new Point(x0 + 0.07, -0.05, cz), radius: 0.07, height: 0.62, material: m }),
-    new Cylinder({ center: new Point(x1 - 0.07, -0.05, cz), radius: 0.07, height: 0.62, material: m }),
+    new Mesh({ name: "rackBars", material: m, meshObjects: tris }),
+    new Cylinder({ center: new Point(lp.x, lp.y, lp.z), radius: 0.07, height: 0.62, material: m }),
+    new Cylinder({ center: new Point(rp.x, rp.y, rp.z), radius: 0.07, height: 0.62, material: m }),
   ];
 }
 
@@ -415,13 +431,16 @@ sceneObjects.push(new Mesh({
 
 // ─── Table items ──────────────────────────────────────────────────────────────
 
-// Test tubes in a wooden rack
-const RACK_CX = 0.1, RACK_CZ = 2.5, RACK_N = 4, RACK_SP = 0.25;
-for (const o of tubeRack(RACK_CX, RACK_CZ, RACK_N, RACK_SP)) sceneObjects.push(o);
+// Test tubes in a wooden rack, rotated 20° around y-axis
+const RACK_CX = 0.1, RACK_CZ = 2.5, RACK_N = 4, RACK_SP = 0.25, RACK_ANG = 20;
+const rack_θ = RACK_ANG * Math.PI / 180;
+for (const o of tubeRack(RACK_CX, RACK_CZ, RACK_N, RACK_SP, RACK_ANG)) sceneObjects.push(o);
 const rackLiquids = [liquids.red, liquids.teal, liquids.amber, liquids.blue];
 for (let i = 0; i < RACK_N; i++) {
-  const tx = RACK_CX + (i - (RACK_N - 1) / 2) * RACK_SP;
-  for (const o of testTube(tx, RACK_CZ, rackLiquids[i])) sceneObjects.push(o);
+  const lx = (i - (RACK_N - 1) / 2) * RACK_SP;
+  const tx = RACK_CX + lx * Math.cos(rack_θ);
+  const tz = RACK_CZ + lx * Math.sin(rack_θ);
+  for (const o of testTube(tx, tz, rackLiquids[i])) sceneObjects.push(o);
 }
 
 // Erlenmeyers ×2
