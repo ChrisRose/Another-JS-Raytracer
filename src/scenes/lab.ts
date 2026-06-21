@@ -397,14 +397,14 @@ sceneObjects.push(new Sphere({
 }));
 
 // Frosted green vase (tall cylinder)
-sceneObjects.push(new Cylinder({ center: new Point(-0.4, 0, 4.3), radius: 0.11, height: 0.70, material: frostedGreen }));
+sceneObjects.push(new Cylinder({ center: new Point(-1.5, 0, 4.3), radius: 0.11, height: 0.70, material: frostedGreen }));
 
 // Candles on table ×2
 for (const o of candle(-1.9, 0, 0.8)) sceneObjects.push(o);
 for (const o of candle(-1.3, 0, 3.5)) sceneObjects.push(o);
 
 // ─── Stool (right of table) ───────────────────────────────────────────────────
-sceneObjects.push(new Cylinder({ center: new Point(2.3, -0.07, 2.2), radius: 0.32, height: 0.07, material: benchTop }));
-for (const [sx, sz] of [[2.06, 1.96], [2.54, 1.96], [2.06, 2.44], [2.54, 2.44]] as [number,number][]) {
-  sceneObjects.push(new Cylinder({ center: new Point(sx, -0.6, sz), radius: 0.04, height: 0.53, material: legMat }));
+sceneObjects.push(new Cylinder({ center: new Point(0.85, -0.12, 2.2), radius: 0.32, height: 0.07, material: benchTop }));
+for (const [sx, sz] of [[0.63, 1.98], [1.07, 1.98], [0.63, 2.42], [1.07, 2.42]] as [number,number][]) {
+  sceneObjects.push(new Cylinder({ center: new Point(sx, -0.6, sz), radius: 0.04, height: 0.48, material: legMat }));
 }
