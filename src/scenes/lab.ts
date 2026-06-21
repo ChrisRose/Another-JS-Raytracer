@@ -276,34 +276,41 @@ sceneObjects.push(new Rectangle({
   material: wallMat,
 }));
 
-// ─── Arched alcove opening ────────────────────────────────────────────────────
-// Semicircular arch: radius = half alcove width, peak at AY1
+// ─── Arched alcove entrance ───────────────────────────────────────────────────
+// Narrowed entrance (−1.8 → 1.8) gives radius=1.8, spring line at y=2.2
 {
-  const arch_r  = (AX1 - AX0) / 2;           // 3.4
-  const arch_cx = (AX0 + AX1) / 2;            // 0
-  const arch_sy = AY1 - arch_r;               // spring line y ≈ 0.6
-  const AZ_ARCH = AZ0 - 0.01;                 // just in front of glass panes
+  const EX0 = -1.8, EX1 = 1.8;
+  const arch_r  = (EX1 - EX0) / 2;   // 1.8
+  const arch_cy = AY1 - arch_r;       // spring line at y=2.2
   const ARCH_N  = 24;
-  const archPt  = (a: number) => new Vector(arch_cx + arch_r * Math.cos(a), arch_sy + arch_r * Math.sin(a), AZ_ARCH);
-  const archTris: Triangle[] = [];
+  const archPt  = (a: number) => new Vector(arch_r * Math.cos(a), arch_cy + arch_r * Math.sin(a), AZ0);
 
+  // Wall panels filling the gap between alcove width and entrance width
+  for (const [x0, w] of [[AX0, EX0 - AX0], [EX1, AX1 - EX1]] as [number, number][]) {
+    sceneObjects.push(new Rectangle({
+      corner: new Point(x0, AY0, AZ0),
+      v1: new Vector(1, 0, 0), v2: new Vector(0, 1, 0),
+      width: w, height: AY1 - AY0,
+      normal: new Vector(0, 0, -1), orientation: "xyAxis",
+      material: wallMat,
+    }));
+  }
+
+  // Spandrel triangles — wall fill in corners above spring line
+  const archTris: Triangle[] = [];
   for (let i = 0; i < ARCH_N; i++) {
     const a0 = Math.PI * i / ARCH_N;
     const a1 = Math.PI * (i + 1) / ARCH_N;
     const P0 = archPt(a0), P1 = archPt(a1);
     if (i < ARCH_N / 2) {
-      // Right spandrel — fan from (AX1, AY1)
-      archTris.push(new Triangle({ v1: P1, v2: P0, v3: new Vector(AX1, AY1, AZ_ARCH), material: wallMat }));
+      // Right spandrel — fan from (EX1, AY1)
+      archTris.push(new Triangle({ v1: P1, v2: P0, v3: new Vector(EX1, AY1, AZ0), material: wallMat }));
     } else {
-      // Left spandrel — fan from (AX0, AY1)
-      archTris.push(new Triangle({ v1: new Vector(AX0, AY1, AZ_ARCH), v2: P1, v3: P0, material: wallMat }));
+      // Left spandrel — fan from (EX0, AY1)
+      archTris.push(new Triangle({ v1: new Vector(EX0, AY1, AZ0), v2: P1, v3: P0, material: wallMat }));
     }
   }
-  // Thin strip below spring line (AY0 → arch_sy)
-  archTris.push(new Triangle({ v1: new Vector(AX0, AY0, AZ_ARCH), v2: new Vector(AX1, arch_sy, AZ_ARCH), v3: new Vector(AX0, arch_sy, AZ_ARCH), material: wallMat }));
-  archTris.push(new Triangle({ v1: new Vector(AX0, AY0, AZ_ARCH), v2: new Vector(AX1, AY0,   AZ_ARCH), v3: new Vector(AX1, arch_sy, AZ_ARCH), material: wallMat }));
-
-  sceneObjects.push(new Mesh({ name: "archFrame", material: wallMat, meshObjects: archTris }));
+  sceneObjects.push(new Mesh({ name: "archSpandrel", material: wallMat, meshObjects: archTris }));
 }
 
 // ─── Alcove interior ──────────────────────────────────────────────────────────
@@ -336,25 +343,6 @@ sceneObjects.push(new Rectangle({
   material: alcoveMat,
 }));
 
-// ─── Alcove glass panes ───────────────────────────────────────────────────────
-// Two tall panes with a gap in the centre; slight green tint of thick glass
-const GAP      = 0.22;
-const PANE_T   = 0.10;
-const paneMat  = new Material({ albedo: new Color(0.82, 0.94, 0.88), refractionIndex: 1.52 });
-
-for (const [px0, px1, innerNX] of [
-  [AX0,   -GAP,  1],   // left pane  — inner edge faces +x
-  [ GAP,  AX1,  -1],   // right pane — inner edge faces -x
-] as [number, number, number][]) {
-  const pw = px1 - px0;
-  // front face (facing camera)
-  sceneObjects.push(new Rectangle({ corner: new Point(px0, AY0, AZ0),          v1: new Vector(1,0,0), v2: new Vector(0,1,0), width: pw,     height: AY1-AY0, normal: new Vector(0,0,-1),    orientation: "xyAxis", material: paneMat }));
-  // back face (facing alcove interior)
-  sceneObjects.push(new Rectangle({ corner: new Point(px0, AY0, AZ0+PANE_T),   v1: new Vector(1,0,0), v2: new Vector(0,1,0), width: pw,     height: AY1-AY0, normal: new Vector(0,0, 1),    orientation: "xyAxis", material: paneMat }));
-  // inner edge (the cut face visible through the gap)
-  const ex = innerNX > 0 ? px1 : px0;
-  sceneObjects.push(new Rectangle({ corner: new Point(ex, AY0, AZ0),            v1: new Vector(0,1,0), v2: new Vector(0,0,1), height: AY1-AY0, width: PANE_T, normal: new Vector(innerNX,0,0), orientation: "yzAxis", material: paneMat }));
-}
 
 // ─── Alcove shelves ───────────────────────────────────────────────────────────
 const SY1 = 1.5, SY2 = 2.8;
