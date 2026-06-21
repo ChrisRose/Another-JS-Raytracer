@@ -17,11 +17,10 @@ export const cameraStart = new Point(0, 3.2, -3.2);
 export const rotateCamera = (dir: Vector) =>
   dir.multiplyWith3x3Matrix(getRotationXMatrix(18));
 
-// Participating media: dense dust for a visible shaft.
-// phaseG=0 (isotropic) works better for a side window — forward scatter
-// biases rays along the camera direction, away from the lateral light source.
-export const sigma_t = 0.40;
-export const sigma_s = 0.36;
+// sigma_t=0.10: low enough to converge cleanly at 96 passes, still shows shaft.
+// High sigma_t causes firefly noise because rare scatter events hit the bright window.
+export const sigma_t = 0.10;
+export const sigma_s = 0.09;
 export const phaseG  = 0.0;
 
 // Dark sky so escaped rays don't brighten the room from above.
@@ -284,7 +283,7 @@ sceneObjects.push(new Rectangle({
 
 // ─── Window light — emissive plane just outside the right wall ────────────────
 const LX = 5.05;
-const sunMat = new Material({ albedo: new Color(1, 0.95, 0.80), emissive: new Color(220, 198, 143) });
+const sunMat = new Material({ albedo: new Color(1, 0.95, 0.80), emissive: new Color(90, 81, 58) });
 sceneObjects.push(new Mesh({
   name: "windowLight",
   material: sunMat,
