@@ -278,7 +278,14 @@ const sampleGGX = (normal: Vector, alpha2: number): Vector => {
     .normalize();
 };
 
-// Henyey-Greenstein phase function importance sampling.
+// Evaluate HG phase function (solid-angle PDF).  Used for volumetric NEE weight.
+const hgPhase = (cosTheta: number, g: number): number => {
+  if (Math.abs(g) < 1e-3) return 1 / (4 * Math.PI);
+  const g2 = g * g;
+  return (1 - g2) / (4 * Math.PI * Math.pow(Math.max(0, 1 + g2 - 2 * g * cosTheta), 1.5));
+};
+
+
 // g=0 → isotropic, g>0 → forward scatter (dust), g<0 → back scatter.
 const sampleHenyeyGreenstein = (inDir: Vector, g: number): Vector => {
   const u = Math.random();
@@ -428,11 +435,59 @@ const traceRay = ({
     const tSurface = intersected ? distance(intersected.point, ray.start) : Infinity;
     if (tScatter < tSurface) {
       const scatterPt = ray.getPoint(tScatter);
-      const newDir = sampleHenyeyGreenstein(ray.dir.normalize(), phaseG);
-      const sa = sigma_s / sigma_t; // single-scatter albedo
-      return new Color(sa, sa, sa).multiplyWithColor(
-        traceRay({ ray: new Ray(scatterPt, newDir), imageMaps, bounceDepth: bounceDepth + 1, includeEmission: true, i, j, k })
+      const inDir = ray.dir.normalize();
+      const sa = sigma_s / sigma_t;
+
+      // ── Volumetric NEE: direct-sample the area light from the scatter point ──
+      // This is what makes god rays converge — without it we rely on the
+      // scattered ray randomly finding the tiny window, which takes thousands of passes.
+      let nee = new Color(0, 0, 0);
+      for (const obj of sceneObjects) {
+        if (obj.type !== "mesh") continue;
+        const mesh = obj as Mesh;
+        const emissive = mesh.material?.emissive;
+        if (!emissive || (emissive.r === 0 && emissive.g === 0 && emissive.b === 0)) continue;
+        type ETri = { tri: Triangle; area: number };
+        const tris: ETri[] = [];
+        for (const prim of mesh.meshObjects) {
+          if (prim.type !== "triangle") continue;
+          const tri = prim as Triangle;
+          const e1 = tri.v2.subtract(tri.v1);
+          const e2 = tri.v3.subtract(tri.v1);
+          tris.push({ tri, area: 0.5 * e1.crossProduct(e2).length() });
+        }
+        if (tris.length === 0) continue;
+        const totalArea = tris.reduce((s, t) => s + t.area, 0);
+        let rnd = Math.random() * totalArea;
+        let chosen = tris[tris.length - 1];
+        for (const t of tris) { rnd -= t.area; if (rnd <= 0) { chosen = t; break; } }
+        const sq = Math.sqrt(Math.random()), r2 = Math.random();
+        const b0 = 1 - sq, b1 = sq * (1 - r2), b2 = sq * r2;
+        const { tri } = chosen;
+        const lp = new Point(
+          b0 * tri.v1.x + b1 * tri.v2.x + b2 * tri.v3.x,
+          b0 * tri.v1.y + b1 * tri.v2.y + b2 * tri.v3.y,
+          b0 * tri.v1.z + b1 * tri.v2.z + b2 * tri.v3.z
+        );
+        const toLv = new Vector(lp.x - scatterPt.x, lp.y - scatterPt.y, lp.z - scatterPt.z);
+        const dist = toLv.length();
+        const lDir = toLv.normalize();
+        const cosTL = Math.abs(tri.normal.dotProduct(lDir));
+        const phase = hgPhase(inDir.dotProduct(lDir), phaseG);
+        const shadow = findClosestIntersection({ ray: new Ray(scatterPt, lDir), tMin: epsilon, tMax: dist - epsilon, sceneObjects });
+        if (!shadow) {
+          const T = Math.exp(-sigma_t * dist);
+          nee = nee.addWithColor(emissive.multiply(sa * phase * cosTL * totalArea * T / (dist * dist)));
+        }
+      }
+      // ─────────────────────────────────────────────────────────────────────────
+
+      // Indirect scattered ray — suppress emission so NEE doesn't double-count direct hits.
+      const newDir = sampleHenyeyGreenstein(inDir, phaseG);
+      const indirect = new Color(sa, sa, sa).multiplyWithColor(
+        traceRay({ ray: new Ray(scatterPt, newDir), imageMaps, bounceDepth: bounceDepth + 1, includeEmission: false, i, j, k })
       );
+      return nee.addWithColor(indirect);
     }
   }
   // ─────────────────────────────────────────────────────────────────────────────
