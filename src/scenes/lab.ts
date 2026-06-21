@@ -246,8 +246,8 @@ sceneObjects.push(new Rectangle({
 
 
 // ─── Right wall with window hole ──────────────────────────────────────────────
-const WY0 = 0.5, WY1 = 2.8;
-const WZ0 = 1.0, WZ1 = 3.2;
+const WY0 = 2.8, WY1 = 3.6;
+const WZ0 = 1.4, WZ1 = 2.2;
 
 sceneObjects.push(new Rectangle({
   corner: new Point(5, -0.6, -3),
@@ -282,7 +282,7 @@ sceneObjects.push(new Rectangle({
 
 // ─── Window light — emissive plane just outside the right wall ────────────────
 const LX = 5.05;
-const sunMat = new Material({ albedo: new Color(1, 0.95, 0.80), emissive: new Color(40, 36, 26) });
+const sunMat = new Material({ albedo: new Color(1, 0.95, 0.80), emissive: new Color(80, 72, 52) });
 sceneObjects.push(new Mesh({
   name: "windowLight",
   material: sunMat,
