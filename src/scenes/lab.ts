@@ -51,6 +51,7 @@ const frostedGreen= new Material({ albedo: new Color(0.65, 0.88, 0.72), roughnes
 const alcoveMat   = new Material({ albedo: new Color(0.55, 0.45, 0.32) });
 const shelfMat    = new Material({ albedo: new Color(0.50, 0.38, 0.18) });
 const slatMat     = new Material({ albedo: new Color(0.10, 0.07, 0.04) });
+const rackMat     = new Material({ albedo: new Color(0.62, 0.44, 0.22), roughness: 0.50 });
 
 const liquids = {
   red:   new Material({ albedo: new Color(0.80, 0.04, 0.04) }),
@@ -60,6 +61,24 @@ const liquids = {
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+function tubeRack(cx: number, cz: number, n: number, spacing: number): SceneObject[] {
+  const hw = (n - 1) * spacing / 2 + 0.14;
+  const x0 = cx - hw, x1 = cx + hw;
+  const d = 0.20, z0 = cz - d / 2;
+  const m = rackMat;
+  return [
+    // Bottom bar (top face + front face)
+    new Rectangle({ corner: new Point(x0, 0.10, z0), v1: new Vector(1,0,0), v2: new Vector(0,0,1), width: x1-x0, height: d, normal: new Vector(0,1,0), orientation: "xzAxis", material: m }),
+    new Rectangle({ corner: new Point(x0, -0.05, z0), v1: new Vector(1,0,0), v2: new Vector(0,1,0), width: x1-x0, height: 0.15, normal: new Vector(0,0,-1), orientation: "xyAxis", material: m }),
+    // Top bar (top face + front face)
+    new Rectangle({ corner: new Point(x0, 0.57, z0), v1: new Vector(1,0,0), v2: new Vector(0,0,1), width: x1-x0, height: d, normal: new Vector(0,1,0), orientation: "xzAxis", material: m }),
+    new Rectangle({ corner: new Point(x0, 0.50, z0), v1: new Vector(1,0,0), v2: new Vector(0,1,0), width: x1-x0, height: 0.07, normal: new Vector(0,0,-1), orientation: "xyAxis", material: m }),
+    // End posts
+    new Cylinder({ center: new Point(x0 + 0.07, -0.05, cz), radius: 0.07, height: 0.62, material: m }),
+    new Cylinder({ center: new Point(x1 - 0.07, -0.05, cz), radius: 0.07, height: 0.62, material: m }),
+  ];
+}
+
 function testTube(x: number, z: number, liquid: Material): SceneObject[] {
   return [
     new Cylinder({ center: new Point(x, 0,    z), radius: 0.09,  height: 1.00, material: glassMat }),
@@ -396,15 +415,13 @@ sceneObjects.push(new Mesh({
 
 // ─── Table items ──────────────────────────────────────────────────────────────
 
-// Test tubes ×4 — scattered positions
-const tubeLayout: [number, number, Material][] = [
-  [ 0.3, 1.2, liquids.red  ],
-  [-1.6, 2.3, liquids.teal ],
-  [-0.5, 4.6, liquids.amber],
-  [-1.0, 1.9, liquids.blue ],
-];
-for (const [x, z, mat] of tubeLayout) {
-  for (const o of testTube(x, z, mat)) sceneObjects.push(o);
+// Test tubes in a wooden rack
+const RACK_CX = 0.1, RACK_CZ = 2.5, RACK_N = 4, RACK_SP = 0.25;
+for (const o of tubeRack(RACK_CX, RACK_CZ, RACK_N, RACK_SP)) sceneObjects.push(o);
+const rackLiquids = [liquids.red, liquids.teal, liquids.amber, liquids.blue];
+for (let i = 0; i < RACK_N; i++) {
+  const tx = RACK_CX + (i - (RACK_N - 1) / 2) * RACK_SP;
+  for (const o of testTube(tx, RACK_CZ, rackLiquids[i])) sceneObjects.push(o);
 }
 
 // Erlenmeyers ×2
