@@ -8,15 +8,13 @@ import { Mesh } from "../Mesh.js";
 import { Triangle } from "../Triangle.js";
 import { Cylinder } from "../Cylinder.js";
 import { Sphere } from "../Sphere.js";
-import { getRotationXMatrix, getRotationYMatrix } from "../matrix.js";
+import { getRotationXMatrix } from "../matrix.js";
 import { parseMesh } from "../meshUtils.js";
 import { icosahedron } from "../meshes/icosahedron.js";
 
-// Camera: lower angle, angled 15° toward window (right wall)
 export const cameraStart = new Point(0, 2.2, -3.2);
 export const rotateCamera = (dir: Vector) =>
-  dir.multiplyWith3x3Matrix(getRotationXMatrix(10))
-     .multiplyWith3x3Matrix(getRotationYMatrix(15));
+  dir.multiplyWith3x3Matrix(getRotationXMatrix(10));
 
 export const sigma_t = 0.10;
 export const sigma_s = 0.09;
@@ -66,7 +64,6 @@ function testTube(x: number, z: number, liquid: Material): SceneObject[] {
   return [
     new Cylinder({ center: new Point(x, 0,    z), radius: 0.09,  height: 1.00, material: glassMat }),
     new Cylinder({ center: new Point(x, 0,    z), radius: 0.062, height: 0.65, material: liquid  }),
-    new Cylinder({ center: new Point(x, 0.90, z), radius: 0.10,  height: 0.12, material: capMat  }),
   ];
 }
 
@@ -359,26 +356,20 @@ sceneObjects.push(new Mesh({
 
 // ─── Table items ──────────────────────────────────────────────────────────────
 
-// Test tubes ×8
+// Test tubes ×4 — scattered positions
 const tubeLayout: [number, number, Material][] = [
-  [ 0.8, 1.5, liquids.red  ],
-  [ 1.2, 2.0, liquids.blue ],
-  [ 1.3, 1.2, liquids.amber],
-  [ 1.0, 2.7, liquids.teal ],
-  [-1.1, 1.8, liquids.red  ],
-  [-0.7, 2.5, liquids.teal ],
-  [-0.3, 3.8, liquids.amber],
-  [ 0.6, 4.5, liquids.blue ],
+  [ 1.1, 1.2, liquids.red  ],
+  [-0.8, 2.3, liquids.teal ],
+  [ 0.3, 4.6, liquids.amber],
+  [-0.2, 1.9, liquids.blue ],
 ];
 for (const [x, z, mat] of tubeLayout) {
   for (const o of testTube(x, z, mat)) sceneObjects.push(o);
 }
 
-// Erlenmeyers ×4
-for (const o of makeErlenmeyer( 0.7, 0.5, 1.8, flaskMat,     liquids.amber)) sceneObjects.push(o);
-for (const o of makeErlenmeyer( 1.1, 3.2, 1.0, backFlaskMat, liquids.red  )) sceneObjects.push(o);
-for (const o of makeErlenmeyer( 0.3, 2.7, 1.2, flaskMat,     liquids.teal )) sceneObjects.push(o);
-for (const o of makeErlenmeyer(-0.9, 4.8, 0.7, backFlaskMat, liquids.blue )) sceneObjects.push(o);
+// Erlenmeyers ×2
+for (const o of makeErlenmeyer( 0.7, 0.6, 1.8, flaskMat,     liquids.amber)) sceneObjects.push(o);
+for (const o of makeErlenmeyer(-0.6, 3.5, 1.0, backFlaskMat, liquids.red  )) sceneObjects.push(o);
 
 // Faceted crystal ball (icosahedron, IOR 1.9)
 sceneObjects.push(parseMesh({
