@@ -408,7 +408,7 @@ for (const [x, z, mat] of tubeLayout) {
 }
 
 // Erlenmeyers ×2
-for (const o of makeErlenmeyer(-0.1, 0.6, 1.8, flaskMat,     liquids.amber)) sceneObjects.push(o);
+for (const o of makeErlenmeyer(-1.7, 0.6, 1.8, flaskMat,     liquids.amber)) sceneObjects.push(o);
 for (const o of makeErlenmeyer(-1.4, 3.5, 1.0, backFlaskMat, liquids.red  )) sceneObjects.push(o);
 
 // Faceted crystal ball (icosahedron, IOR 1.9)
