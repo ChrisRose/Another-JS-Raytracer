@@ -53,10 +53,10 @@ const backFlaskMat = new Material({ albedo: new Color(0.42, 0.02, 0.08), roughne
 
 // Fewer, more saturated liquids — just four colours for a tighter palette
 const liquids = {
-  red:    new Material({ albedo: new Color(0.80, 0.04, 0.04), emissive: new Color(0.55, 0.02, 0.02) }),
-  blue:   new Material({ albedo: new Color(0.04, 0.08, 0.90), emissive: new Color(0.02, 0.04, 0.58) }),
-  amber:  new Material({ albedo: new Color(0.90, 0.55, 0.04), emissive: new Color(0.58, 0.30, 0.02) }),
-  teal:   new Material({ albedo: new Color(0.04, 0.70, 0.60), emissive: new Color(0.03, 0.40, 0.34) }),
+  red:   new Material({ albedo: new Color(0.80, 0.04, 0.04) }),
+  blue:  new Material({ albedo: new Color(0.04, 0.08, 0.90) }),
+  amber: new Material({ albedo: new Color(0.90, 0.55, 0.04) }),
+  teal:  new Material({ albedo: new Color(0.04, 0.70, 0.60) }),
 };
 
 const paperMat = new Material({ albedo: new Color(0.93, 0.91, 0.86) });
@@ -246,8 +246,8 @@ sceneObjects.push(new Rectangle({
 
 
 // ─── Right wall with window hole ──────────────────────────────────────────────
-const WY0 = 2.8, WY1 = 3.6;
-const WZ0 = 1.4, WZ1 = 2.2;
+const WY0 = 3.1, WY1 = 3.5;
+const WZ0 = 0.8, WZ1 = 3.0;
 
 sceneObjects.push(new Rectangle({
   corner: new Point(5, -0.6, -3),
@@ -282,7 +282,7 @@ sceneObjects.push(new Rectangle({
 
 // ─── Window light — emissive plane just outside the right wall ────────────────
 const LX = 5.05;
-const sunMat = new Material({ albedo: new Color(1, 0.95, 0.80), emissive: new Color(80, 72, 52) });
+const sunMat = new Material({ albedo: new Color(1, 0.95, 0.80), emissive: new Color(130, 117, 84) });
 sceneObjects.push(new Mesh({
   name: "windowLight",
   material: sunMat,
