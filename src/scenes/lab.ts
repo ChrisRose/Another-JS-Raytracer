@@ -7,8 +7,9 @@ import { Material } from "../Material.js";
 import { Mesh } from "../Mesh.js";
 import { Triangle } from "../Triangle.js";
 import { Cylinder } from "../Cylinder.js";
-import { Sphere } from "../Sphere.js";
 import { getRotationXMatrix } from "../matrix.js";
+import { parseMesh } from "../meshUtils.js";
+import { icosahedron } from "../meshes/icosahedron.js";
 
 // Camera: slightly higher so the bench top sits at the lower third.
 // 18° tilt puts the horizon (bench surface) at ~1/3 from the bottom
@@ -318,12 +319,15 @@ for (const [x, z, mat] of tubes) {
   for (const obj of testTube(x, z, mat)) sceneObjects.push(obj);
 }
 
-// ─── Glass sphere ─────────────────────────────────────────────────────────────
-// Sits on the bench between the paper and the tube cluster; refracts the scene behind it.
-sceneObjects.push(new Sphere({
-  center: new Point(-0.3, 0.28, 1.6),
-  radius: 0.28,
-  material: new Material({ albedo: new Color(0, 0, 0), refractionIndex: 1.5 }),
+// ─── Faceted crystal ball ──────────────────────────────────────────────────────
+// Icosahedron (20 flat faces) with dense-glass IOR — each facet refracts
+// at a different angle giving a cut-crystal sparkle.
+sceneObjects.push(parseMesh({
+  mesh: icosahedron,
+  material: new Material({ albedo: new Color(0, 0, 0), refractionIndex: 1.9 }),
+  name: "crystalBall",
+  scale: 0.32,
+  translate: { x: -0.3, y: 0.34, z: 1.6 },
 }));
 
 // ─── Erlenmeyer flasks ────────────────────────────────────────────────────────
