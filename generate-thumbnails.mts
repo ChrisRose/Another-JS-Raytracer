@@ -46,9 +46,10 @@ const SCENES = [
   { id: 'lab',               scene: labScene               },
 ];
 
-const WIDTH   = 600;
-const HEIGHT  = 600;
-const PASSES  = 96;
+const PREVIEW = process.argv.includes('--preview');
+const WIDTH   = PREVIEW ? 200 : 600;
+const HEIGHT  = PREVIEW ? 200 : 600;
+const PASSES  = PREVIEW ?  16 :  96;
 const OUT_DIR = path.join(__dirname, 'public', 'thumbnails');
 
 // ─── ImageData shim for sky texture ──────────────────────────────────────────
@@ -360,7 +361,7 @@ function traceRay({ ray, sceneObjects, skyFn, skyImageData, bounceDepth = 0, inc
 await mkdir(OUT_DIR, { recursive: true });
 
 // If a scene ID is passed as argv, render only that scene (used for parallel workers).
-const targetId = process.argv[2];
+const targetId = process.argv.slice(2).find(a => !a.startsWith('--'));
 const scenesToRender = targetId ? SCENES.filter(s => s.id === targetId) : SCENES;
 
 for (const { id, scene } of scenesToRender) {
