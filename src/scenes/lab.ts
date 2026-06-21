@@ -95,6 +95,48 @@ function tubeRack(cx: number, cz: number, n: number, spacing: number, angleDeg =
   ];
 }
 
+function alcoveRack(cx: number, cy: number, cz: number, n: number, spacing: number, angleDeg = 0): SceneObject[] {
+  const θ = angleDeg * Math.PI / 180;
+  const cosT = Math.cos(θ), sinT = Math.sin(θ);
+  const p = (lx: number, ly: number, lz: number) =>
+    new Vector(cx + lx * cosT - lz * sinT, cy + ly, cz + lx * sinT + lz * cosT);
+
+  const hw = (n - 1) * spacing / 2 + 0.08;
+  const d = 0.13;
+  const m = rackMat;
+  const tris: Triangle[] = [];
+
+  const bar = (ly0: number, ly1: number) => {
+    tris.push(new Triangle({ v1: p(-hw, ly1, -d/2), v2: p( hw, ly1,  d/2), v3: p(-hw, ly1,  d/2), material: m }));
+    tris.push(new Triangle({ v1: p(-hw, ly1, -d/2), v2: p( hw, ly1, -d/2), v3: p( hw, ly1,  d/2), material: m }));
+    tris.push(new Triangle({ v1: p(-hw, ly0, -d/2), v2: p( hw, ly1, -d/2), v3: p(-hw, ly1, -d/2), material: m }));
+    tris.push(new Triangle({ v1: p(-hw, ly0, -d/2), v2: p( hw, ly0, -d/2), v3: p( hw, ly1, -d/2), material: m }));
+  };
+  bar(0, 0.07);
+  bar(0.42, 0.48);
+
+  const lp = p(-hw + 0.045, 0, 0);
+  const rp = p( hw - 0.045, 0, 0);
+  return [
+    new Mesh({ name: "alcoveRackBars", material: m, meshObjects: tris }),
+    new Cylinder({ center: new Point(lp.x, lp.y, lp.z), radius: 0.035, height: 0.50, material: m }),
+    new Cylinder({ center: new Point(rp.x, rp.y, rp.z), radius: 0.035, height: 0.50, material: m }),
+  ];
+}
+
+function alcoveRackWithTubes(cx: number, cy: number, cz: number, n: number, spacing: number, angleDeg: number, colors: Material[]): SceneObject[] {
+  const θ = angleDeg * Math.PI / 180;
+  const cosT = Math.cos(θ), sinT = Math.sin(θ);
+  const objs = alcoveRack(cx, cy, cz, n, spacing, angleDeg);
+  for (let i = 0; i < n; i++) {
+    const lx = (i - (n - 1) / 2) * spacing;
+    const tx = cx + lx * cosT;
+    const tz = cz + lx * sinT;
+    for (const o of alcoveTube(tx, cy, tz, colors[i % colors.length])) objs.push(o);
+  }
+  return objs;
+}
+
 function testTube(x: number, z: number, liquid: Material): SceneObject[] {
   return [
     new Cylinder({ center: new Point(x, 0,    z), radius: 0.09,  height: 1.00, material: glassMat }),
@@ -302,42 +344,36 @@ for (const sy of [SY1, SY2]) {
 }
 
 // ─── Alcove shelf items ───────────────────────────────────────────────────────
-const tubeColors = [liquids.red, liquids.teal, liquids.amber, liquids.blue];
-let ti = 0;
 
-// Lower shelf — 11 items, chaotic spacing, varied z depth
-const lowerItems: [number, number, 'candle'|'tube'|'flask'][] = [
+// Lower shelf — 8 items + 3 mini-racks
+const lowerItems: [number, number, 'candle'|'flask'][] = [
   [-3.1, 7.32, 'candle'],
-  [-2.5, 7.90, 'tube'  ],
   [-1.9, 8.08, 'candle'],
   [-1.4, 7.50, 'flask' ],
   [-0.8, 7.82, 'candle'],
-  [-0.2, 8.16, 'tube'  ],
   [ 0.4, 7.38, 'flask' ],
   [ 1.0, 7.95, 'candle'],
-  [ 1.6, 7.60, 'tube'  ],
   [ 2.4, 8.08, 'candle'],
   [ 3.1, 7.44, 'candle'],
 ];
 for (const [x, z, type] of lowerItems) {
   if (type === 'candle') {
     for (const o of candle(x, SY1, z)) sceneObjects.push(o);
-  } else if (type === 'tube') {
-    for (const o of alcoveTube(x, SY1, z, tubeColors[ti++ % 4])) sceneObjects.push(o);
   } else {
     for (const o of makeErlenmeyer(x, z, 0.55, backFlaskMat, liquids.red, SY1)) sceneObjects.push(o);
   }
 }
+for (const o of alcoveRackWithTubes(-2.5, SY1, 7.90, 3, 0.14, -15, [liquids.red,  liquids.amber, liquids.teal])) sceneObjects.push(o);
+for (const o of alcoveRackWithTubes(-0.2, SY1, 8.16, 2, 0.14,  10, [liquids.blue, liquids.red                ])) sceneObjects.push(o);
+for (const o of alcoveRackWithTubes( 1.6, SY1, 7.60, 3, 0.14, -10, [liquids.teal, liquids.amber, liquids.blue])) sceneObjects.push(o);
 
-// Upper shelf — 10 items, varied types, chaotic z depth
-const upperItems: [number, number, 'candle'|'vase'|'tube'][] = [
+// Upper shelf — 8 items + 2 mini-racks
+const upperItems: [number, number, 'candle'|'vase'][] = [
   [-3.0, 7.84, 'vase'  ],
   [-2.3, 7.50, 'candle'],
-  [-1.6, 8.10, 'tube'  ],
   [-0.9, 7.36, 'vase'  ],
   [-0.2, 7.78, 'candle'],
   [ 0.6, 8.14, 'vase'  ],
-  [ 1.2, 7.55, 'tube'  ],
   [ 1.9, 7.92, 'candle'],
   [ 2.6, 7.40, 'vase'  ],
   [ 3.2, 8.06, 'candle'],
@@ -345,12 +381,12 @@ const upperItems: [number, number, 'candle'|'vase'|'tube'][] = [
 for (const [x, z, type] of upperItems) {
   if (type === 'candle') {
     for (const o of candle(x, SY2, z)) sceneObjects.push(o);
-  } else if (type === 'tube') {
-    for (const o of alcoveTube(x, SY2, z, tubeColors[ti++ % 4])) sceneObjects.push(o);
   } else {
     sceneObjects.push(new Cylinder({ center: new Point(x, SY2, z), radius: 0.065, height: 0.38, material: frostedWhite }));
   }
 }
+for (const o of alcoveRackWithTubes(-1.6, SY2, 8.10, 2, 0.14,  15, [liquids.amber, liquids.red               ])) sceneObjects.push(o);
+for (const o of alcoveRackWithTubes( 1.2, SY2, 7.55, 3, 0.14, -12, [liquids.blue,  liquids.teal, liquids.amber])) sceneObjects.push(o);
 
 // ─── Right wall with window ───────────────────────────────────────────────────
 const WY0 = 0.5, WY1 = 4.5;
@@ -474,4 +510,25 @@ for (const o of candle(-1.3, 0, 3.5)) sceneObjects.push(o);
 sceneObjects.push(new Cylinder({ center: new Point(0.85, -0.12, 2.2), radius: 0.32, height: 0.07, material: benchTop }));
 for (const [sx, sz] of [[0.63, 1.98], [1.07, 1.98], [0.63, 2.42], [1.07, 2.42]] as [number,number][]) {
   sceneObjects.push(new Cylinder({ center: new Point(sx, -0.6, sz), radius: 0.04, height: 0.48, material: legMat }));
+}
+
+// ─── Pencil (diagonal, half on paper) ────────────────────────────────────────
+// dir = normalize(0.456, 0, 1.174) ≈ (0.362, 0, 0.932); perp = (-0.932, 0, 0.362)
+// A = off-paper end, B = on-paper end; hw = 0.015 half-width
+const pencilMat   = new Material({ albedo: new Color(0.96, 0.83, 0.10), roughness: 0.50 });
+const graphiteMat = new Material({ albedo: new Color(0.22, 0.20, 0.18) });
+{
+  const c1   = new Vector(-1.242, 0.006, 0.368);  // A + hw*perp
+  const c2   = new Vector(-1.214, 0.006, 0.358);  // A - hw*perp
+  const c3   = new Vector(-0.786, 0.006, 1.542);  // B + hw*perp
+  const c4   = new Vector(-0.758, 0.006, 1.532);  // B - hw*perp
+  const cTip = new Vector(-1.242, 0.006, 0.326);  // A - 0.04*dir (graphite tip)
+  sceneObjects.push(new Mesh({
+    name: "pencil", material: pencilMat,
+    meshObjects: [
+      new Triangle({ v1: c1, v2: c2, v3: c3,   material: pencilMat   }),
+      new Triangle({ v1: c3, v2: c2, v3: c4,   material: pencilMat   }),
+      new Triangle({ v1: c2, v2: c1, v3: cTip, material: graphiteMat }),
+    ],
+  }));
 }
