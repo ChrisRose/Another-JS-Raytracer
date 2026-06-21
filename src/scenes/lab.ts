@@ -313,7 +313,15 @@ sceneObjects.push(new Rectangle({
   sceneObjects.push(new Mesh({ name: "archSpandrel", material: wallMat, meshObjects: archTris }));
 }
 
-// ─── Alcove interior ──────────────────────────────────────────────────────────
+// ─── Alcove interior ─────────────────────────────────────────────────────────
+// Floor at y=AY0
+sceneObjects.push(new Rectangle({
+  corner: new Point(AX0, AY0, AZ0),
+  v1: new Vector(1, 0, 0), v2: new Vector(0, 0, 1),
+  width: AX1 - AX0, height: AZ1 - AZ0,
+  normal: new Vector(0, 1, 0), orientation: "xzAxis",
+  material: alcoveMat,
+}));
 sceneObjects.push(new Rectangle({
   corner: new Point(AX0, AY0, AZ0),
   v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
