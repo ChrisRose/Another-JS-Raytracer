@@ -7,27 +7,23 @@ import { Material } from "../Material.js";
 import { Mesh } from "../Mesh.js";
 import { Triangle } from "../Triangle.js";
 import { Cylinder } from "../Cylinder.js";
-import { getRotationXMatrix } from "../matrix.js";
+import { Sphere } from "../Sphere.js";
+import { getRotationXMatrix, getRotationYMatrix } from "../matrix.js";
 import { parseMesh } from "../meshUtils.js";
 import { icosahedron } from "../meshes/icosahedron.js";
 
-// Camera: slightly higher so the bench top sits at the lower third.
-// 18° tilt puts the horizon (bench surface) at ~1/3 from the bottom
-// for a 600×600 canvas at FoV ≈ 55°.
-export const cameraStart = new Point(0, 3.2, -3.2);
+// Camera: lower angle, angled 15° toward window (right wall)
+export const cameraStart = new Point(0, 2.2, -3.2);
 export const rotateCamera = (dir: Vector) =>
-  dir.multiplyWith3x3Matrix(getRotationXMatrix(18));
+  dir.multiplyWith3x3Matrix(getRotationXMatrix(10))
+     .multiplyWith3x3Matrix(getRotationYMatrix(15));
 
-// sigma_t=0.10: low enough to converge cleanly at 96 passes, still shows shaft.
-// High sigma_t causes firefly noise because rare scatter events hit the bright window.
 export const sigma_t = 0.10;
 export const sigma_s = 0.09;
 export const phaseG  = 0.0;
-
-// Dark sky so escaped rays don't brighten the room from above.
 export const skyFn = (_dir: Vector) => new Color(0, 0, 0);
 
-// ─── Wood grain texture ───────────────────────────────────────────────────────
+// ─── Wood grain ───────────────────────────────────────────────────────────────
 function woodGrain(point: Point): Color {
   const grain = point.x * 2.0
     + Math.sin(point.z * 6.0) * 0.30
@@ -36,24 +32,28 @@ function woodGrain(point: Point): Color {
   const t = Math.pow((Math.sin(grain * 9.0) + 1) * 0.5, 2);
   const light = new Color(0.68, 0.48, 0.26);
   const dark  = new Color(0.35, 0.22, 0.09);
-  return new Color(
-    light.r * (1 - t) + dark.r * t,
-    light.g * (1 - t) + dark.g * t,
-    light.b * (1 - t) + dark.b * t
-  );
+  return new Color(light.r*(1-t)+dark.r*t, light.g*(1-t)+dark.g*t, light.b*(1-t)+dark.b*t);
 }
 
 // ─── Materials ────────────────────────────────────────────────────────────────
-const benchTop   = new Material({ albedo: new Color(0.5, 0.35, 0.15), texture: (p) => woodGrain(p), roughness: 0.40 });
-const benchSide  = new Material({ albedo: new Color(0.28, 0.18, 0.07) });
-const wallMat    = new Material({ albedo: new Color(0.22, 0.21, 0.20) });
-const floorMat   = new Material({ albedo: new Color(0.12, 0.11, 0.10) });
-const glassMat   = new Material({ albedo: new Color(0, 0, 0), refractionIndex: 1.5 });
-const capMat     = new Material({ albedo: new Color(0.95, 0.95, 0.95) });
-const flaskMat     = new Material({ albedo: new Color(0.18, 0.52, 0.28), roughness: 0.55, subsurface: 0.35 });
-const backFlaskMat = new Material({ albedo: new Color(0.42, 0.02, 0.08), roughness: 0.30, subsurface: 0.20 });
+const benchTop    = new Material({ albedo: new Color(0.5, 0.35, 0.15), texture: (p) => woodGrain(p), roughness: 0.40 });
+const benchSide   = new Material({ albedo: new Color(0.28, 0.18, 0.07) });
+const legMat      = new Material({ albedo: new Color(0.22, 0.14, 0.06) });
+const wallMat     = new Material({ albedo: new Color(0.22, 0.21, 0.20) });
+const floorMat    = new Material({ albedo: new Color(0.12, 0.11, 0.10) });
+const glassMat    = new Material({ albedo: new Color(0, 0, 0), refractionIndex: 1.5 });
+const capMat      = new Material({ albedo: new Color(0.95, 0.95, 0.95) });
+const flaskMat    = new Material({ albedo: new Color(0.18, 0.52, 0.28), roughness: 0.55, subsurface: 0.35 });
+const backFlaskMat= new Material({ albedo: new Color(0.42, 0.02, 0.08), roughness: 0.30, subsurface: 0.20 });
+const paperMat    = new Material({ albedo: new Color(0.93, 0.91, 0.86) });
+const candleWax   = new Material({ albedo: new Color(0.94, 0.91, 0.84) });
+const candleFlame = new Material({ albedo: new Color(1.0, 0.6, 0.1), emissive: new Color(6, 3, 0.5) });
+const frostedWhite= new Material({ albedo: new Color(0.88, 0.88, 0.86), roughness: 0.35, subsurface: 0.20 });
+const frostedGreen= new Material({ albedo: new Color(0.65, 0.88, 0.72), roughness: 0.40, subsurface: 0.15 });
+const alcoveMat   = new Material({ albedo: new Color(0.55, 0.45, 0.32) });
+const shelfMat    = new Material({ albedo: new Color(0.50, 0.38, 0.18) });
+const slatMat     = new Material({ albedo: new Color(0.10, 0.07, 0.04) });
 
-// Fewer, more saturated liquids — just four colours for a tighter palette
 const liquids = {
   red:   new Material({ albedo: new Color(0.80, 0.04, 0.04) }),
   blue:  new Material({ albedo: new Color(0.04, 0.08, 0.90) }),
@@ -61,10 +61,7 @@ const liquids = {
   teal:  new Material({ albedo: new Color(0.04, 0.70, 0.60) }),
 };
 
-const paperMat = new Material({ albedo: new Color(0.93, 0.91, 0.86) });
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-// Thinner (r=0.09), taller (h=1.0) tubes
 function testTube(x: number, z: number, liquid: Material): SceneObject[] {
   return [
     new Cylinder({ center: new Point(x, 0,    z), radius: 0.09,  height: 1.00, material: glassMat }),
@@ -73,21 +70,30 @@ function testTube(x: number, z: number, liquid: Material): SceneObject[] {
   ];
 }
 
-// Erlenmeyer flask — revolved profile mesh.
+function alcoveTube(x: number, y: number, z: number, liquid: Material): SceneObject[] {
+  return [
+    new Cylinder({ center: new Point(x, y,      z), radius: 0.055, height: 0.60, material: glassMat }),
+    new Cylinder({ center: new Point(x, y,      z), radius: 0.038, height: 0.38, material: liquid  }),
+    new Cylinder({ center: new Point(x, y+0.53, z), radius: 0.060, height: 0.08, material: capMat  }),
+  ];
+}
+
+function candle(x: number, y: number, z: number): SceneObject[] {
+  return [
+    new Cylinder({ center: new Point(x, y,      z), radius: 0.045, height: 0.28, material: candleWax   }),
+    new Cylinder({ center: new Point(x, y+0.30, z), radius: 0.022, height: 0.07, material: candleFlame }),
+  ];
+}
+
 function makeErlenmeyer(
-  cx: number, cz: number,
-  scale: number,
-  flaskM: Material, liquidM: Material
+  cx: number, cz: number, scale: number,
+  flaskM: Material, liquidM: Material,
+  yBase = 0
 ): SceneObject[] {
   const SEGS = 18;
   const profile: [number, number][] = [
-    [0.00, 0.000],
-    [0.30, 0.000],
-    [0.32, 0.060],
-    [0.32, 0.340],
-    [0.22, 0.480],
-    [0.07, 0.600],
-    [0.07, 0.880],
+    [0.00, 0.000], [0.30, 0.000], [0.32, 0.060], [0.32, 0.340],
+    [0.22, 0.480], [0.07, 0.600], [0.07, 0.880],
   ];
   const tris: Triangle[] = [];
   const PI2 = Math.PI * 2;
@@ -96,10 +102,10 @@ function makeErlenmeyer(
     const [r1, y1] = profile[pi + 1];
     for (let s = 0; s < SEGS; s++) {
       const a0 = (s / SEGS) * PI2, a1 = ((s + 1) / SEGS) * PI2;
-      const p00 = new Vector(cx + scale*r0*Math.cos(a0), scale*y0, cz + scale*r0*Math.sin(a0));
-      const p01 = new Vector(cx + scale*r0*Math.cos(a1), scale*y0, cz + scale*r0*Math.sin(a1));
-      const p10 = new Vector(cx + scale*r1*Math.cos(a0), scale*y1, cz + scale*r1*Math.sin(a0));
-      const p11 = new Vector(cx + scale*r1*Math.cos(a1), scale*y1, cz + scale*r1*Math.sin(a1));
+      const p00 = new Vector(cx + scale*r0*Math.cos(a0), scale*y0+yBase, cz + scale*r0*Math.sin(a0));
+      const p01 = new Vector(cx + scale*r0*Math.cos(a1), scale*y0+yBase, cz + scale*r0*Math.sin(a1));
+      const p10 = new Vector(cx + scale*r1*Math.cos(a0), scale*y1+yBase, cz + scale*r1*Math.sin(a0));
+      const p11 = new Vector(cx + scale*r1*Math.cos(a1), scale*y1+yBase, cz + scale*r1*Math.sin(a1));
       if (r0 < 0.001) {
         tris.push(new Triangle({ v1: p00, v2: p10, v3: p11, material: flaskM }));
       } else {
@@ -108,40 +114,42 @@ function makeErlenmeyer(
       }
     }
   }
-  // Bottom cap
   const baseR = profile[1][0] * scale;
   for (let s = 0; s < SEGS; s++) {
     const a0 = (s / SEGS) * PI2, a1 = ((s + 1) / SEGS) * PI2;
     tris.push(new Triangle({
-      v1: new Vector(cx, 0, cz),
-      v2: new Vector(cx + baseR*Math.cos(a1), 0, cz + baseR*Math.sin(a1)),
-      v3: new Vector(cx + baseR*Math.cos(a0), 0, cz + baseR*Math.sin(a0)),
+      v1: new Vector(cx, yBase, cz),
+      v2: new Vector(cx + baseR*Math.cos(a1), yBase, cz + baseR*Math.sin(a1)),
+      v3: new Vector(cx + baseR*Math.cos(a0), yBase, cz + baseR*Math.sin(a0)),
       material: flaskM,
     }));
   }
   return [
     new Mesh({ name: "erlenmeyer", material: flaskM, meshObjects: tris }),
-    new Cylinder({ center: new Point(cx, 0.005, cz), radius: 0.26*scale, height: 0.22*scale, material: liquidM }),
+    new Cylinder({ center: new Point(cx, 0.005+yBase, cz), radius: 0.26*scale, height: 0.22*scale, material: liquidM }),
   ];
 }
 
 export const sceneObjects: SceneObject[] = [];
 
-// ─── Bench ────────────────────────────────────────────────────────────────────
+// ─── Table — narrow, lifted on legs ──────────────────────────────────────────
 sceneObjects.push(new Rectangle({
-  corner: new Point(-2.5, 0, 0),
+  corner: new Point(-1.5, 0, 0),
   v1: new Vector(1, 0, 0), v2: new Vector(0, 0, 1),
-  width: 5, height: 5.5,
+  width: 3, height: 5.5,
   normal: new Vector(0, 1, 0), orientation: "xzAxis",
   material: benchTop,
 }));
 sceneObjects.push(new Rectangle({
-  corner: new Point(-2.5, -0.6, 0),
+  corner: new Point(-1.5, -0.12, 0),
   v1: new Vector(1, 0, 0), v2: new Vector(0, 1, 0),
-  width: 5, height: 0.6,
+  width: 3, height: 0.12,
   normal: new Vector(0, 0, -1), orientation: "xyAxis",
   material: benchSide,
 }));
+for (const [lx, lz] of [[-1.38, 0.14], [1.38, 0.14], [-1.38, 5.36], [1.38, 5.36]] as [number,number][]) {
+  sceneObjects.push(new Cylinder({ center: new Point(lx, -0.6, lz), radius: 0.05, height: 0.48, material: legMat }));
+}
 
 // ─── Room ─────────────────────────────────────────────────────────────────────
 sceneObjects.push(new Rectangle({
@@ -159,15 +167,12 @@ sceneObjects.push(new Rectangle({
   material: wallMat,
 }));
 
-// ─── Back wall — split around alcove opening ──────────────────────────────────
-const AX0 = -2.5, AX1 = 0.5;   // alcove x extents (shifted left)
-const AY0 =  0.5, AY1 = 3.8;   // alcove y extents
-const AZ0 =  7.0, AZ1 = 8.5;   // alcove z extents (depth 1.5)
+// ─── Back wall — almost entirely alcove ───────────────────────────────────────
+const AX0 = -4.2, AX1 = 4.2;
+const AY0 =  0.5, AY1 = 4.0;
+const AZ0 =  7.0, AZ1 = 8.5;
 
-const alcoveMat      = new Material({ albedo: new Color(0.22, 0.21, 0.20) });
-const shelfMat       = new Material({ albedo: new Color(0.50, 0.38, 0.18) });
-
-// Top strip (above alcove)
+// Top strip
 sceneObjects.push(new Rectangle({
   corner: new Point(-5, AY1, AZ0),
   v1: new Vector(1, 0, 0), v2: new Vector(0, 1, 0),
@@ -191,7 +196,7 @@ sceneObjects.push(new Rectangle({
   normal: new Vector(0, 0, -1), orientation: "xyAxis",
   material: wallMat,
 }));
-// Bottom strip (below alcove opening)
+// Bottom strip
 sceneObjects.push(new Rectangle({
   corner: new Point(AX0, -0.6, AZ0),
   v1: new Vector(1, 0, 0), v2: new Vector(0, 1, 0),
@@ -201,7 +206,6 @@ sceneObjects.push(new Rectangle({
 }));
 
 // ─── Alcove interior ──────────────────────────────────────────────────────────
-// Left wall
 sceneObjects.push(new Rectangle({
   corner: new Point(AX0, AY0, AZ0),
   v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
@@ -209,7 +213,6 @@ sceneObjects.push(new Rectangle({
   normal: new Vector(1, 0, 0), orientation: "yzAxis",
   material: alcoveMat,
 }));
-// Right wall
 sceneObjects.push(new Rectangle({
   corner: new Point(AX1, AY0, AZ0),
   v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
@@ -217,7 +220,6 @@ sceneObjects.push(new Rectangle({
   normal: new Vector(-1, 0, 0), orientation: "yzAxis",
   material: alcoveMat,
 }));
-// Back wall
 sceneObjects.push(new Rectangle({
   corner: new Point(AX0, AY0, AZ1),
   v1: new Vector(1, 0, 0), v2: new Vector(0, 1, 0),
@@ -225,31 +227,62 @@ sceneObjects.push(new Rectangle({
   normal: new Vector(0, 0, -1), orientation: "xyAxis",
   material: alcoveMat,
 }));
-// Ceiling (v2.z = depth/width so xzAxis covers the right z extent)
 sceneObjects.push(new Rectangle({
   corner: new Point(AX0, AY1, AZ0),
-  v1: new Vector(1, 0, 0), v2: new Vector(0, 0, (AZ1 - AZ0) / (AX1 - AX0)),
+  v1: new Vector(1, 0, 0), v2: new Vector(0, 0, (AZ1-AZ0)/(AX1-AX0)),
   width: AX1 - AX0, height: AZ1 - AZ0,
   normal: new Vector(0, -1, 0), orientation: "xzAxis",
   material: alcoveMat,
 }));
 
-// ─── Alcove shelf ─────────────────────────────────────────────────────────────
-const SY  = 1.9;                           // shelf surface height
-const SX0 = AX0 + 0.06, SX1 = AX1 - 0.06; // slightly inset from side walls
-const SZ0 = AZ0 + 0.05, SZ1 = AZ1 - 0.15; // slightly inset front and back
-sceneObjects.push(new Rectangle({
-  corner: new Point(SX0, SY, SZ0),
-  v1: new Vector(1, 0, 0), v2: new Vector(0, 0, (SZ1 - SZ0) / (SX1 - SX0)),
-  width: SX1 - SX0, height: SZ1 - SZ0,
-  normal: new Vector(0, 1, 0), orientation: "xzAxis",
-  material: shelfMat,
-}));
+// ─── Alcove shelves ───────────────────────────────────────────────────────────
+const SY1 = 1.5, SY2 = 2.8;
+const SZmid = (AZ0 + AZ1) / 2;
 
+for (const sy of [SY1, SY2]) {
+  sceneObjects.push(new Rectangle({
+    corner: new Point(AX0 + 0.06, sy, AZ0 + 0.05),
+    v1: new Vector(1, 0, 0), v2: new Vector(0, 0, (AZ1-AZ0-0.20)/(AX1-AX0-0.12)),
+    width: AX1 - AX0 - 0.12, height: AZ1 - AZ0 - 0.20,
+    normal: new Vector(0, 1, 0), orientation: "xzAxis",
+    material: shelfMat,
+  }));
+}
 
-// ─── Right wall with window hole ──────────────────────────────────────────────
-const WY0 = 3.1, WY1 = 3.5;
-const WZ0 = 1.5, WZ1 = 2.5;
+// ─── Alcove shelf items ───────────────────────────────────────────────────────
+// Lower shelf: candle, tube, candle, small flask, candle, tube, candle
+const lowerXs:  [number, 'candle'|'tube'|'flask'][] = [
+  [-3.2, 'candle'], [-2.2, 'tube'], [-1.2, 'candle'],
+  [-0.2, 'flask'],  [0.8,  'candle'], [1.8, 'tube'], [2.8, 'candle'],
+];
+const tubeColors = [liquids.red, liquids.teal, liquids.amber, liquids.blue];
+let ti = 0;
+for (const [x, type] of lowerXs) {
+  if (type === 'candle') {
+    for (const o of candle(x, SY1, SZmid)) sceneObjects.push(o);
+  } else if (type === 'tube') {
+    for (const o of alcoveTube(x, SY1, SZmid, tubeColors[ti++ % 4])) sceneObjects.push(o);
+  } else {
+    for (const o of makeErlenmeyer(x, SZmid, 0.55, backFlaskMat, liquids.red, SY1)) sceneObjects.push(o);
+  }
+}
+
+// Upper shelf: frosted vase, candle, frosted vase, candle, frosted vase, candle
+const upperXs: [number, 'candle'|'vase'][] = [
+  [-2.8, 'vase'], [-1.8, 'candle'], [-0.8, 'vase'],
+  [0.2, 'candle'], [1.2, 'vase'], [2.2, 'candle'],
+];
+for (const [x, type] of upperXs) {
+  if (type === 'candle') {
+    for (const o of candle(x, SY2, SZmid)) sceneObjects.push(o);
+  } else {
+    sceneObjects.push(new Cylinder({ center: new Point(x, SY2, SZmid), radius: 0.065, height: 0.38, material: frostedWhite }));
+  }
+}
+
+// ─── Right wall with window ───────────────────────────────────────────────────
+const WY0 = 0.5, WY1 = 4.5;
+const WZ0 = 0.5, WZ1 = 3.7;
 
 sceneObjects.push(new Rectangle({
   corner: new Point(5, -0.6, -3),
@@ -268,23 +301,43 @@ sceneObjects.push(new Rectangle({
 sceneObjects.push(new Rectangle({
   corner: new Point(5, WY0, -3),
   v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
-  width: WZ0 + 3,
-  height: WY1 - WY0,
+  width: WZ0 + 3, height: WY1 - WY0,
   normal: new Vector(-1, 0, 0), orientation: "yzAxis",
   material: wallMat,
 }));
 sceneObjects.push(new Rectangle({
   corner: new Point(5, WY0, WZ1),
   v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
-  width: 10 - WZ1,
-  height: WY1 - WY0,
+  width: 10 - WZ1, height: WY1 - WY0,
   normal: new Vector(-1, 0, 0), orientation: "yzAxis",
   material: wallMat,
 }));
 
-// ─── Window light — emissive plane just outside the right wall ────────────────
+// ─── Window slats ─────────────────────────────────────────────────────────────
+// Vertical dividers (z)
+for (const zs of [WZ0 + (WZ1-WZ0)/3, WZ0 + 2*(WZ1-WZ0)/3]) {
+  sceneObjects.push(new Rectangle({
+    corner: new Point(4.90, WY0, zs - 0.04),
+    v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
+    height: WY1 - WY0, width: 0.08,
+    normal: new Vector(-1, 0, 0), orientation: "yzAxis",
+    material: slatMat,
+  }));
+}
+// Horizontal dividers (y)
+for (const ys of [WY0 + (WY1-WY0)/4, WY0 + 2*(WY1-WY0)/4, WY0 + 3*(WY1-WY0)/4]) {
+  sceneObjects.push(new Rectangle({
+    corner: new Point(4.90, ys - 0.04, WZ0),
+    v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
+    height: 0.08, width: WZ1 - WZ0,
+    normal: new Vector(-1, 0, 0), orientation: "yzAxis",
+    material: slatMat,
+  }));
+}
+
+// ─── Window light ─────────────────────────────────────────────────────────────
 const LX = 5.05;
-const sunMat = new Material({ albedo: new Color(1, 0.95, 0.80), emissive: new Color(90, 81, 58) });
+const sunMat = new Material({ albedo: new Color(1, 0.95, 0.80), emissive: new Color(22, 20, 14) });
 sceneObjects.push(new Mesh({
   name: "windowLight",
   material: sunMat,
@@ -294,44 +347,58 @@ sceneObjects.push(new Mesh({
   ],
 }));
 
-// ─── Paper — angled ~15° on the bench (edges not parallel to image plane) ─────
-// Corner coords derived from rotating a 1.2×1.5 sheet 15° CW around y-axis,
-// centred at (-1.9, 0, 1.0).
+// ─── Paper ────────────────────────────────────────────────────────────────────
+// 1.2×1.5 sheet rotated 15° CW around y, centred at (-0.2, 0, 1.5)
 sceneObjects.push(new Mesh({
-  name: "paper",
-  material: paperMat,
+  name: "paper", material: paperMat,
   meshObjects: [
-    new Triangle({ v1: new Vector(-2.286, 0.003, 0.121), v2: new Vector(-1.514, 0.003, 1.879), v3: new Vector(-2.674, 0.003, 1.569), material: paperMat }),
-    new Triangle({ v1: new Vector(-2.286, 0.003, 0.121), v2: new Vector(-1.126, 0.003, 0.431), v3: new Vector(-1.514, 0.003, 1.879), material: paperMat }),
+    new Triangle({ v1: new Vector(-0.974, 0.003, 0.930), v2: new Vector(0.574, 0.003, 2.070), v3: new Vector(-0.586, 0.003, 2.380), material: paperMat }),
+    new Triangle({ v1: new Vector(-0.974, 0.003, 0.930), v2: new Vector( 0.186, 0.003, 0.620), v3: new Vector( 0.574, 0.003, 2.070), material: paperMat }),
   ],
 }));
 
+// ─── Table items ──────────────────────────────────────────────────────────────
 
-// ─── Test tubes — four colours, right of centre (right focal zone) ────────────
-// Cluster near x=+0.8..+1.8, z=1.5..3.0 — the right horizontal focal point.
-const tubes: [number, number, Material][] = [
-  [ 0.9, 1.6, liquids.red  ],
-  [ 1.4, 2.0, liquids.blue ],
-  [ 1.9, 1.4, liquids.amber],
-  [ 1.5, 2.7, liquids.teal ],
+// Test tubes ×8
+const tubeLayout: [number, number, Material][] = [
+  [ 0.8, 1.5, liquids.red  ],
+  [ 1.2, 2.0, liquids.blue ],
+  [ 1.3, 1.2, liquids.amber],
+  [ 1.0, 2.7, liquids.teal ],
+  [-1.1, 1.8, liquids.red  ],
+  [-0.7, 2.5, liquids.teal ],
+  [-0.3, 3.8, liquids.amber],
+  [ 0.6, 4.5, liquids.blue ],
 ];
-for (const [x, z, mat] of tubes) {
-  for (const obj of testTube(x, z, mat)) sceneObjects.push(obj);
+for (const [x, z, mat] of tubeLayout) {
+  for (const o of testTube(x, z, mat)) sceneObjects.push(o);
 }
 
-// ─── Faceted crystal ball ──────────────────────────────────────────────────────
-// Icosahedron (20 flat faces) with dense-glass IOR — each facet refracts
-// at a different angle giving a cut-crystal sparkle.
+// Erlenmeyers ×4
+for (const o of makeErlenmeyer( 0.7, 0.5, 1.8, flaskMat,     liquids.amber)) sceneObjects.push(o);
+for (const o of makeErlenmeyer( 1.1, 3.2, 1.0, backFlaskMat, liquids.red  )) sceneObjects.push(o);
+for (const o of makeErlenmeyer( 0.3, 2.7, 1.2, flaskMat,     liquids.teal )) sceneObjects.push(o);
+for (const o of makeErlenmeyer(-0.9, 4.8, 0.7, backFlaskMat, liquids.blue )) sceneObjects.push(o);
+
+// Faceted crystal ball (icosahedron, IOR 1.9)
 sceneObjects.push(parseMesh({
   mesh: icosahedron,
   material: new Material({ albedo: new Color(0, 0, 0), refractionIndex: 1.9 }),
   name: "crystalBall",
-  scale: 0.32,
-  translate: { x: -0.3, y: 0.34, z: 1.6 },
+  scale: 0.30,
+  translate: { x: -0.5, y: 0.32, z: 1.8 },
 }));
 
-// ─── Erlenmeyer flasks ────────────────────────────────────────────────────────
-// Large flask (2× scale) closer to the camera as the dominant foreground object.
-for (const obj of makeErlenmeyer( 1.5, 0.8, 2.0, flaskMat, liquids.amber)) sceneObjects.push(obj);
-// Normal flask further back, right side
-for (const obj of makeErlenmeyer( 0.3, 3.5, 1.0, backFlaskMat, liquids.red )) sceneObjects.push(obj);
+// Frosted glass sphere
+sceneObjects.push(new Sphere({
+  center: new Point(-0.9, 0.22, 3.1),
+  radius: 0.22,
+  material: frostedWhite,
+}));
+
+// Frosted green vase (tall cylinder)
+sceneObjects.push(new Cylinder({ center: new Point(0.4, 0, 4.3), radius: 0.11, height: 0.70, material: frostedGreen }));
+
+// Candles on table ×2
+for (const o of candle(-1.1, 0, 0.8)) sceneObjects.push(o);
+for (const o of candle(-0.5, 0, 3.5)) sceneObjects.push(o);
