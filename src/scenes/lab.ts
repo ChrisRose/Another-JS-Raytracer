@@ -247,33 +247,42 @@ for (const sy of [SY1, SY2]) {
 }
 
 // ─── Alcove shelf items ───────────────────────────────────────────────────────
-// Lower shelf: candle, tube, candle, small flask, candle, tube, candle
-const lowerXs:  [number, 'candle'|'tube'|'flask'][] = [
-  [-3.2, 'candle'], [-2.2, 'tube'], [-1.2, 'candle'],
-  [-0.2, 'flask'],  [0.8,  'candle'], [1.8, 'tube'], [2.8, 'candle'],
+// Lower shelf: irregular x spacing + z-depth scatter
+const lowerItems: [number, number, 'candle'|'tube'|'flask'][] = [
+  [-3.7, 7.58, 'candle'],
+  [-2.6, 7.88, 'tube'  ],
+  [-1.7, 7.64, 'candle'],
+  [-0.3, 7.82, 'flask' ],
+  [ 0.9, 7.60, 'candle'],
+  [ 2.2, 7.90, 'tube'  ],
+  [ 3.3, 7.72, 'candle'],
 ];
 const tubeColors = [liquids.red, liquids.teal, liquids.amber, liquids.blue];
 let ti = 0;
-for (const [x, type] of lowerXs) {
+for (const [x, z, type] of lowerItems) {
   if (type === 'candle') {
-    for (const o of candle(x, SY1, SZmid)) sceneObjects.push(o);
+    for (const o of candle(x, SY1, z)) sceneObjects.push(o);
   } else if (type === 'tube') {
-    for (const o of alcoveTube(x, SY1, SZmid, tubeColors[ti++ % 4])) sceneObjects.push(o);
+    for (const o of alcoveTube(x, SY1, z, tubeColors[ti++ % 4])) sceneObjects.push(o);
   } else {
-    for (const o of makeErlenmeyer(x, SZmid, 0.55, backFlaskMat, liquids.red, SY1)) sceneObjects.push(o);
+    for (const o of makeErlenmeyer(x, z, 0.55, backFlaskMat, liquids.red, SY1)) sceneObjects.push(o);
   }
 }
 
-// Upper shelf: frosted vase, candle, frosted vase, candle, frosted vase, candle
-const upperXs: [number, 'candle'|'vase'][] = [
-  [-2.8, 'vase'], [-1.8, 'candle'], [-0.8, 'vase'],
-  [0.2, 'candle'], [1.2, 'vase'], [2.2, 'candle'],
+// Upper shelf: irregular x spacing + z-depth scatter
+const upperItems: [number, number, 'candle'|'vase'][] = [
+  [-3.3, 7.76, 'vase'  ],
+  [-1.8, 7.58, 'candle'],
+  [-0.6, 7.88, 'vase'  ],
+  [ 0.7, 7.65, 'candle'],
+  [ 1.9, 7.84, 'vase'  ],
+  [ 3.1, 7.60, 'candle'],
 ];
-for (const [x, type] of upperXs) {
+for (const [x, z, type] of upperItems) {
   if (type === 'candle') {
-    for (const o of candle(x, SY2, SZmid)) sceneObjects.push(o);
+    for (const o of candle(x, SY2, z)) sceneObjects.push(o);
   } else {
-    sceneObjects.push(new Cylinder({ center: new Point(x, SY2, SZmid), radius: 0.065, height: 0.38, material: frostedWhite }));
+    sceneObjects.push(new Cylinder({ center: new Point(x, SY2, z), radius: 0.065, height: 0.38, material: frostedWhite }));
   }
 }
 
