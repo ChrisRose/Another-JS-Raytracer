@@ -455,7 +455,7 @@ sceneObjects.push(new Mesh({
 // ─── Table items ──────────────────────────────────────────────────────────────
 
 // Test tubes in a wooden rack (items scaled ×0.8, table centred at x=0)
-const RACK_CX = -0.25, RACK_CZ = 1.85, RACK_N = 4, RACK_SP = 0.20, RACK_ANG = -70;
+const RACK_CX = 0.90, RACK_CZ = 1.85, RACK_N = 4, RACK_SP = 0.20, RACK_ANG = -70;
 const RACK_Y = 1.2;
 const rack_θ = RACK_ANG * Math.PI / 180;
 for (const o of tubeRack(RACK_CX, RACK_CZ, RACK_N, RACK_SP, RACK_ANG, RACK_Y, 0.8)) sceneObjects.push(o);
