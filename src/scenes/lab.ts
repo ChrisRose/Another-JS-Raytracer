@@ -276,6 +276,36 @@ sceneObjects.push(new Rectangle({
   material: wallMat,
 }));
 
+// ─── Arched alcove opening ────────────────────────────────────────────────────
+// Semicircular arch: radius = half alcove width, peak at AY1
+{
+  const arch_r  = (AX1 - AX0) / 2;           // 3.4
+  const arch_cx = (AX0 + AX1) / 2;            // 0
+  const arch_sy = AY1 - arch_r;               // spring line y ≈ 0.6
+  const AZ_ARCH = AZ0 - 0.01;                 // just in front of glass panes
+  const ARCH_N  = 24;
+  const archPt  = (a: number) => new Vector(arch_cx + arch_r * Math.cos(a), arch_sy + arch_r * Math.sin(a), AZ_ARCH);
+  const archTris: Triangle[] = [];
+
+  for (let i = 0; i < ARCH_N; i++) {
+    const a0 = Math.PI * i / ARCH_N;
+    const a1 = Math.PI * (i + 1) / ARCH_N;
+    const P0 = archPt(a0), P1 = archPt(a1);
+    if (i < ARCH_N / 2) {
+      // Right spandrel — fan from (AX1, AY1)
+      archTris.push(new Triangle({ v1: P1, v2: P0, v3: new Vector(AX1, AY1, AZ_ARCH), material: wallMat }));
+    } else {
+      // Left spandrel — fan from (AX0, AY1)
+      archTris.push(new Triangle({ v1: new Vector(AX0, AY1, AZ_ARCH), v2: P1, v3: P0, material: wallMat }));
+    }
+  }
+  // Thin strip below spring line (AY0 → arch_sy)
+  archTris.push(new Triangle({ v1: new Vector(AX0, AY0, AZ_ARCH), v2: new Vector(AX1, arch_sy, AZ_ARCH), v3: new Vector(AX0, arch_sy, AZ_ARCH), material: wallMat }));
+  archTris.push(new Triangle({ v1: new Vector(AX0, AY0, AZ_ARCH), v2: new Vector(AX1, AY0,   AZ_ARCH), v3: new Vector(AX1, arch_sy, AZ_ARCH), material: wallMat }));
+
+  sceneObjects.push(new Mesh({ name: "archFrame", material: wallMat, meshObjects: archTris }));
+}
+
 // ─── Alcove interior ──────────────────────────────────────────────────────────
 sceneObjects.push(new Rectangle({
   corner: new Point(AX0, AY0, AZ0),
@@ -452,9 +482,13 @@ sceneObjects.push(new Mesh({
   ],
 }));
 
-// ─── Stool ────────────────────────────────────────────────────────────────────
+// ─── Stools ───────────────────────────────────────────────────────────────────
 sceneObjects.push(new Cylinder({ center: new Point(-0.8, 0.58, 0.65), radius: 0.28, height: 0.05, material: benchTop }));
 for (const [sx, sz] of [[-1.02, 0.87], [-1.02, 0.43], [-0.58, 0.87], [-0.58, 0.43]] as [number,number][]) {
+  sceneObjects.push(new Cylinder({ center: new Point(sx, -0.6, sz), radius: 0.05, height: 1.18, material: legMat }));
+}
+sceneObjects.push(new Cylinder({ center: new Point(1.2, 0.58, 0.80), radius: 0.28, height: 0.05, material: benchTop }));
+for (const [sx, sz] of [[0.98, 1.02], [0.98, 0.58], [1.42, 1.02], [1.42, 0.58]] as [number,number][]) {
   sceneObjects.push(new Cylinder({ center: new Point(sx, -0.6, sz), radius: 0.05, height: 1.18, material: legMat }));
 }
 
