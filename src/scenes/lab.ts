@@ -16,8 +16,8 @@ export const cameraStart = new Point(0, 2.2, -1.8);
 export const rotateCamera = (dir: Vector) =>
   dir.multiplyWith3x3Matrix(getRotationXMatrix(10));
 
-export const sigma_t = 0.13;
-export const sigma_s = 0.11;
+export const sigma_t = 0.28;
+export const sigma_s = 0.26;
 export const phaseG  = 0.0;
 export const skyFn = (_dir: Vector) => new Color(0, 0, 0);
 
@@ -366,50 +366,30 @@ for (const sy of [SY1, SY2]) {
   }));
 }
 
-// ─── Alcove shelf items ───────────────────────────────────────────────────────
+// ─── Alcove shelf items — centred within arch entrance (±1.8) ─────────────────
+const facetedCrystal = new Material({ albedo: new Color(0, 0, 0), refractionIndex: 1.9 });
+const facetedAmber   = new Material({ albedo: new Color(0.85, 0.52, 0.08), roughness: 0.12 });
+const facetedTeal    = new Material({ albedo: new Color(0.08, 0.62, 0.52), roughness: 0.12 });
+const facetedRose    = new Material({ albedo: new Color(0.80, 0.18, 0.22), roughness: 0.14 });
 
-// Lower shelf — 8 items + 3 mini-racks
-const lowerItems: [number, number, 'candle'|'flask'][] = [
-  [-3.1, 7.32, 'candle'],
-  [-1.9, 8.08, 'candle'],
-  [-1.4, 7.50, 'flask' ],
-  [-0.8, 7.82, 'candle'],
-  [ 0.4, 7.38, 'flask' ],
-  [ 1.0, 7.95, 'candle'],
-  [ 2.4, 8.08, 'candle'],
-  [ 3.1, 7.44, 'candle'],
-];
-for (const [x, z, type] of lowerItems) {
-  if (type === 'candle') {
-    for (const o of candle(x, SY1, z)) sceneObjects.push(o);
-  } else {
-    for (const o of makeErlenmeyer(x, z, 0.55, backFlaskMat, liquids.red, SY1)) sceneObjects.push(o);
-  }
-}
-for (const o of alcoveRackWithTubes(-2.5, SY1, 7.90, 3, 0.14, -15, [liquids.red,  liquids.amber, liquids.teal])) sceneObjects.push(o);
-for (const o of alcoveRackWithTubes(-0.2, SY1, 8.16, 2, 0.14,  10, [liquids.blue, liquids.red                ])) sceneObjects.push(o);
-for (const o of alcoveRackWithTubes( 1.6, SY1, 7.60, 3, 0.14, -10, [liquids.teal, liquids.amber, liquids.blue])) sceneObjects.push(o);
+const shelfSphere = (name: string, mat: Material, x: number, z: number, sy: number, r = 0.13) =>
+  sceneObjects.push(parseMesh({ mesh: icosahedron, material: mat, name, scale: r, translate: { x, y: sy + r, z } }));
 
-// Upper shelf — 8 items + 2 mini-racks
-const upperItems: [number, number, 'candle'|'vase'][] = [
-  [-3.0, 7.84, 'vase'  ],
-  [-2.3, 7.50, 'candle'],
-  [-0.9, 7.36, 'vase'  ],
-  [-0.2, 7.78, 'candle'],
-  [ 0.6, 8.14, 'vase'  ],
-  [ 1.9, 7.92, 'candle'],
-  [ 2.6, 7.40, 'vase'  ],
-  [ 3.2, 8.06, 'candle'],
-];
-for (const [x, z, type] of upperItems) {
-  if (type === 'candle') {
-    for (const o of candle(x, SY2, z)) sceneObjects.push(o);
-  } else {
-    sceneObjects.push(new Cylinder({ center: new Point(x, SY2, z), radius: 0.065, height: 0.38, material: frostedWhite }));
-  }
-}
-for (const o of alcoveRackWithTubes(-1.6, SY2, 8.10, 2, 0.14,  15, [liquids.amber, liquids.red               ])) sceneObjects.push(o);
-for (const o of alcoveRackWithTubes( 1.2, SY2, 7.55, 3, 0.14, -12, [liquids.blue,  liquids.teal, liquids.amber])) sceneObjects.push(o);
+// Lower shelf
+for (const o of alcoveRackWithTubes(-0.9, SY1, 8.10, 3, 0.14, -8, [liquids.red, liquids.amber, liquids.teal])) sceneObjects.push(o);
+for (const o of alcoveRackWithTubes( 0.9, SY1, 7.65, 2, 0.14, 12, [liquids.blue, liquids.red              ])) sceneObjects.push(o);
+shelfSphere("ls1", facetedCrystal, -1.55, 7.75, SY1);
+shelfSphere("ls2", facetedAmber,   -0.05, 7.40, SY1, 0.11);
+for (const o of candle(-1.55, SY1, 8.10)) sceneObjects.push(o);
+for (const o of makeErlenmeyer(1.55, 7.95, 0.44, backFlaskMat, liquids.red, SY1)) sceneObjects.push(o);
+
+// Upper shelf
+for (const o of alcoveRackWithTubes(0.3, SY2, 8.05, 3, 0.14, -5, [liquids.blue, liquids.teal, liquids.amber])) sceneObjects.push(o);
+shelfSphere("us1", facetedTeal,    -1.40, 7.80, SY2, 0.12);
+shelfSphere("us2", facetedRose,    -0.35, 7.50, SY2, 0.11);
+shelfSphere("us3", facetedCrystal,  1.45, 7.70, SY2, 0.12);
+for (const o of candle(1.45, SY2, 8.10)) sceneObjects.push(o);
+for (const o of candle(-0.35, SY2, 8.05)) sceneObjects.push(o);
 
 // ─── Right wall with window ───────────────────────────────────────────────────
 const WY0 = 0.5, WY1 = 4.5;
@@ -468,7 +448,7 @@ for (const ys of [WY0 + (WY1-WY0)/4, WY0 + 2*(WY1-WY0)/4, WY0 + 3*(WY1-WY0)/4]) 
 
 // ─── Window light ─────────────────────────────────────────────────────────────
 const LX = 4.05;
-const sunMat = new Material({ albedo: new Color(1, 0.95, 0.80), emissive: new Color(22, 20, 14) });
+const sunMat = new Material({ albedo: new Color(1, 0.95, 0.80), emissive: new Color(60, 54, 36) });
 sceneObjects.push(new Mesh({
   name: "windowLight",
   material: sunMat,
