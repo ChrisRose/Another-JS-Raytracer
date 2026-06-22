@@ -9,7 +9,7 @@ import { Triangle } from "../Triangle.js";
 import { Cylinder } from "../Cylinder.js";
 import { Sphere } from "../Sphere.js";
 import { getRotationXMatrix } from "../matrix.js";
-import { parseMesh, fetchAndParseMesh } from "../meshUtils.js";
+import { parseMesh } from "../meshUtils.js";
 import { icosahedron } from "../meshes/icosahedron.js";
 
 export const cameraStart = new Point(0, 2.2, -2.5);
@@ -566,20 +566,3 @@ sceneObjects.push(new Rectangle({
   }));
 }
 
-
-// ─── Stanford dragon (alcove lower shelf, right side) ─────────────────────────
-const alcoveDragonMat = new Material({
-  albedo: new Color(0.08, 0.48, 0.22),
-  roughness: 0.08,
-  subsurface: 0.62,
-});
-
-export async function init() {
-  const dragon = await fetchAndParseMesh(`${import.meta.env.BASE_URL}meshes/dragon.obj`, {
-    name: "alcoveDragon",
-    material: alcoveDragonMat,
-    scale: 0.28,
-    translate: { x: 0.0, y: SY1 + 0.58 * 0.28, z: 5.55 },
-  });
-  sceneObjects.push(dragon);
-}
