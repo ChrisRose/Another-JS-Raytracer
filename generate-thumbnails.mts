@@ -389,7 +389,7 @@ for (const { id, scene } of scenesToRender) {
       name: 'alcoveDragon',
       material: new Material({ albedo: new Color(0.08, 0.48, 0.22), roughness: 0.08, subsurface: 0.62 }),
       scale: 0.28,
-      translate: { x: 0.9, y: 1.5 + 0.58 * 0.28, z: 7.65 },
+      translate: { x: 0.9, y: 1.5 + 0.58 * 0.28, z: 5.65 },
     });
     labScene.sceneObjects.push(dragon);
     console.log(`[lab] alcoveDragon: ${dragon.meshObjects.length} triangles`);

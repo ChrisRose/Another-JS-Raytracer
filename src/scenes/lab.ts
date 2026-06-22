@@ -242,7 +242,7 @@ sceneObjects.push(new Rectangle({
 // ─── Back wall — almost entirely alcove ───────────────────────────────────────
 const AX0 = -3.4, AX1 = 3.4;
 const AY0 =  0.5, AY1 = 5.5;
-const AZ0 =  7.0, AZ1 = 8.5;
+const AZ0 =  5.0, AZ1 = 6.5;
 
 // Top strip
 sceneObjects.push(new Rectangle({
@@ -377,24 +377,24 @@ const shelfSphere = (name: string, mat: Material, x: number, z: number, sy: numb
   sceneObjects.push(parseMesh({ mesh: icosahedron, material: mat, name, scale: r, translate: { x, y: sy + r, z } }));
 
 // Lower shelf — Stanford dragon on right (loaded in init())
-shelfSphere("ls1", facetedCrystal, -1.55, 7.75, SY1);
-shelfSphere("ls2", facetedAmber,   -0.05, 7.40, SY1, 0.11);
-shelfSphere("ls3", facetedTeal,    -1.10, 8.05, SY1, 0.10);
-shelfSphere("ls4", facetedRose,    -0.70, 8.08, SY1, 0.09);
-shelfSphere("ls5", facetedCrystal, -0.90, 7.72, SY1, 0.09);
-for (const o of candle(-1.55, SY1, 8.10)) sceneObjects.push(o);
-for (const o of candle( 1.55, SY1, 8.10)) sceneObjects.push(o);
-for (const o of makeErlenmeyer(1.55, 7.95, 0.44, backFlaskMat, liquids.red, SY1)) sceneObjects.push(o);
+shelfSphere("ls1", facetedCrystal, -1.55, 5.75, SY1);
+shelfSphere("ls2", facetedAmber,   -0.05, 5.40, SY1, 0.11);
+shelfSphere("ls3", facetedTeal,    -1.10, 6.05, SY1, 0.10);
+shelfSphere("ls4", facetedRose,    -0.70, 6.08, SY1, 0.09);
+shelfSphere("ls5", facetedCrystal, -0.90, 5.72, SY1, 0.09);
+for (const o of candle(-1.55, SY1, 6.10)) sceneObjects.push(o);
+for (const o of candle( 1.55, SY1, 6.10)) sceneObjects.push(o);
+for (const o of makeErlenmeyer(1.55, 5.95, 0.44, backFlaskMat, liquids.red, SY1)) sceneObjects.push(o);
 
 // Upper shelf
-shelfSphere("us1", facetedTeal,    -1.40, 7.80, SY2, 0.12);
-shelfSphere("us2", facetedRose,    -0.35, 7.50, SY2, 0.11);
-shelfSphere("us3", facetedCrystal,  1.45, 7.70, SY2, 0.12);
-shelfSphere("us4", facetedAmber,    0.10, 8.00, SY2, 0.10);
-shelfSphere("us5", facetedCrystal,  0.30, 8.05, SY2, 0.09);
-shelfSphere("us6", facetedTeal,     0.50, 7.95, SY2, 0.10);
-for (const o of candle(1.45, SY2, 8.10)) sceneObjects.push(o);
-for (const o of candle(-0.35, SY2, 8.05)) sceneObjects.push(o);
+shelfSphere("us1", facetedTeal,    -1.40, 5.80, SY2, 0.12);
+shelfSphere("us2", facetedRose,    -0.35, 5.50, SY2, 0.11);
+shelfSphere("us3", facetedCrystal,  1.45, 5.70, SY2, 0.12);
+shelfSphere("us4", facetedAmber,    0.10, 6.00, SY2, 0.10);
+shelfSphere("us5", facetedCrystal,  0.30, 6.05, SY2, 0.09);
+shelfSphere("us6", facetedTeal,     0.50, 5.95, SY2, 0.10);
+for (const o of candle(1.45, SY2, 6.10)) sceneObjects.push(o);
+for (const o of candle(-0.35, SY2, 6.05)) sceneObjects.push(o);
 
 // ─── Right wall with window ───────────────────────────────────────────────────
 const WY0 = 0.5, WY1 = 4.5;
@@ -562,7 +562,7 @@ export async function init() {
     name: "alcoveDragon",
     material: alcoveDragonMat,
     scale: 0.28,
-    translate: { x: 0.9, y: SY1 + 0.58 * 0.28, z: 7.65 },
+    translate: { x: 0.9, y: SY1 + 0.58 * 0.28, z: 5.65 },
   });
   sceneObjects.push(dragon);
 }
