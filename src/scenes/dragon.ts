@@ -41,11 +41,17 @@ const rightWall = new Rectangle({
 
 const lightBall = new Sphere({
   center: new Point(0, 16, 3), radius: 3, name: "lightBall",
-  material: new Material({ albedo: new Color(1, 1, 1), emissive: new Color(5, 5, 5) }),
+  material: new Material({ albedo: new Color(1, 1, 1), emissive: new Color(3, 3, 3) }),
+});
+
+// Back light — large warm sphere behind the dragon, backlights subsurface
+const backLight = new Sphere({
+  center: new Point(0, 3.5, 7), radius: 3,
+  material: new Material({ albedo: new Color(1, 0.95, 0.80), emissive: new Color(28, 24, 16) }),
 });
 
 export const sceneObjects: SceneObject[] = [
-  floor, ceiling, backWall, leftWall, rightWall, lightBall,
+  floor, ceiling, backWall, leftWall, rightWall, lightBall, backLight,
 ];
 
 // ─── Dragon (fetched at runtime, pushed in init()) ───────────────────────────

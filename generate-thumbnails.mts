@@ -398,7 +398,7 @@ const scenesToRender = targetId ? SCENES.filter(s => s.id === targetId) : SCENES
 
 for (const { id, scene } of scenesToRender) {
   // Dragon OBJ is served via fetch in the browser; in Node.js we read it from disk.
-  if (id === 'dragon' && dragonScene.sceneObjects.length === 6) {
+  if (id === 'dragon' && !dragonScene.sceneObjects.some((o: any) => o.name === 'dragon')) {
     console.log('[dragon] Loading OBJ from disk…');
     const objText = await readFile(path.join(__dirname, 'public', 'meshes', 'dragon.obj'), 'utf-8');
     const dragon = parseMesh({
