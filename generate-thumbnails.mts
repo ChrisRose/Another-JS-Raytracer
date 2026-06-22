@@ -49,7 +49,7 @@ const SCENES = [
 const PREVIEW = process.argv.includes('--preview');
 const WIDTH   = PREVIEW ? 200 : 600;
 const HEIGHT  = PREVIEW ? 200 : 600;
-const PASSES  = PREVIEW ?  16 :  96;
+const PASSES  = PREVIEW ?  16 : 128;
 const OUT_DIR = path.join(__dirname, 'public', 'thumbnails');
 
 // ─── ImageData shim for sky texture ──────────────────────────────────────────
