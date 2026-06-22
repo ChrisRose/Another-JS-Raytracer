@@ -239,12 +239,25 @@ sceneObjects.push(new Rectangle({
   material: wallMat,
 }));
 
-// ─── Back wall — almost entirely alcove ───────────────────────────────────────
-const AX0 = -3.4, AX1 = 3.4;
-const AY0 =  0.5, AY1 = 5.5;
-const AZ0 =  5.0, AZ1 = 6.5;
+// ─── Three alcoves across the back wall ───────────────────────────────────────
+const AY0 = 0.5,  AY1 = 4.0;
+const AZ0 = 5.0,  AZ1 = 6.0;
+const AHW = 0.9;                        // each alcove half-width
+const ALCOVE_CX = [-2.5, 0.0, 2.5];    // alcove x-centres
+const arch_r  = AHW;                    // 0.9
+const arch_cy = AY1 - arch_r;          // 3.1 (spring line)
+const ARCH_N  = 20;
 
-// Top strip
+// ── Back wall face at z=AZ0 ──────────────────────────────────────────────────
+// Bottom strip (below all openings)
+sceneObjects.push(new Rectangle({
+  corner: new Point(-4, -0.6, AZ0),
+  v1: new Vector(1, 0, 0), v2: new Vector(0, 1, 0),
+  width: 8, height: AY0 + 0.6,
+  normal: new Vector(0, 0, -1), orientation: "xyAxis",
+  material: wallMat,
+}));
+// Top strip (above all openings)
 sceneObjects.push(new Rectangle({
   corner: new Point(-4, AY1, AZ0),
   v1: new Vector(1, 0, 0), v2: new Vector(0, 1, 0),
@@ -252,122 +265,100 @@ sceneObjects.push(new Rectangle({
   normal: new Vector(0, 0, -1), orientation: "xyAxis",
   material: wallMat,
 }));
-// Left flank
-sceneObjects.push(new Rectangle({
-  corner: new Point(-4, -0.6, AZ0),
-  v1: new Vector(1, 0, 0), v2: new Vector(0, 1, 0),
-  width: AX0 + 4, height: AY1 + 0.6,
-  normal: new Vector(0, 0, -1), orientation: "xyAxis",
-  material: wallMat,
-}));
-// Right flank
-sceneObjects.push(new Rectangle({
-  corner: new Point(AX1, -0.6, AZ0),
-  v1: new Vector(1, 0, 0), v2: new Vector(0, 1, 0),
-  width: 4 - AX1, height: AY1 + 0.6,
-  normal: new Vector(0, 0, -1), orientation: "xyAxis",
-  material: wallMat,
-}));
-// Bottom strip
-sceneObjects.push(new Rectangle({
-  corner: new Point(AX0, -0.6, AZ0),
-  v1: new Vector(1, 0, 0), v2: new Vector(0, 1, 0),
-  width: AX1 - AX0, height: AY0 + 0.6,
-  normal: new Vector(0, 0, -1), orientation: "xyAxis",
-  material: wallMat,
-}));
-
-// ─── Arched alcove entrance ───────────────────────────────────────────────────
-// Narrowed entrance (−1.8 → 1.8) gives radius=1.8, spring line at y=2.2
+// Vertical panels: left flank, between alcoves, right flank
 {
-  const EX0 = -1.8, EX1 = 1.8;
-  const arch_r  = (EX1 - EX0) / 2;   // 1.8
-  const arch_cy = AY1 - arch_r;       // spring line at y=2.2
-  const ARCH_N  = 24;
-  const archPt  = (a: number) => new Vector(arch_r * Math.cos(a), arch_cy + arch_r * Math.sin(a), AZ0);
-
-  // Wall panels filling the gap between alcove width and entrance width
-  for (const [x0, w] of [[AX0, EX0 - AX0], [EX1, AX1 - EX1]] as [number, number][]) {
+  const xBreaks = [
+    -4,
+    ALCOVE_CX[0] - AHW, ALCOVE_CX[0] + AHW,
+    ALCOVE_CX[1] - AHW, ALCOVE_CX[1] + AHW,
+    ALCOVE_CX[2] - AHW, ALCOVE_CX[2] + AHW,
+    4,
+  ];
+  for (let i = 0; i < xBreaks.length - 1; i += 2) {
+    const x0 = xBreaks[i], x1 = xBreaks[i + 1];
     sceneObjects.push(new Rectangle({
       corner: new Point(x0, AY0, AZ0),
       v1: new Vector(1, 0, 0), v2: new Vector(0, 1, 0),
-      width: w, height: AY1 - AY0,
+      width: x1 - x0, height: AY1 - AY0,
       normal: new Vector(0, 0, -1), orientation: "xyAxis",
       material: wallMat,
     }));
   }
-
-  // Spandrel triangles — wall fill in corners above spring line
+}
+// Arch spandrels — one per alcove
+for (const cx of ALCOVE_CX) {
+  const archPt = (a: number) => new Vector(cx + arch_r * Math.cos(a), arch_cy + arch_r * Math.sin(a), AZ0);
   const archTris: Triangle[] = [];
   for (let i = 0; i < ARCH_N; i++) {
     const a0 = Math.PI * i / ARCH_N;
     const a1 = Math.PI * (i + 1) / ARCH_N;
     const P0 = archPt(a0), P1 = archPt(a1);
     if (i < ARCH_N / 2) {
-      // Right spandrel — fan from (EX1, AY1)
-      archTris.push(new Triangle({ v1: P1, v2: P0, v3: new Vector(EX1, AY1, AZ0), material: wallMat }));
+      archTris.push(new Triangle({ v1: P1, v2: P0, v3: new Vector(cx + AHW, AY1, AZ0), material: wallMat }));
     } else {
-      // Left spandrel — fan from (EX0, AY1)
-      archTris.push(new Triangle({ v1: new Vector(EX0, AY1, AZ0), v2: P1, v3: P0, material: wallMat }));
+      archTris.push(new Triangle({ v1: new Vector(cx - AHW, AY1, AZ0), v2: P1, v3: P0, material: wallMat }));
     }
   }
-  sceneObjects.push(new Mesh({ name: "archSpandrel", material: wallMat, meshObjects: archTris }));
+  sceneObjects.push(new Mesh({ name: `archSpandrel_${cx}`, material: wallMat, meshObjects: archTris }));
 }
 
-// ─── Alcove interior ─────────────────────────────────────────────────────────
-// Floor at y=AY0
-sceneObjects.push(new Rectangle({
-  corner: new Point(AX0, AY0, AZ0),
-  v1: new Vector(1, 0, 0), v2: new Vector(0, 0, 1),
-  width: AX1 - AX0, height: AZ1 - AZ0,
-  normal: new Vector(0, 1, 0), orientation: "xzAxis",
-  material: alcoveMat,
-}));
-sceneObjects.push(new Rectangle({
-  corner: new Point(AX0, AY0, AZ0),
-  v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
-  width: AZ1 - AZ0, height: AY1 - AY0,
-  normal: new Vector(1, 0, 0), orientation: "yzAxis",
-  material: alcoveMat,
-}));
-sceneObjects.push(new Rectangle({
-  corner: new Point(AX1, AY0, AZ0),
-  v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
-  width: AZ1 - AZ0, height: AY1 - AY0,
-  normal: new Vector(-1, 0, 0), orientation: "yzAxis",
-  material: alcoveMat,
-}));
-sceneObjects.push(new Rectangle({
-  corner: new Point(AX0, AY0, AZ1),
-  v1: new Vector(1, 0, 0), v2: new Vector(0, 1, 0),
-  width: AX1 - AX0, height: AY1 - AY0,
-  normal: new Vector(0, 0, -1), orientation: "xyAxis",
-  material: alcoveMat,
-}));
-sceneObjects.push(new Rectangle({
-  corner: new Point(AX0, AY1, AZ0),
-  v1: new Vector(1, 0, 0), v2: new Vector(0, 0, (AZ1-AZ0)/(AX1-AX0)),
-  width: AX1 - AX0, height: AZ1 - AZ0,
-  normal: new Vector(0, -1, 0), orientation: "xzAxis",
-  material: alcoveMat,
-}));
-
-
-// ─── Alcove shelves ───────────────────────────────────────────────────────────
-const SY1 = 1.5, SY2 = 2.8;
-const SZmid = (AZ0 + AZ1) / 2;
-
-for (const sy of [SY1, SY2]) {
-  sceneObjects.push(new Rectangle({
-    corner: new Point(AX0 + 0.06, sy, AZ0 + 0.05),
-    v1: new Vector(1, 0, 0), v2: new Vector(0, 0, (AZ1-AZ0-0.20)/(AX1-AX0-0.12)),
-    width: AX1 - AX0 - 0.12, height: AZ1 - AZ0 - 0.20,
+// ── Alcove interiors — floor, walls, back, ceiling ───────────────────────────
+for (const cx of ALCOVE_CX) {
+  const ax0 = cx - AHW, ax1 = cx + AHW;
+  sceneObjects.push(new Rectangle({  // floor
+    corner: new Point(ax0, AY0, AZ0),
+    v1: new Vector(1, 0, 0), v2: new Vector(0, 0, 1),
+    width: AHW * 2, height: AZ1 - AZ0,
     normal: new Vector(0, 1, 0), orientation: "xzAxis",
-    material: shelfMat,
+    material: alcoveMat,
+  }));
+  sceneObjects.push(new Rectangle({  // left wall
+    corner: new Point(ax0, AY0, AZ0),
+    v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
+    width: AZ1 - AZ0, height: AY1 - AY0,
+    normal: new Vector(1, 0, 0), orientation: "yzAxis",
+    material: alcoveMat,
+  }));
+  sceneObjects.push(new Rectangle({  // right wall
+    corner: new Point(ax1, AY0, AZ0),
+    v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
+    width: AZ1 - AZ0, height: AY1 - AY0,
+    normal: new Vector(-1, 0, 0), orientation: "yzAxis",
+    material: alcoveMat,
+  }));
+  sceneObjects.push(new Rectangle({  // back wall
+    corner: new Point(ax0, AY0, AZ1),
+    v1: new Vector(1, 0, 0), v2: new Vector(0, 1, 0),
+    width: AHW * 2, height: AY1 - AY0,
+    normal: new Vector(0, 0, -1), orientation: "xyAxis",
+    material: alcoveMat,
+  }));
+  sceneObjects.push(new Rectangle({  // ceiling
+    corner: new Point(ax0, AY1, AZ0),
+    v1: new Vector(1, 0, 0), v2: new Vector(0, 0, 1),
+    width: AHW * 2, height: AZ1 - AZ0,
+    normal: new Vector(0, -1, 0), orientation: "xzAxis",
+    material: alcoveMat,
   }));
 }
 
-// ─── Alcove shelf items — centred within arch entrance (±1.8) ─────────────────
+// ── Alcove shelves — two per alcove ──────────────────────────────────────────
+const SY1 = 1.5, SY2 = 2.6;
+
+for (const cx of ALCOVE_CX) {
+  const ax0 = cx - AHW;
+  for (const sy of [SY1, SY2]) {
+    sceneObjects.push(new Rectangle({
+      corner: new Point(ax0 + 0.05, sy, AZ0 + 0.05),
+      v1: new Vector(1, 0, 0), v2: new Vector(0, 0, 1),
+      width: AHW * 2 - 0.10, height: AZ1 - AZ0 - 0.10,
+      normal: new Vector(0, 1, 0), orientation: "xzAxis",
+      material: shelfMat,
+    }));
+  }
+}
+
+// ── Alcove shelf items ────────────────────────────────────────────────────────
 const facetedCrystal = new Material({ albedo: new Color(0, 0, 0), refractionIndex: 1.9 });
 const facetedAmber   = new Material({ albedo: new Color(0.85, 0.52, 0.08), roughness: 0.12 });
 const facetedTeal    = new Material({ albedo: new Color(0.08, 0.62, 0.52), roughness: 0.12 });
@@ -376,25 +367,23 @@ const facetedRose    = new Material({ albedo: new Color(0.80, 0.18, 0.22), rough
 const shelfSphere = (name: string, mat: Material, x: number, z: number, sy: number, r = 0.13) =>
   sceneObjects.push(parseMesh({ mesh: icosahedron, material: mat, name, scale: r, translate: { x, y: sy + r, z } }));
 
-// Lower shelf — Stanford dragon on right (loaded in init())
-shelfSphere("ls1", facetedCrystal, -1.55, 5.75, SY1);
-shelfSphere("ls2", facetedAmber,   -0.05, 5.40, SY1, 0.11);
-shelfSphere("ls3", facetedTeal,    -1.10, 6.05, SY1, 0.10);
-shelfSphere("ls4", facetedRose,    -0.70, 6.08, SY1, 0.09);
-shelfSphere("ls5", facetedCrystal, -0.90, 5.72, SY1, 0.09);
-for (const o of candle(-1.55, SY1, 6.10)) sceneObjects.push(o);
-for (const o of candle( 1.55, SY1, 6.10)) sceneObjects.push(o);
-for (const o of makeErlenmeyer(1.55, 5.95, 0.44, backFlaskMat, liquids.red, SY1)) sceneObjects.push(o);
+// Left alcove (cx = −2.5)
+shelfSphere("ls1", facetedCrystal, -2.80, 5.30, SY1);
+shelfSphere("ls2", facetedAmber,   -2.22, 5.72, SY1, 0.11);
+for (const o of candle(-2.50, SY1, 5.85)) sceneObjects.push(o);
+shelfSphere("lu1", facetedTeal,    -2.72, 5.40, SY2, 0.12);
+shelfSphere("lu2", facetedRose,    -2.25, 5.68, SY2, 0.11);
 
-// Upper shelf
-shelfSphere("us1", facetedTeal,    -1.40, 5.80, SY2, 0.12);
-shelfSphere("us2", facetedRose,    -0.35, 5.50, SY2, 0.11);
-shelfSphere("us3", facetedCrystal,  1.45, 5.70, SY2, 0.12);
-shelfSphere("us4", facetedAmber,    0.10, 6.00, SY2, 0.10);
-shelfSphere("us5", facetedCrystal,  0.30, 6.05, SY2, 0.09);
-shelfSphere("us6", facetedTeal,     0.50, 5.95, SY2, 0.10);
-for (const o of candle(1.45, SY2, 6.10)) sceneObjects.push(o);
-for (const o of candle(-0.35, SY2, 6.05)) sceneObjects.push(o);
+// Center alcove (cx = 0.0) — Stanford dragon on lower shelf (loaded in init())
+shelfSphere("cu1", facetedAmber,   -0.30, 5.55, SY2, 0.11);
+shelfSphere("cu2", facetedCrystal,  0.32, 5.42, SY2, 0.10);
+
+// Right alcove (cx = 2.5)
+for (const o of makeErlenmeyer(2.18, 5.42, 0.40, backFlaskMat, liquids.red, SY1)) sceneObjects.push(o);
+shelfSphere("rs1", facetedTeal,     2.80, 5.72, SY1, 0.11);
+for (const o of candle(2.50, SY1, 5.85)) sceneObjects.push(o);
+shelfSphere("ru1", facetedRose,     2.28, 5.40, SY2, 0.12);
+shelfSphere("ru2", facetedCrystal,  2.78, 5.68, SY2, 0.10);
 
 // ─── Right wall with window ───────────────────────────────────────────────────
 const WY0 = 0.5, WY1 = 4.5;
@@ -562,7 +551,7 @@ export async function init() {
     name: "alcoveDragon",
     material: alcoveDragonMat,
     scale: 0.28,
-    translate: { x: 0.9, y: SY1 + 0.58 * 0.28, z: 5.65 },
+    translate: { x: 0.0, y: SY1 + 0.58 * 0.28, z: 5.55 },
   });
   sceneObjects.push(dragon);
 }
