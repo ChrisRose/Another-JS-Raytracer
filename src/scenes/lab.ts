@@ -12,7 +12,7 @@ import { getRotationXMatrix } from "../matrix.js";
 import { parseMesh, fetchAndParseMesh } from "../meshUtils.js";
 import { icosahedron } from "../meshes/icosahedron.js";
 
-export const cameraStart = new Point(0, 2.2, -0.8);
+export const cameraStart = new Point(0, 2.2, -2.5);
 export const rotateCamera = (dir: Vector) =>
   new Vector(dir.x, dir.y, dir.z)
     .multiplyWith3x3Matrix(getRotationXMatrix(10));
