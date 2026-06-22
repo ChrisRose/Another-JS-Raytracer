@@ -393,7 +393,7 @@ for (const o of candle(-0.35, SY2, 8.05)) sceneObjects.push(o);
 
 // ─── Right wall with window ───────────────────────────────────────────────────
 const WY0 = 0.5, WY1 = 4.5;
-const WZ0 = 0.5, WZ1 = 3.7;
+const WZ0 = 1.6, WZ1 = 2.0;
 
 sceneObjects.push(new Rectangle({
   corner: new Point(4, -0.6, -3),
@@ -459,31 +459,9 @@ sceneObjects.push(new Rectangle({
   material: wallMat,
 }));
 
-// ─── Window slats ─────────────────────────────────────────────────────────────
-// Vertical dividers (z)
-for (const zs of [WZ0 + (WZ1-WZ0)/3, WZ0 + 2*(WZ1-WZ0)/3]) {
-  sceneObjects.push(new Rectangle({
-    corner: new Point(4.40, WY0, zs - 0.04),
-    v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
-    height: WY1 - WY0, width: 0.08,
-    normal: new Vector(-1, 0, 0), orientation: "yzAxis",
-    material: slatMat,
-  }));
-}
-// Horizontal dividers (y)
-for (const ys of [WY0 + (WY1-WY0)/4, WY0 + 2*(WY1-WY0)/4, WY0 + 3*(WY1-WY0)/4]) {
-  sceneObjects.push(new Rectangle({
-    corner: new Point(4.40, ys - 0.04, WZ0),
-    v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
-    height: 0.08, width: WZ1 - WZ0,
-    normal: new Vector(-1, 0, 0), orientation: "yzAxis",
-    material: slatMat,
-  }));
-}
-
 // ─── Window light ─────────────────────────────────────────────────────────────
 const LX = 4.50;
-const sunMat = new Material({ albedo: new Color(1, 0.95, 0.80), emissive: new Color(60, 54, 36) });
+const sunMat = new Material({ albedo: new Color(1, 0.95, 0.80), emissive: new Color(200, 180, 120) });
 sceneObjects.push(new Mesh({
   name: "windowLight",
   material: sunMat,
