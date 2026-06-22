@@ -14,12 +14,12 @@ import { icosahedron } from "../meshes/icosahedron.js";
 
 export const cameraStart = new Point(0, 2.2, -0.8);
 export const rotateCamera = (dir: Vector) =>
-  new Vector(dir.x * 1.6, dir.y * 1.6, dir.z)
+  new Vector(dir.x, dir.y, dir.z)
     .multiplyWith3x3Matrix(getRotationXMatrix(10));
 
-export const sigma_t = 0.28;
-export const sigma_s = 0.26;
-export const phaseG  = 0.0;
+export const sigma_t = 0.70;
+export const sigma_s = 0.67;
+export const phaseG  = 0.45;
 export const skyFn = (_dir: Vector) => new Color(0, 0, 0);
 
 // ─── Wood grain ───────────────────────────────────────────────────────────────
@@ -224,6 +224,9 @@ for (const [lx, lz] of [[-1.38, 3.18], [-1.38, 1.42], [2.38, 3.18], [2.38, 1.42]
 }
 
 // ─── Room ─────────────────────────────────────────────────────────────────────
+const CEILING_Y = 4.5;
+const baseboardMat = new Material({ albedo: new Color(0.88, 0.87, 0.84) });
+
 sceneObjects.push(new Rectangle({
   corner: new Point(-4, -0.6, -3),
   v1: new Vector(1, 0, 0), v2: new Vector(0, 0, 1),
@@ -231,12 +234,43 @@ sceneObjects.push(new Rectangle({
   normal: new Vector(0, 1, 0), orientation: "xzAxis",
   material: floorMat,
 }));
+// Left wall (x = -4)
 sceneObjects.push(new Rectangle({
   corner: new Point(-4, -0.6, -3),
   v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
-  width: 13, height: 13,
+  width: 13, height: CEILING_Y + 0.6,
   normal: new Vector(1, 0, 0), orientation: "yzAxis",
   material: wallMat,
+}));
+// Room ceiling (z=-3 to z=5.0, matching back wall face)
+sceneObjects.push(new Rectangle({
+  corner: new Point(-4, CEILING_Y, -3),
+  v1: new Vector(1, 0, 0), v2: new Vector(0, 0, 1),
+  width: 8, height: 8,
+  normal: new Vector(0, -1, 0), orientation: "xzAxis",
+  material: wallMat,
+}));
+// Baseboards — left wall, back face, right wall
+sceneObjects.push(new Rectangle({   // left wall baseboard
+  corner: new Point(-4, -0.6, -3),
+  v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
+  width: 13, height: 0.12,
+  normal: new Vector(1, 0, 0), orientation: "yzAxis",
+  material: baseboardMat,
+}));
+sceneObjects.push(new Rectangle({   // back wall baseboard
+  corner: new Point(-4, -0.6, 5.0),
+  v1: new Vector(1, 0, 0), v2: new Vector(0, 1, 0),
+  width: 8, height: 0.12,
+  normal: new Vector(0, 0, -1), orientation: "xyAxis",
+  material: baseboardMat,
+}));
+sceneObjects.push(new Rectangle({   // right wall baseboard
+  corner: new Point(4, -0.6, -3),
+  v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
+  width: 13, height: 0.12,
+  normal: new Vector(-1, 0, 0), orientation: "yzAxis",
+  material: baseboardMat,
 }));
 
 // ─── Three alcoves across the back wall ───────────────────────────────────────
@@ -257,11 +291,11 @@ sceneObjects.push(new Rectangle({
   normal: new Vector(0, 0, -1), orientation: "xyAxis",
   material: wallMat,
 }));
-// Top strip (above all openings)
+// Top strip (above all openings, up to ceiling)
 sceneObjects.push(new Rectangle({
   corner: new Point(-4, AY1, AZ0),
   v1: new Vector(1, 0, 0), v2: new Vector(0, 1, 0),
-  width: 8, height: 12.4 - AY1,
+  width: 8, height: CEILING_Y - AY1,
   normal: new Vector(0, 0, -1), orientation: "xyAxis",
   material: wallMat,
 }));
@@ -396,13 +430,7 @@ sceneObjects.push(new Rectangle({
   normal: new Vector(-1, 0, 0), orientation: "yzAxis",
   material: wallMat,
 }));
-sceneObjects.push(new Rectangle({
-  corner: new Point(4, WY1, -3),
-  v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
-  width: 13, height: 13 - WY1,
-  normal: new Vector(-1, 0, 0), orientation: "yzAxis",
-  material: wallMat,
-}));
+// (no panel above window — window runs to ceiling)
 sceneObjects.push(new Rectangle({
   corner: new Point(4, WY0, -3),
   v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),

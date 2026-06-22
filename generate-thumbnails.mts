@@ -183,6 +183,24 @@ function sampleSphereLight(lightCenter: Point, lightRadius: number, surfacePoint
   return { dir, solidAngle };
 }
 
+function sampleHG(dir: Vector, g: number): Vector {
+  const u = Math.random();
+  let cosTheta: number;
+  if (Math.abs(g) < 0.001) {
+    cosTheta = 1 - 2 * u;
+  } else {
+    const sq = (1 - g * g) / (1 + g * (2 * u - 1));
+    cosTheta = (1 + g * g - sq * sq) / (2 * g);
+  }
+  const sinTheta = Math.sqrt(Math.max(0, 1 - cosTheta * cosTheta));
+  const phi = 2 * Math.PI * Math.random();
+  const z = dir.normalize();
+  const up = Math.abs(z.y) < 0.999 ? new Vector(0, 1, 0) : new Vector(1, 0, 0);
+  const x  = up.crossProduct(z).normalize();
+  const y  = z.crossProduct(x);
+  return x.multiply(sinTheta * Math.cos(phi)).add(y.multiply(sinTheta * Math.sin(phi))).add(z.multiply(cosTheta)).normalize();
+}
+
 interface TraceCtx {
   ray: Ray;
   sceneObjects: SceneObject[];
@@ -190,12 +208,26 @@ interface TraceCtx {
   skyImageData?: ImageDataLike;
   bounceDepth?: number;
   includeEmission?: boolean;
+  sigma_t?: number;
+  sigma_s?: number;
+  phaseG?: number;
 }
 
-function traceRay({ ray, sceneObjects, skyFn, skyImageData, bounceDepth = 0, includeEmission = true }: TraceCtx): Color {
+function traceRay({ ray, sceneObjects, skyFn, skyImageData, bounceDepth = 0, includeEmission = true, sigma_t = 0, sigma_s = 0, phaseG = 0 }: TraceCtx): Color {
   if (bounceDepth > 4) return new Color(0, 0, 0);
 
   const intersected = findClosestIntersection({ ray, tMin: epsilon, tMax: Infinity, sceneObjects });
+
+  // Participating medium: free-path sample
+  if (sigma_t > 0) {
+    const t_free = -Math.log(Math.max(1e-10, Math.random())) / sigma_t;
+    const t_surf = intersected ? distance(intersected.point, ray.start) : Infinity;
+    if (t_free < t_surf) {
+      if (Math.random() > sigma_s / sigma_t) return new Color(0, 0, 0);
+      const sp = ray.getPoint(t_free);
+      return traceRay({ ray: new Ray(sp, sampleHG(ray.dir, phaseG)), sceneObjects, skyFn, skyImageData, bounceDepth: bounceDepth + 1, includeEmission: true, sigma_t, sigma_s, phaseG });
+    }
+  }
 
   if (!intersected?.object) {
     if (skyImageData) {
@@ -244,7 +276,7 @@ function traceRay({ ray, sceneObjects, skyFn, skyImageData, bounceDepth = 0, inc
     const fresnel = f0.addWithColor(new Color(1,1,1).subtract(f0).multiply(Math.pow(1 - oDotH, 5)));
     const G = smithG1(nDotO, alpha2) * smithG1(nDotI, alpha2);
     const weight = (G * oDotH) / (nDotO * nDotH);
-    const Li = traceRay({ ray: new Ray(intersected.point.add(normal.multiply(epsilon).toPoint()), ωi), sceneObjects, skyFn, skyImageData, bounceDepth: bounceDepth+1, includeEmission: true });
+    const Li = traceRay({ ray: new Ray(intersected.point.add(normal.multiply(epsilon).toPoint()), ωi), sceneObjects, skyFn, skyImageData, bounceDepth: bounceDepth+1, includeEmission: true, sigma_t, sigma_s, phaseG });
     return fresnel.multiply(weight).multiplyWithColor(Li);
   }
 
@@ -252,10 +284,10 @@ function traceRay({ ray, sceneObjects, skyFn, skyImageData, bounceDepth = 0, inc
     const fresnel = getFresnelReflectance({ normal, incidentRay: ray.dir, refractionIndex: material.refractionIndex! });
     const reflected = getReflectedRay({ normal, point: intersected.point, incidentRay: ray.dir });
     if (Math.random() < fresnel) {
-      return traceRay({ ray: reflected, sceneObjects, skyFn, skyImageData, bounceDepth: bounceDepth+1, includeEmission: true });
+      return traceRay({ ray: reflected, sceneObjects, skyFn, skyImageData, bounceDepth: bounceDepth+1, includeEmission: true, sigma_t, sigma_s, phaseG });
     }
     const refracted = getRefractedRay({ normal, point: intersected.point, incidentRay: ray.dir, refractionIndex: material.refractionIndex! });
-    return traceRay({ ray: refracted ?? reflected, sceneObjects, skyFn, skyImageData, bounceDepth: bounceDepth+1, includeEmission: true });
+    return traceRay({ ray: refracted ?? reflected, sceneObjects, skyFn, skyImageData, bounceDepth: bounceDepth+1, includeEmission: true, sigma_t, sigma_s, phaseG });
   }
 
   // Glossy dielectric: roughness set, not metallic, not glass.
@@ -274,7 +306,7 @@ function traceRay({ ray, sceneObjects, skyFn, skyImageData, bounceDepth = 0, inc
       if (nDotI > 0 && nDotH > 0 && nDotO > 0) {
         const G = smithG1(nDotO, alpha2) * smithG1(nDotI, alpha2);
         const weight = (G * oDotH) / (nDotO * nDotH);
-        const Li = traceRay({ ray: new Ray(intersected.point.add(normal.multiply(epsilon).toPoint()), ωi), sceneObjects, skyFn, skyImageData, bounceDepth: bounceDepth+1, includeEmission: true });
+        const Li = traceRay({ ray: new Ray(intersected.point.add(normal.multiply(epsilon).toPoint()), ωi), sceneObjects, skyFn, skyImageData, bounceDepth: bounceDepth+1, includeEmission: true, sigma_t, sigma_s, phaseG });
         return new Color(1, 1, 1).multiply(weight).multiplyWithColor(Li);
       }
     }
@@ -287,7 +319,7 @@ function traceRay({ ray, sceneObjects, skyFn, skyImageData, bounceDepth = 0, inc
     const scatterDir = getCosineWeightedSample(normal.multiply(-1));
     const exitPt = intersected.point.add(normal.multiply(-epsilon).toPoint());
     return albedo.multiplyWithColor(
-      traceRay({ ray: new Ray(exitPt, scatterDir), sceneObjects, skyFn, skyImageData, bounceDepth: bounceDepth+1, includeEmission: true })
+      traceRay({ ray: new Ray(exitPt, scatterDir), sceneObjects, skyFn, skyImageData, bounceDepth: bounceDepth+1, includeEmission: true, sigma_t, sigma_s, phaseG })
     );
   }
 
@@ -295,7 +327,7 @@ function traceRay({ ray, sceneObjects, skyFn, skyImageData, bounceDepth = 0, inc
   const randomDir = getCosineWeightedSample(normal);
   const shiftedPoint = intersected.point.add(normal.multiply(epsilon).toPoint());
   let radiance = color.multiplyWithColor(
-    traceRay({ ray: new Ray(shiftedPoint, randomDir), sceneObjects, skyFn, skyImageData, bounceDepth: bounceDepth+1, includeEmission: false })
+    traceRay({ ray: new Ray(shiftedPoint, randomDir), sceneObjects, skyFn, skyImageData, bounceDepth: bounceDepth+1, includeEmission: false, sigma_t, sigma_s, phaseG })
   );
 
   const lightSphere = sceneObjects.find(o => (o as any).name === 'lightBall') as Sphere | undefined;
@@ -395,7 +427,7 @@ for (const { id, scene } of scenesToRender) {
     console.log(`[lab] alcoveDragon: ${dragon.meshObjects.length} triangles`);
   }
 
-  const { cameraStart, rotateCamera, sceneObjects, skyFn, skyImageKey } = scene as any;
+  const { cameraStart, rotateCamera, sceneObjects, skyFn, skyImageKey, sigma_t = 0, sigma_s = 0, phaseG = 0 } = scene as any;
   console.log(`[${id}] Rendering  (${PASSES} passes)`);
 
   let skyImageData: ImageDataLike | undefined;
@@ -428,7 +460,7 @@ for (const { id, scene } of scenesToRender) {
     if (pass % 8 === 0) process.stdout.write(`[${id}] pass ${pass}/${PASSES}\r`);
     for (const { i, j, rotatedDir } of pixelDirs) {
       const jitteredDir = new Vector(rotatedDir.x + Math.random()/WIDTH, rotatedDir.y + Math.random()/WIDTH, rotatedDir.z);
-      const color = traceRay({ ray: new Ray(cameraStart, jitteredDir), sceneObjects, skyFn, skyImageData });
+      const color = traceRay({ ray: new Ray(cameraStart, jitteredDir), sceneObjects, skyFn, skyImageData, sigma_t, sigma_s, phaseG });
       const idx = i * WIDTH + j;
       accumR[idx] += color.r; accumG[idx] += color.g; accumB[idx] += color.b;
       counts[idx]++;
