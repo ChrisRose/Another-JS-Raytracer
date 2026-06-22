@@ -17,9 +17,9 @@ export const rotateCamera = (dir: Vector) =>
   new Vector(dir.x, dir.y, dir.z)
     .multiplyWith3x3Matrix(getRotationXMatrix(10));
 
-export const sigma_t = 0.70;
-export const sigma_s = 0.67;
-export const phaseG  = 0.45;
+export const sigma_t = 0.22;
+export const sigma_s = 0.20;
+export const phaseG  = 0.50;
 export const skyFn = (_dir: Vector) => new Color(0, 0, 0);
 
 // ─── Wood grain ───────────────────────────────────────────────────────────────
