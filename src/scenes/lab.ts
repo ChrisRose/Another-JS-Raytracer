@@ -9,12 +9,13 @@ import { Triangle } from "../Triangle.js";
 import { Cylinder } from "../Cylinder.js";
 import { Sphere } from "../Sphere.js";
 import { getRotationXMatrix } from "../matrix.js";
-import { parseMesh } from "../meshUtils.js";
+import { parseMesh, fetchAndParseMesh } from "../meshUtils.js";
 import { icosahedron } from "../meshes/icosahedron.js";
 
-export const cameraStart = new Point(0, 2.2, -1.8);
+export const cameraStart = new Point(0, 2.2, -0.8);
 export const rotateCamera = (dir: Vector) =>
-  dir.multiplyWith3x3Matrix(getRotationXMatrix(10));
+  new Vector(dir.x * 1.6, dir.y * 1.6, dir.z)
+    .multiplyWith3x3Matrix(getRotationXMatrix(10));
 
 export const sigma_t = 0.28;
 export const sigma_s = 0.26;
@@ -240,7 +241,7 @@ sceneObjects.push(new Rectangle({
 
 // ─── Back wall — almost entirely alcove ───────────────────────────────────────
 const AX0 = -3.4, AX1 = 3.4;
-const AY0 =  0.5, AY1 = 4.0;
+const AY0 =  0.5, AY1 = 5.5;
 const AZ0 =  7.0, AZ1 = 8.5;
 
 // Top strip
@@ -375,9 +376,8 @@ const facetedRose    = new Material({ albedo: new Color(0.80, 0.18, 0.22), rough
 const shelfSphere = (name: string, mat: Material, x: number, z: number, sy: number, r = 0.13) =>
   sceneObjects.push(parseMesh({ mesh: icosahedron, material: mat, name, scale: r, translate: { x, y: sy + r, z } }));
 
-// Lower shelf
+// Lower shelf — rack on left; Stanford dragon on right (loaded in init())
 for (const o of alcoveRackWithTubes(-0.9, SY1, 8.10, 3, 0.14, -8, [liquids.red, liquids.amber, liquids.teal])) sceneObjects.push(o);
-for (const o of alcoveRackWithTubes( 0.9, SY1, 7.65, 2, 0.14, 12, [liquids.blue, liquids.red              ])) sceneObjects.push(o);
 shelfSphere("ls1", facetedCrystal, -1.55, 7.75, SY1);
 shelfSphere("ls2", facetedAmber,   -0.05, 7.40, SY1, 0.11);
 for (const o of candle(-1.55, SY1, 8.10)) sceneObjects.push(o);
@@ -424,11 +424,46 @@ sceneObjects.push(new Rectangle({
   material: wallMat,
 }));
 
+// ─── Window reveal (inset niche) ─────────────────────────────────────────────
+const WD = 0.5;
+// Sill
+sceneObjects.push(new Rectangle({
+  corner: new Point(4, WY0, WZ0),
+  v1: new Vector(1, 0, 0), v2: new Vector(0, 0, 1),
+  width: WD, height: WZ1 - WZ0,
+  normal: new Vector(0, 1, 0), orientation: "xzAxis",
+  material: wallMat,
+}));
+// Head
+sceneObjects.push(new Rectangle({
+  corner: new Point(4, WY1, WZ0),
+  v1: new Vector(1, 0, 0), v2: new Vector(0, 0, 1),
+  width: WD, height: WZ1 - WZ0,
+  normal: new Vector(0, -1, 0), orientation: "xzAxis",
+  material: wallMat,
+}));
+// Near-z jamb
+sceneObjects.push(new Rectangle({
+  corner: new Point(4, WY0, WZ0),
+  v1: new Vector(1, 0, 0), v2: new Vector(0, 1, 0),
+  width: WD, height: WY1 - WY0,
+  normal: new Vector(0, 0, 1), orientation: "xyAxis",
+  material: wallMat,
+}));
+// Far-z jamb
+sceneObjects.push(new Rectangle({
+  corner: new Point(4, WY0, WZ1),
+  v1: new Vector(1, 0, 0), v2: new Vector(0, 1, 0),
+  width: WD, height: WY1 - WY0,
+  normal: new Vector(0, 0, -1), orientation: "xyAxis",
+  material: wallMat,
+}));
+
 // ─── Window slats ─────────────────────────────────────────────────────────────
 // Vertical dividers (z)
 for (const zs of [WZ0 + (WZ1-WZ0)/3, WZ0 + 2*(WZ1-WZ0)/3]) {
   sceneObjects.push(new Rectangle({
-    corner: new Point(3.90, WY0, zs - 0.04),
+    corner: new Point(4.40, WY0, zs - 0.04),
     v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
     height: WY1 - WY0, width: 0.08,
     normal: new Vector(-1, 0, 0), orientation: "yzAxis",
@@ -438,7 +473,7 @@ for (const zs of [WZ0 + (WZ1-WZ0)/3, WZ0 + 2*(WZ1-WZ0)/3]) {
 // Horizontal dividers (y)
 for (const ys of [WY0 + (WY1-WY0)/4, WY0 + 2*(WY1-WY0)/4, WY0 + 3*(WY1-WY0)/4]) {
   sceneObjects.push(new Rectangle({
-    corner: new Point(3.90, ys - 0.04, WZ0),
+    corner: new Point(4.40, ys - 0.04, WZ0),
     v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
     height: 0.08, width: WZ1 - WZ0,
     normal: new Vector(-1, 0, 0), orientation: "yzAxis",
@@ -447,7 +482,7 @@ for (const ys of [WY0 + (WY1-WY0)/4, WY0 + 2*(WY1-WY0)/4, WY0 + 3*(WY1-WY0)/4]) 
 }
 
 // ─── Window light ─────────────────────────────────────────────────────────────
-const LX = 4.05;
+const LX = 4.50;
 const sunMat = new Material({ albedo: new Color(1, 0.95, 0.80), emissive: new Color(60, 54, 36) });
 sceneObjects.push(new Mesh({
   name: "windowLight",
@@ -505,3 +540,20 @@ sceneObjects.push(new Sphere({
 
 // Candle — back-right, warm point light in the fog
 for (const o of candle(1.5, TABLE_Y, 2.0, 0.9)) sceneObjects.push(o);
+
+// ─── Stanford dragon (alcove lower shelf, right side) ─────────────────────────
+const alcoveDragonMat = new Material({
+  albedo: new Color(0.08, 0.48, 0.22),
+  roughness: 0.08,
+  subsurface: 0.62,
+});
+
+export async function init() {
+  const dragon = await fetchAndParseMesh(`${import.meta.env.BASE_URL}meshes/dragon.obj`, {
+    name: "alcoveDragon",
+    material: alcoveDragonMat,
+    scale: 0.28,
+    translate: { x: 0.9, y: SY1 + 0.58 * 0.28, z: 7.65 },
+  });
+  sceneObjects.push(dragon);
+}

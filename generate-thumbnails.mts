@@ -380,6 +380,21 @@ for (const { id, scene } of scenesToRender) {
     console.log(`[dragon] ${dragon.meshObjects.length} triangles, BVH built`);
   }
 
+  // Lab scene: Stanford dragon on alcove lower shelf (no fetch in Node.js).
+  if (id === 'lab' && !labScene.sceneObjects.some((o: any) => o.name === 'alcoveDragon')) {
+    console.log('[lab] Loading alcove dragon from disk…');
+    const objText = await readFile(path.join(__dirname, 'public', 'meshes', 'dragon.obj'), 'utf-8');
+    const dragon = parseMesh({
+      mesh: objText,
+      name: 'alcoveDragon',
+      material: new Material({ albedo: new Color(0.08, 0.48, 0.22), roughness: 0.08, subsurface: 0.62 }),
+      scale: 0.28,
+      translate: { x: 0.9, y: 1.5 + 0.58 * 0.28, z: 7.65 },
+    });
+    labScene.sceneObjects.push(dragon);
+    console.log(`[lab] alcoveDragon: ${dragon.meshObjects.length} triangles`);
+  }
+
   const { cameraStart, rotateCamera, sceneObjects, skyFn, skyImageKey } = scene as any;
   console.log(`[${id}] Rendering  (${PASSES} passes)`);
 
