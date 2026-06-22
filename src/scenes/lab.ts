@@ -35,7 +35,7 @@ function woodGrain(point: Point): Color {
 }
 
 // ─── Materials ────────────────────────────────────────────────────────────────
-const benchTop    = new Material({ albedo: new Color(0.5, 0.35, 0.15), texture: (p) => woodGrain(p), roughness: 0.40 });
+const benchTop    = new Material({ albedo: new Color(0.5, 0.35, 0.15), texture: (p) => woodGrain(p), roughness: 0.12, reflectivity: 0.18 });
 const benchSide   = new Material({ albedo: new Color(0.28, 0.18, 0.07) });
 const legMat      = new Material({ albedo: new Color(0.22, 0.14, 0.06) });
 const wallMat     = new Material({ albedo: new Color(0.22, 0.21, 0.20) });
@@ -376,19 +376,23 @@ const facetedRose    = new Material({ albedo: new Color(0.80, 0.18, 0.22), rough
 const shelfSphere = (name: string, mat: Material, x: number, z: number, sy: number, r = 0.13) =>
   sceneObjects.push(parseMesh({ mesh: icosahedron, material: mat, name, scale: r, translate: { x, y: sy + r, z } }));
 
-// Lower shelf — rack on left; Stanford dragon on right (loaded in init())
-for (const o of alcoveRackWithTubes(-0.9, SY1, 8.10, 3, 0.14, -8, [liquids.red, liquids.amber, liquids.teal])) sceneObjects.push(o);
+// Lower shelf — Stanford dragon on right (loaded in init())
 shelfSphere("ls1", facetedCrystal, -1.55, 7.75, SY1);
 shelfSphere("ls2", facetedAmber,   -0.05, 7.40, SY1, 0.11);
+shelfSphere("ls3", facetedTeal,    -1.10, 8.05, SY1, 0.10);
+shelfSphere("ls4", facetedRose,    -0.70, 8.08, SY1, 0.09);
+shelfSphere("ls5", facetedCrystal, -0.90, 7.72, SY1, 0.09);
 for (const o of candle(-1.55, SY1, 8.10)) sceneObjects.push(o);
 for (const o of candle( 1.55, SY1, 8.10)) sceneObjects.push(o);
 for (const o of makeErlenmeyer(1.55, 7.95, 0.44, backFlaskMat, liquids.red, SY1)) sceneObjects.push(o);
 
 // Upper shelf
-for (const o of alcoveRackWithTubes(0.3, SY2, 8.05, 3, 0.14, -5, [liquids.blue, liquids.teal, liquids.amber])) sceneObjects.push(o);
 shelfSphere("us1", facetedTeal,    -1.40, 7.80, SY2, 0.12);
 shelfSphere("us2", facetedRose,    -0.35, 7.50, SY2, 0.11);
 shelfSphere("us3", facetedCrystal,  1.45, 7.70, SY2, 0.12);
+shelfSphere("us4", facetedAmber,    0.10, 8.00, SY2, 0.10);
+shelfSphere("us5", facetedCrystal,  0.30, 8.05, SY2, 0.09);
+shelfSphere("us6", facetedTeal,     0.50, 7.95, SY2, 0.10);
 for (const o of candle(1.45, SY2, 8.10)) sceneObjects.push(o);
 for (const o of candle(-0.35, SY2, 8.05)) sceneObjects.push(o);
 
@@ -516,6 +520,34 @@ sceneObjects.push(new Sphere({
   radius: 0.15,
   material: frostedWhite,
 }));
+
+// Paper sheet — centre of table
+sceneObjects.push(new Rectangle({
+  corner: new Point(-0.15, TABLE_Y + 0.002, 1.90),
+  v1: new Vector(1, 0, 0), v2: new Vector(0, 0, 1),
+  width: 0.52, height: 0.72,
+  normal: new Vector(0, 1, 0), orientation: "xzAxis",
+  material: paperMat,
+}));
+
+// Pencil — yellow, lying diagonally on paper
+{
+  const py = TABLE_Y + 0.006;
+  const pcx = 0.04, pcz = 2.25, pLen = 0.42, pW = 0.022;
+  const ca = Math.cos(22 * Math.PI / 180), sa = Math.sin(22 * Math.PI / 180);
+  const pencilMat = new Material({ albedo: new Color(0.95, 0.80, 0.08) });
+  const A = new Vector(pcx + ca*pLen/2 - sa*pW/2, py, pcz + sa*pLen/2 + ca*pW/2);
+  const B = new Vector(pcx + ca*pLen/2 + sa*pW/2, py, pcz + sa*pLen/2 - ca*pW/2);
+  const C = new Vector(pcx - ca*pLen/2 + sa*pW/2, py, pcz - sa*pLen/2 - ca*pW/2);
+  const D = new Vector(pcx - ca*pLen/2 - sa*pW/2, py, pcz - sa*pLen/2 + ca*pW/2);
+  sceneObjects.push(new Mesh({
+    name: "pencil", material: pencilMat,
+    meshObjects: [
+      new Triangle({ v1: B, v2: D, v3: C, material: pencilMat }),
+      new Triangle({ v1: B, v2: A, v3: D, material: pencilMat }),
+    ],
+  }));
+}
 
 
 // ─── Stanford dragon (alcove lower shelf, right side) ─────────────────────────
