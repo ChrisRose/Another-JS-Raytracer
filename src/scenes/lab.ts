@@ -381,6 +381,7 @@ for (const o of alcoveRackWithTubes(-0.9, SY1, 8.10, 3, 0.14, -8, [liquids.red, 
 shelfSphere("ls1", facetedCrystal, -1.55, 7.75, SY1);
 shelfSphere("ls2", facetedAmber,   -0.05, 7.40, SY1, 0.11);
 for (const o of candle(-1.55, SY1, 8.10)) sceneObjects.push(o);
+for (const o of candle( 1.55, SY1, 8.10)) sceneObjects.push(o);
 for (const o of makeErlenmeyer(1.55, 7.95, 0.44, backFlaskMat, liquids.red, SY1)) sceneObjects.push(o);
 
 // Upper shelf
@@ -516,8 +517,6 @@ sceneObjects.push(new Sphere({
   material: frostedWhite,
 }));
 
-// Candle — back-right, warm point light in the fog
-for (const o of candle(1.5, TABLE_Y, 2.0, 0.9)) sceneObjects.push(o);
 
 // ─── Stanford dragon (alcove lower shelf, right side) ─────────────────────────
 const alcoveDragonMat = new Material({
