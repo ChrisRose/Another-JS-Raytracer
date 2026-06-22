@@ -91,12 +91,12 @@ export function findClosestIntersection({
       const hit = intersectBVH(meshObject.bvh, ray, tMin, tMax, !findClosest);
       if (hit) {
         point = ray.getPoint(hit.t);
-        if (!findClosest) return { point, object: hit.tri };
+        if (!findClosest) return { point, object: hit.tri, mesh: meshObject };
         dist = distance(point, ray.start);
         if (dist < closestIntersection) {
           closestIntersection = dist;
           tMax = hit.t; // shrink window so later meshes get a tighter bound
-          intersected = { point, object: hit.tri, intersection: { t: hit.t } };
+          intersected = { point, object: hit.tri, intersection: { t: hit.t }, mesh: meshObject };
         }
       }
     } else {
@@ -611,7 +611,12 @@ const traceRay = ({
     // Scatter direction is cosine-weighted around the INWARD normal, so light
     // exits from the other side tinted by the material albedo.
     if ((material.subsurface ?? 0) > 0 && Math.random() < (material.subsurface ?? 0)) {
-      const albedo = material.texture ? material.texture(intersected.point, normal) : material.albedo;
+      let albedo = material.texture ? material.texture(intersected.point, normal) : material.albedo;
+      if (material.subsurfaceSigma && intersected.mesh?.bvh) {
+        const thicknessHit = intersectBVH(intersected.mesh.bvh, new Ray(intersected.point, ray.dir), epsilon * 10, Infinity, false);
+        const thickness = thicknessHit ? thicknessHit.t : 0.5;
+        albedo = albedo.multiply(Math.exp(-material.subsurfaceSigma * thickness));
+      }
       const scatterDir = getCosineWeightedSample(normal.multiply(-1));
       const exitPt = intersected.point.add(normal.multiply(-epsilon).toPoint());
       return albedo.multiplyWithColor(

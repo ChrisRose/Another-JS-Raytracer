@@ -75,9 +75,9 @@ function findClosestIntersection({
       const hit = intersectBVH(meshObject.bvh, ray, tMin, tMax, !findClosest);
       if (hit) {
         const point = ray.getPoint(hit.t);
-        if (!findClosest) return { point, object: hit.tri };
+        if (!findClosest) return { point, object: hit.tri, mesh: meshObject };
         const dist = distance(point, ray.start);
-        if (dist < closestIntersection) { closestIntersection = dist; tMax = hit.t; intersected = { point, object: hit.tri }; }
+        if (dist < closestIntersection) { closestIntersection = dist; tMax = hit.t; intersected = { point, object: hit.tri, mesh: meshObject }; }
       }
     } else {
       for (const prim of meshObject.meshObjects) {
@@ -315,7 +315,12 @@ function traceRay({ ray, sceneObjects, skyFn, skyImageData, bounceDepth = 0, inc
 
   // Subsurface scattering: jade, wax, skin.
   if ((material.subsurface ?? 0) > 0 && Math.random() < (material.subsurface ?? 0)) {
-    const albedo = material.texture ? material.texture(intersected.point, normal) : material.albedo;
+    let albedo = material.texture ? material.texture(intersected.point, normal) : material.albedo;
+    if (material.subsurfaceSigma && (intersected as any).mesh?.bvh) {
+      const thicknessHit = intersectBVH((intersected as any).mesh.bvh, new Ray(intersected.point, ray.dir), epsilon * 10, Infinity, false);
+      const thickness = thicknessHit ? thicknessHit.t : 0.5;
+      albedo = albedo.multiply(Math.exp(-material.subsurfaceSigma * thickness));
+    }
     const scatterDir = getCosineWeightedSample(normal.multiply(-1));
     const exitPt = intersected.point.add(normal.multiply(-epsilon).toPoint());
     return albedo.multiplyWithColor(
@@ -404,7 +409,7 @@ for (const { id, scene } of scenesToRender) {
     const dragon = parseMesh({
       mesh: objText,
       name: 'dragon',
-      material: new Material({ albedo: new Color(0.08, 0.48, 0.22), roughness: 0.08, subsurface: 0.62 }),
+      material: new Material({ albedo: new Color(0.08, 0.48, 0.22), roughness: 0.08, subsurface: 0.62, subsurfaceSigma: 4 }),
       scale: 4,
       translate: { x: 0, y: 2.34, z: 1 },
     });
@@ -419,7 +424,7 @@ for (const { id, scene } of scenesToRender) {
     const dragon = parseMesh({
       mesh: objText,
       name: 'alcoveDragon',
-      material: new Material({ albedo: new Color(0.08, 0.48, 0.22), roughness: 0.08, subsurface: 0.62 }),
+      material: new Material({ albedo: new Color(0.08, 0.48, 0.22), roughness: 0.08, subsurface: 0.62, subsurfaceSigma: 14 }),
       scale: 0.28,
       translate: { x: 0.0, y: 1.5 + 0.58 * 0.28, z: 5.55 },
     });

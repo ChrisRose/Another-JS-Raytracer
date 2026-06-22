@@ -32,6 +32,7 @@ export type Intersected = {
   point: Point;
   object?: Primitive | AreaLight | LightBall;
   intersection?: Intersection;
+  mesh?: Mesh;
 } | null;
 
 export type Intersection =

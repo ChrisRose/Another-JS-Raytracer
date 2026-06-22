@@ -14,7 +14,8 @@ export class Material {
   imageMapUV?: (point: Point) => [number, number];
   metallic?: number;    // 1 = fully metallic (F0 = albedo, no diffuse)
   roughness?: number;   // GGX α² parameter; 0 = mirror, 1 = fully rough
-  subsurface?: number;  // 0–1 fraction of body bounces that scatter through (jade, wax, skin)
+  subsurface?: number;      // 0–1 fraction of body bounces that scatter through (jade, wax, skin)
+  subsurfaceSigma?: number; // Beer-Lambert extinction coefficient (world units); undefined = flat probability
 
   constructor({
     albedo = new Color(0, 0, 0),
@@ -29,6 +30,7 @@ export class Material {
     metallic,
     roughness,
     subsurface,
+    subsurfaceSigma,
   }: {
     albedo: Color;
     specular?: number;
@@ -42,6 +44,7 @@ export class Material {
     metallic?: number;
     roughness?: number;
     subsurface?: number;
+    subsurfaceSigma?: number;
   }) {
     this.albedo = albedo;
     this.specular = specular;
@@ -55,5 +58,6 @@ export class Material {
     this.metallic = metallic;
     this.roughness = roughness;
     this.subsurface = subsurface;
+    this.subsurfaceSigma = subsurfaceSigma;
   }
 }

@@ -66,6 +66,7 @@ export async function init() {
       albedo: new Color(0.08, 0.48, 0.22),  // jade green
       roughness: 0.08,                       // waxy polished surface
       subsurface: 0.62,                      // translucency — light bleeds through thin sections
+      subsurfaceSigma: 4,                    // Beer-Lambert: fins ~T=0.30, body ~T≈0
     }),
     scale: 4,
     translate: { x: 0, y: 2.34, z: 1 },
