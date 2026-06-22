@@ -41,7 +41,7 @@ const rightWall = new Rectangle({
 
 const lightBall = new Sphere({
   center: new Point(0, 16, 3), radius: 3, name: "lightBall",
-  material: new Material({ albedo: new Color(1, 1, 1), emissive: new Color(3, 3, 3) }),
+  material: new Material({ albedo: new Color(1, 1, 1), emissive: new Color(8, 8, 8) }),
 });
 
 // Back light — large warm sphere behind the dragon, backlights subsurface
