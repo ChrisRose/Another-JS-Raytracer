@@ -17,6 +17,7 @@ import * as backroomsScene          from './src/scenes/backrooms.js';
 import * as chessScene              from './src/scenes/chess.js';
 import * as dragonScene             from './src/scenes/dragon.js';
 import * as labScene               from './src/scenes/lab.js';
+import * as monkeyScene            from './src/scenes/monkey.js';
 
 // Raytracer utilities
 import { Color }    from './src/Color.js';
@@ -44,6 +45,7 @@ const SCENES = [
   { id: 'chess',              scene: chessScene              },
   { id: 'dragon',             scene: dragonScene             },
   { id: 'lab',               scene: labScene               },
+  { id: 'monkey',            scene: monkeyScene            },
 ];
 
 const PREVIEW = process.argv.includes('--preview');
@@ -415,6 +417,21 @@ for (const { id, scene } of scenesToRender) {
     });
     dragonScene.sceneObjects.push(dragon);
     console.log(`[dragon] ${dragon.meshObjects.length} triangles, BVH built`);
+  }
+
+  // Monkey scene: Suzanne head from disk.
+  if (id === 'monkey' && !monkeyScene.sceneObjects.some((o: any) => o.name === 'monkey')) {
+    console.log('[monkey] Loading Suzanne from disk…');
+    const objText = await readFile(path.join(__dirname, 'public', 'meshes', 'suzanne.obj'), 'utf-8');
+    const monkey = parseMesh({
+      mesh: objText,
+      name: 'monkey',
+      material: new Material({ albedo: new Color(0.78, 0.42, 0.24), subsurface: 0.65, subsurfaceSigma: 3 }),
+      scale: 1.5,
+      translate: { x: 3.741, y: -0.405, z: 6.647 },
+    });
+    monkeyScene.sceneObjects.push(monkey);
+    console.log(`[monkey] ${monkey.meshObjects.length} triangles, BVH built`);
   }
 
   const { cameraStart, rotateCamera, sceneObjects, skyFn, skyImageKey, sigma_t = 0, sigma_s = 0, phaseG = 0 } = scene as any;
