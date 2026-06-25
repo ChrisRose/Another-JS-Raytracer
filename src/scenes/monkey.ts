@@ -41,9 +41,9 @@ const keyLight = new Sphere({
   material: new Material({ albedo: new Color(1, 1, 1), emissive: new Color(16, 16, 18) }),
 });
 
-// Front fill — path-traced only so needs very high emissive to register at low pass count
+// Fill light behind the camera
 const frontLight = new Sphere({
-  center: new Point(1.5, 2.5, -3.5), radius: 1.2,
+  center: new Point(1.5, 2.5, -7), radius: 1.2,
   material: new Material({ albedo: new Color(1, 0.95, 0.85), emissive: new Color(220, 190, 140) }),
 });
 
