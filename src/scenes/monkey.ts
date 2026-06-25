@@ -35,20 +35,26 @@ const rightWall = new Rectangle({
   width: 18, height: 6, normal: new Vector(-1, 0, 0), orientation: "yzAxis", material: wallMat,
 });
 
-// Overhead cool key light
+// Overhead key light
 const keyLight = new Sphere({
   center: new Point(0, 8, -1), radius: 2, name: "lightBall",
-  material: new Material({ albedo: new Color(1, 1, 1), emissive: new Color(6, 6, 7) }),
+  material: new Material({ albedo: new Color(1, 1, 1), emissive: new Color(14, 14, 16) }),
 });
 
-// Intense warm back light — drives SSS glow through ears and thin sections
+// Front fill — illuminates the face so SSS contrast is visible
+const frontLight = new Sphere({
+  center: new Point(1.5, 2.5, -3.5), radius: 1.2,
+  material: new Material({ albedo: new Color(1, 0.95, 0.85), emissive: new Color(18, 16, 12) }),
+});
+
+// Warm back light — punches SSS glow through ears and thin geometry
 const backLight = new Sphere({
   center: new Point(0, 1.8, 4.5), radius: 1.5,
-  material: new Material({ albedo: new Color(1, 0.80, 0.50), emissive: new Color(60, 38, 12) }),
+  material: new Material({ albedo: new Color(1, 0.75, 0.40), emissive: new Color(90, 55, 15) }),
 });
 
 export const sceneObjects: SceneObject[] = [
-  floor, ceiling, backWall, leftWall, rightWall, keyLight, backLight,
+  floor, ceiling, backWall, leftWall, rightWall, keyLight, frontLight, backLight,
 ];
 
 // ─── Monkey head (fetched at runtime in browser, loaded directly in Node.js) ──
@@ -60,9 +66,9 @@ export async function init() {
   const monkey = await fetchAndParseMesh(`${base}meshes/suzanne.obj`, {
     name: "monkey",
     material: new Material({
-      albedo: new Color(0.78, 0.42, 0.24),
-      subsurface: 0.65,
-      subsurfaceSigma: 3,
+      albedo: new Color(0.92, 0.42, 0.06),
+      subsurface: 0.70,
+      subsurfaceSigma: 2.5,
     }),
     scale: 1.5,
     translate: { x: 3.741, y: -0.405, z: 6.647 },

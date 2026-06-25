@@ -426,7 +426,7 @@ for (const { id, scene } of scenesToRender) {
     const monkey = parseMesh({
       mesh: objText,
       name: 'monkey',
-      material: new Material({ albedo: new Color(0.78, 0.42, 0.24), subsurface: 0.65, subsurfaceSigma: 3 }),
+      material: new Material({ albedo: new Color(0.92, 0.42, 0.06), subsurface: 0.70, subsurfaceSigma: 2.5 }),
       scale: 1.5,
       translate: { x: 3.741, y: -0.405, z: 6.647 },
     });
