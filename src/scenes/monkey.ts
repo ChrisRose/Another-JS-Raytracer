@@ -11,8 +11,8 @@ export const cameraStart = new Point(0, 1.5, -5);
 export const rotateCamera = (dir: Vector) => dir;
 
 // ─── Room ────────────────────────────────────────────────────────────────────
-const floorMat = new Material({ albedo: new Color(0.50, 0.48, 0.45) });
-const wallMat  = new Material({ albedo: new Color(0.55, 0.55, 0.56) });
+const floorMat = new Material({ albedo: new Color(0.9, 0.9, 0.9) });
+const wallMat  = new Material({ albedo: new Color(0.9, 0.9, 0.9) });
 
 const floor = new Rectangle({
   corner: new Point(-6, 0, -6), v1: new Vector(1, 0, 0), v2: new Vector(0, 0, 1),
@@ -35,22 +35,22 @@ const rightWall = new Rectangle({
   width: 18, height: 6, normal: new Vector(-1, 0, 0), orientation: "yzAxis", material: wallMat,
 });
 
-// Overhead key light — sampled via NEE, moderate emissive is fine
+// Overhead key light — NEE sampled, matches dragon's lightBall setup
 const keyLight = new Sphere({
-  center: new Point(0, 8, -1), radius: 2, name: "lightBall",
-  material: new Material({ albedo: new Color(1, 1, 1), emissive: new Color(16, 16, 18) }),
+  center: new Point(0, 8, 0), radius: 3, name: "lightBall",
+  material: new Material({ albedo: new Color(1, 1, 1), emissive: new Color(8, 8, 8) }),
 });
 
-// Fill light behind the camera
+// Fill light behind the camera — cool white
 const frontLight = new Sphere({
-  center: new Point(1.5, 2.5, -7), radius: 1.2,
-  material: new Material({ albedo: new Color(1, 0.95, 0.85), emissive: new Color(220, 190, 140) }),
+  center: new Point(1.5, 3, -7), radius: 1.5,
+  material: new Material({ albedo: new Color(1, 0.95, 0.85), emissive: new Color(28, 24, 18) }),
 });
 
-// Warm back light — path-traced only, intense to drive SSS glow through ears
+// Warm back light — drives SSS glow through ears, matches dragon backLight energy
 const backLight = new Sphere({
-  center: new Point(0, 1.8, 4.5), radius: 1.5,
-  material: new Material({ albedo: new Color(1, 0.75, 0.40), emissive: new Color(350, 210, 60) }),
+  center: new Point(0, 1.8, 4.5), radius: 2,
+  material: new Material({ albedo: new Color(1, 0.80, 0.45), emissive: new Color(28, 20, 8) }),
 });
 
 export const sceneObjects: SceneObject[] = [
