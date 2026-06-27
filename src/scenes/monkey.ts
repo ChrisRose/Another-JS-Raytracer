@@ -22,19 +22,11 @@ const ceiling = new Rectangle({
   corner: new Point(-6, 6, -6), v1: new Vector(1, 0, 0), v2: new Vector(0, 0, 1),
   width: 12, height: 18, normal: new Vector(0, -1, 0), orientation: "xzAxis", material: wallMat,
 });
-// Emissive back wall — warm orange, just behind the head
-const backWallMat = new Material({ albedo: new Color(1, 0.72, 0.38), emissive: new Color(80, 50, 18) });
 const backWall = new Rectangle({
   corner: new Point(-6, 0, 4), v1: new Vector(1, 0, 0), v2: new Vector(0, 1, 0),
-  width: 12, height: 6, normal: new Vector(0, 0, -1), orientation: "xyAxis", material: backWallMat,
+  width: 12, height: 6, normal: new Vector(0, 0, -1), orientation: "xyAxis", material: wallMat,
 });
 
-// Dim front wall behind the camera — cool ambient fill
-const frontWallMat = new Material({ albedo: new Color(0.85, 0.90, 1.0), emissive: new Color(0.4, 0.5, 0.7) });
-const frontWall = new Rectangle({
-  corner: new Point(-6, 0, -6), v1: new Vector(1, 0, 0), v2: new Vector(0, 1, 0),
-  width: 12, height: 6, normal: new Vector(0, 0, 1), orientation: "xyAxis", material: frontWallMat,
-});
 const leftWall = new Rectangle({
   corner: new Point(-6, 0, -6), v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
   width: 18, height: 6, normal: new Vector(1, 0, 0), orientation: "yzAxis", material: wallMat,
@@ -45,7 +37,7 @@ const rightWall = new Rectangle({
 });
 
 export const sceneObjects: SceneObject[] = [
-  floor, ceiling, backWall, frontWall, leftWall, rightWall,
+  floor, ceiling, backWall, leftWall, rightWall,
 ];
 
 // ─── Monkey head (fetched at runtime in browser, loaded directly in Node.js) ──
