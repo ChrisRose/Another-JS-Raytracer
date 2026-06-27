@@ -8,7 +8,7 @@ import { getRotationXMatrix } from "../matrix.js";
 import { Material } from "../Material.js";
 import { fetchAndParseMesh } from "../meshUtils.js";
 
-export const cameraStart = new Point(0, 1.5, -8);
+export const cameraStart = new Point(0, 1.5, -4);
 export const rotateCamera = (dir: Vector) =>
   dir.multiplyWith3x3Matrix(getRotationXMatrix(3));
 
