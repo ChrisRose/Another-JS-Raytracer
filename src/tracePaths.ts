@@ -605,20 +605,21 @@ const traceRay = ({
       // Diffuse arm: fall through to texture + NEE below.
     }
 
-    // Subsurface scattering: Beer-Lambert transmittance only — no coin flip.
-    // Every hit scatters through; thickness from the BVH controls how much light passes.
-    if ((material.subsurface ?? 0) > 0) {
-      let albedo = material.texture ? material.texture(intersected.point, normal) : material.albedo;
-      if (material.subsurfaceSigma && intersected.mesh?.bvh) {
-        const thicknessHit = intersectBVH(intersected.mesh.bvh, new Ray(intersected.point, ray.dir), epsilon * 10, Infinity, false);
-        const thickness = thicknessHit ? thicknessHit.t : 0.5;
-        albedo = albedo.multiply(Math.exp(-material.subsurfaceSigma * thickness));
+    // Subsurface scattering: use Beer-Lambert T as branching probability.
+    // Thin sections (high T) mostly scatter through; thick sections (low T) mostly
+    // fall through to normal diffuse. No arbitrary subsurface parameter needed.
+    if ((material.subsurface ?? 0) > 0 && material.subsurfaceSigma && intersected.mesh?.bvh) {
+      const thicknessHit = intersectBVH(intersected.mesh.bvh, new Ray(intersected.point, ray.dir), epsilon * 10, Infinity, false);
+      const thickness = thicknessHit ? thicknessHit.t : 0.5;
+      const T = Math.exp(-material.subsurfaceSigma * thickness);
+      if (Math.random() < T) {
+        const albedo = material.texture ? material.texture(intersected.point, normal) : material.albedo;
+        const scatterDir = getCosineWeightedSample(normal.multiply(-1));
+        const exitPt = intersected.point.add(normal.multiply(-epsilon).toPoint());
+        return albedo.multiplyWithColor(
+          traceRay({ ray: new Ray(exitPt, scatterDir), imageMaps, bounceDepth: bounceDepth + 1, includeEmission: true, i, j, k })
+        );
       }
-      const scatterDir = getCosineWeightedSample(normal.multiply(-1));
-      const exitPt = intersected.point.add(normal.multiply(-epsilon).toPoint());
-      return albedo.multiplyWithColor(
-        traceRay({ ray: new Ray(exitPt, scatterDir), imageMaps, bounceDepth: bounceDepth + 1, includeEmission: true, i, j, k })
-      );
     }
 
     let color = material.texture ? material.texture(intersected.point, normal) : material.albedo;

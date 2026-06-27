@@ -315,19 +315,19 @@ function traceRay({ ray, sceneObjects, skyFn, skyImageData, bounceDepth = 0, inc
     // Diffuse arm falls through.
   }
 
-  // Subsurface scattering: Beer-Lambert transmittance only — no coin flip.
-  if ((material.subsurface ?? 0) > 0) {
-    let albedo = material.texture ? material.texture(intersected.point, normal) : material.albedo;
-    if (material.subsurfaceSigma && (intersected as any).mesh?.bvh) {
-      const thicknessHit = intersectBVH((intersected as any).mesh.bvh, new Ray(intersected.point, ray.dir), epsilon * 10, Infinity, false);
-      const thickness = thicknessHit ? thicknessHit.t : 0.5;
-      albedo = albedo.multiply(Math.exp(-material.subsurfaceSigma * thickness));
+  // Subsurface scattering: use Beer-Lambert T as branching probability.
+  if ((material.subsurface ?? 0) > 0 && material.subsurfaceSigma && (intersected as any).mesh?.bvh) {
+    const thicknessHit = intersectBVH((intersected as any).mesh.bvh, new Ray(intersected.point, ray.dir), epsilon * 10, Infinity, false);
+    const thickness = thicknessHit ? thicknessHit.t : 0.5;
+    const T = Math.exp(-material.subsurfaceSigma * thickness);
+    if (Math.random() < T) {
+      const albedo = material.texture ? material.texture(intersected.point, normal) : material.albedo;
+      const scatterDir = getCosineWeightedSample(normal.multiply(-1));
+      const exitPt = intersected.point.add(normal.multiply(-epsilon).toPoint());
+      return albedo.multiplyWithColor(
+        traceRay({ ray: new Ray(exitPt, scatterDir), sceneObjects, skyFn, skyImageData, bounceDepth: bounceDepth+1, includeEmission: true, sigma_t, sigma_s, phaseG })
+      );
     }
-    const scatterDir = getCosineWeightedSample(normal.multiply(-1));
-    const exitPt = intersected.point.add(normal.multiply(-epsilon).toPoint());
-    return albedo.multiplyWithColor(
-      traceRay({ ray: new Ray(exitPt, scatterDir), sceneObjects, skyFn, skyImageData, bounceDepth: bounceDepth+1, includeEmission: true, sigma_t, sigma_s, phaseG })
-    );
   }
 
   const color = material.texture ? material.texture(intersected.point, normal) : material.albedo;
