@@ -23,7 +23,7 @@ const ceiling = new Rectangle({
   width: 12, height: 18, normal: new Vector(0, -1, 0), orientation: "xzAxis", material: wallMat,
 });
 // Emissive back wall — replaces backLight sphere; warm orange, just behind the head
-const backWallMat = new Material({ albedo: new Color(1, 0.72, 0.38), emissive: new Color(22, 14, 5) });
+const backWallMat = new Material({ albedo: new Color(1, 0.72, 0.38), emissive: new Color(80, 50, 18) });
 const backWall = new Rectangle({
   corner: new Point(-6, 0, 4), v1: new Vector(1, 0, 0), v2: new Vector(0, 1, 0),
   width: 12, height: 6, normal: new Vector(0, 0, -1), orientation: "xyAxis", material: backWallMat,
