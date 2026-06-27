@@ -28,8 +28,9 @@ import { Ray }     from './src/Ray.js';
 import { Point }   from './src/Point.js';
 import { epsilon } from './src/const.js';
 import { distance, subtract, dotProduct } from './src/utils.js';
-import { Sphere }   from './src/Sphere.js';
-import { Triangle } from './src/Triangle.js';
+import { Sphere }    from './src/Sphere.js';
+import { Triangle }  from './src/Triangle.js';
+import { Rectangle } from './src/Rectangle.js';
 import { intersectBVH } from './src/BVH.js';
 import { SceneObject } from './src/types.js';
 
@@ -337,58 +338,81 @@ function traceRay({ ray, sceneObjects, skyFn, skyImageData, bounceDepth = 0, inc
     traceRay({ ray: new Ray(shiftedPoint, randomDir), sceneObjects, skyFn, skyImageData, bounceDepth: bounceDepth+1, includeEmission: false, sigma_t, sigma_s, phaseG })
   );
 
-  const lightSphere = sceneObjects.find(o => (o as any).name === 'lightBall') as Sphere | undefined;
-  if (lightSphere) {
-    const sample = sampleSphereLight(lightSphere.center, lightSphere.radius, intersected.point);
-    if (sample) {
-      const { dir: lightDir, solidAngle } = sample;
-      const cosTheta = Math.max(0, normal.dotProduct(lightDir));
-      if (cosTheta > 0) {
-        const shadowHit = findClosestIntersection({ ray: new Ray(intersected.point, lightDir), tMin: epsilon, tMax: Infinity, sceneObjects });
-        if ((shadowHit?.object as any)?.name === 'lightBall') {
-          const em = lightSphere.material.emissive ?? new Color(0,0,0);
-          radiance = radiance.addWithColor(color.multiply(cosTheta * solidAngle / Math.PI).multiplyWithColor(em));
-        }
-      }
+  // ─── NEE: sample all emissive lights ───────────────────────────────────────
+
+  // Emissive spheres
+  for (const obj of sceneObjects) {
+    if (obj.type !== 'sphere') continue;
+    const sphere = obj as unknown as Sphere;
+    const em = sphere.material?.emissive;
+    if (!em || (em.r === 0 && em.g === 0 && em.b === 0)) continue;
+    const sample = sampleSphereLight(sphere.center, sphere.radius, intersected.point);
+    if (!sample) continue;
+    const { dir: lightDir, solidAngle } = sample;
+    const cosTheta = Math.max(0, normal.dotProduct(lightDir));
+    if (cosTheta === 0) continue;
+    const shadowHit = findClosestIntersection({ ray: new Ray(intersected.point, lightDir), tMin: epsilon, tMax: Infinity, sceneObjects });
+    if (shadowHit?.object === sphere) {
+      radiance = radiance.addWithColor(color.multiply(cosTheta * solidAngle / Math.PI).multiplyWithColor(em));
     }
-  } else {
-    const emissiveTris: { tri: Triangle; emission: Color; area: number }[] = [];
-    for (const obj of sceneObjects) {
-      if (obj.type === 'mesh') {
-        const mesh = obj as any;
-        const emissive = mesh.material?.emissive;
-        if (emissive && (emissive.r > 0 || emissive.g > 0 || emissive.b > 0)) {
-          for (const prim of mesh.meshObjects) {
-            if (prim.type === 'triangle') {
-              const tri = prim as Triangle;
-              const edge1 = tri.v2.subtract(tri.v1);
-              const edge2 = tri.v3.subtract(tri.v1);
-              const area = 0.5 * edge1.crossProduct(edge2).length();
-              emissiveTris.push({ tri, emission: emissive, area });
-            }
-          }
-        }
-      }
+  }
+
+  // Emissive rectangles
+  for (const obj of sceneObjects) {
+    if (obj.type !== 'rectangle') continue;
+    const rect = obj as unknown as Rectangle;
+    const em = rect.material?.emissive;
+    if (!em || (em.r === 0 && em.g === 0 && em.b === 0)) continue;
+    const u = Math.random(), v = Math.random();
+    const lx = rect.corner.x + u * rect.v1.x * rect.width + v * rect.v2.x * rect.height;
+    const ly = rect.corner.y + u * rect.v1.y * rect.width + v * rect.v2.y * rect.height;
+    const lz = rect.corner.z + u * rect.v1.z * rect.width + v * rect.v2.z * rect.height;
+    const dx = lx - intersected.point.x, dy = ly - intersected.point.y, dz = lz - intersected.point.z;
+    const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+    const lightDir = new Vector(dx/dist, dy/dist, dz/dist);
+    const cosTheta = Math.max(0, normal.dotProduct(lightDir));
+    const cosThetaLight = Math.abs(rect.normal.dotProduct(lightDir));
+    if (cosTheta === 0 || cosThetaLight === 0) continue;
+    const shadowHit = findClosestIntersection({ ray: new Ray(intersected.point, lightDir), tMin: epsilon, tMax: dist - epsilon, sceneObjects });
+    if (!shadowHit) {
+      const area = rect.width * rect.height;
+      radiance = radiance.addWithColor(color.multiply(cosTheta * cosThetaLight * area / (dist * dist * Math.PI)).multiplyWithColor(em));
     }
-    if (emissiveTris.length > 0) {
-      const totalArea = emissiveTris.reduce((s, e) => s + e.area, 0);
-      let rnd = Math.random() * totalArea;
-      let chosen = emissiveTris[emissiveTris.length - 1];
-      for (const e of emissiveTris) { rnd -= e.area; if (rnd <= 0) { chosen = e; break; } }
-      const sqr1 = Math.sqrt(Math.random()), r2 = Math.random();
-      const b0 = 1 - sqr1, b1 = sqr1 * (1 - r2), b2 = sqr1 * r2;
-      const { tri, emission } = chosen;
-      const lightPoint = new Point(b0*tri.v1.x + b1*tri.v2.x + b2*tri.v3.x, b0*tri.v1.y + b1*tri.v2.y + b2*tri.v3.y, b0*tri.v1.z + b1*tri.v2.z + b2*tri.v3.z);
-      const toLightVec = new Vector(lightPoint.x-intersected.point.x, lightPoint.y-intersected.point.y, lightPoint.z-intersected.point.z);
-      const dist = toLightVec.length();
-      const lightDir = toLightVec.normalize();
-      const cosTheta = Math.max(0, normal.dotProduct(lightDir));
-      const cosThetaLight = Math.abs(tri.normal.dotProduct(lightDir));
-      if (cosTheta > 0 && cosThetaLight > 0) {
-        const shadowHit = findClosestIntersection({ ray: new Ray(intersected.point, lightDir), tMin: epsilon, tMax: dist - epsilon, sceneObjects });
-        if (!shadowHit) {
-          radiance = radiance.addWithColor(color.multiply(cosTheta * cosThetaLight * totalArea / (dist * dist * Math.PI)).multiplyWithColor(emission));
-        }
+  }
+
+  // Emissive mesh triangles
+  const emissiveTris: { tri: Triangle; emission: Color; area: number }[] = [];
+  for (const obj of sceneObjects) {
+    if (obj.type !== 'mesh') continue;
+    const mesh = obj as any;
+    const emissive = mesh.material?.emissive;
+    if (!emissive || (emissive.r === 0 && emissive.g === 0 && emissive.b === 0)) continue;
+    for (const prim of mesh.meshObjects) {
+      if (prim.type !== 'triangle') continue;
+      const tri = prim as Triangle;
+      const edge1 = tri.v2.subtract(tri.v1);
+      const edge2 = tri.v3.subtract(tri.v1);
+      emissiveTris.push({ tri, emission: emissive, area: 0.5 * edge1.crossProduct(edge2).length() });
+    }
+  }
+  if (emissiveTris.length > 0) {
+    const totalArea = emissiveTris.reduce((s, e) => s + e.area, 0);
+    let rnd = Math.random() * totalArea;
+    let chosen = emissiveTris[emissiveTris.length - 1];
+    for (const e of emissiveTris) { rnd -= e.area; if (rnd <= 0) { chosen = e; break; } }
+    const sqr1 = Math.sqrt(Math.random()), r2 = Math.random();
+    const b0 = 1 - sqr1, b1 = sqr1 * (1 - r2), b2 = sqr1 * r2;
+    const { tri, emission } = chosen;
+    const lightPoint = new Point(b0*tri.v1.x + b1*tri.v2.x + b2*tri.v3.x, b0*tri.v1.y + b1*tri.v2.y + b2*tri.v3.y, b0*tri.v1.z + b1*tri.v2.z + b2*tri.v3.z);
+    const toLightVec = new Vector(lightPoint.x-intersected.point.x, lightPoint.y-intersected.point.y, lightPoint.z-intersected.point.z);
+    const dist = toLightVec.length();
+    const lightDir = toLightVec.normalize();
+    const cosTheta = Math.max(0, normal.dotProduct(lightDir));
+    const cosThetaLight = Math.abs(tri.normal.dotProduct(lightDir));
+    if (cosTheta > 0 && cosThetaLight > 0) {
+      const shadowHit = findClosestIntersection({ ray: new Ray(intersected.point, lightDir), tMin: epsilon, tMax: dist - epsilon, sceneObjects });
+      if (!shadowHit) {
+        radiance = radiance.addWithColor(color.multiply(cosTheta * cosThetaLight * totalArea / (dist * dist * Math.PI)).multiplyWithColor(emission));
       }
     }
   }
