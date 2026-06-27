@@ -43,14 +43,8 @@ const keyLight = new Sphere({
   material: new Material({ albedo: new Color(1, 1, 1), emissive: new Color(8, 8, 8) }),
 });
 
-// Fill light behind the camera — cool white
-const frontLight = new Sphere({
-  center: new Point(1.5, 3, -7), radius: 1.5,
-  material: new Material({ albedo: new Color(1, 0.95, 0.85), emissive: new Color(28, 24, 18) }),
-});
-
 export const sceneObjects: SceneObject[] = [
-  floor, ceiling, backWall, leftWall, rightWall, keyLight, frontLight,
+  floor, ceiling, backWall, leftWall, rightWall, keyLight,
 ];
 
 // ─── Monkey head (fetched at runtime in browser, loaded directly in Node.js) ──
