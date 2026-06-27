@@ -37,14 +37,8 @@ const rightWall = new Rectangle({
   width: 18, height: 6, normal: new Vector(-1, 0, 0), orientation: "yzAxis", material: wallMat,
 });
 
-// Overhead key light — NEE sampled, matches dragon's lightBall setup
-const keyLight = new Sphere({
-  center: new Point(0, 8, 0), radius: 3, name: "lightBall",
-  material: new Material({ albedo: new Color(1, 1, 1), emissive: new Color(8, 8, 8) }),
-});
-
 export const sceneObjects: SceneObject[] = [
-  floor, ceiling, backWall, leftWall, rightWall, keyLight,
+  floor, ceiling, backWall, leftWall, rightWall,
 ];
 
 // ─── Monkey head (fetched at runtime in browser, loaded directly in Node.js) ──
