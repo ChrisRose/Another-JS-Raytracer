@@ -38,20 +38,14 @@ const rightWall = new Rectangle({
   width: 20, height: 8, normal: new Vector(-1, 0, 0), orientation: "yzAxis", material: yellowMat,
 });
 
-// Overhead key light
-const lightBall = new Sphere({
-  center: new Point(0, 10, 1), radius: 2, name: "lightBall",
-  material: new Material({ albedo: new Color(1, 1, 1), emissive: new Color(8, 8, 8) }),
-});
-
 // Warm back light — backlights SSS through ears
 const backLight = new Sphere({
-  center: new Point(0, 1.5, 5), radius: 2,
+  center: new Point(0, 1.5, 5), radius: 2, name: "lightBall",
   material: new Material({ albedo: new Color(1, 0.95, 0.80), emissive: new Color(28, 24, 16) }),
 });
 
 export const sceneObjects: SceneObject[] = [
-  floor, ceiling, backWall, leftWall, rightWall, lightBall, backLight,
+  floor, ceiling, backWall, leftWall, rightWall, backLight,
 ];
 
 // ─── Monkey head ──────────────────────────────────────────────────────────────
