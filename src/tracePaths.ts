@@ -605,12 +605,9 @@ const traceRay = ({
       // Diffuse arm: fall through to texture + NEE below.
     }
 
-    // Subsurface scattering: jade, wax, skin.
-    // After the surface gloss has been Russian-rouletted, the body light can either
-    // scatter back out (diffuse, handled below) or pass through thin sections.
-    // Scatter direction is cosine-weighted around the INWARD normal, so light
-    // exits from the other side tinted by the material albedo.
-    if ((material.subsurface ?? 0) > 0 && Math.random() < (material.subsurface ?? 0)) {
+    // Subsurface scattering: Beer-Lambert transmittance only — no coin flip.
+    // Every hit scatters through; thickness from the BVH controls how much light passes.
+    if ((material.subsurface ?? 0) > 0) {
       let albedo = material.texture ? material.texture(intersected.point, normal) : material.albedo;
       if (material.subsurfaceSigma && intersected.mesh?.bvh) {
         const thicknessHit = intersectBVH(intersected.mesh.bvh, new Ray(intersected.point, ray.dir), epsilon * 10, Infinity, false);

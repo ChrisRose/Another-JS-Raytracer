@@ -315,8 +315,8 @@ function traceRay({ ray, sceneObjects, skyFn, skyImageData, bounceDepth = 0, inc
     // Diffuse arm falls through.
   }
 
-  // Subsurface scattering: jade, wax, skin.
-  if ((material.subsurface ?? 0) > 0 && Math.random() < (material.subsurface ?? 0)) {
+  // Subsurface scattering: Beer-Lambert transmittance only — no coin flip.
+  if ((material.subsurface ?? 0) > 0) {
     let albedo = material.texture ? material.texture(intersected.point, normal) : material.albedo;
     if (material.subsurfaceSigma && (intersected as any).mesh?.bvh) {
       const thicknessHit = intersectBVH((intersected as any).mesh.bvh, new Ray(intersected.point, ray.dir), epsilon * 10, Infinity, false);
