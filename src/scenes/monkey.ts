@@ -22,9 +22,11 @@ const ceiling = new Rectangle({
   corner: new Point(-6, 6, -6), v1: new Vector(1, 0, 0), v2: new Vector(0, 0, 1),
   width: 12, height: 18, normal: new Vector(0, -1, 0), orientation: "xzAxis", material: wallMat,
 });
+// Emissive back wall — replaces backLight sphere; warm orange, just behind the head
+const backWallMat = new Material({ albedo: new Color(1, 0.72, 0.38), emissive: new Color(22, 14, 5) });
 const backWall = new Rectangle({
-  corner: new Point(-6, 0, 12), v1: new Vector(1, 0, 0), v2: new Vector(0, 1, 0),
-  width: 12, height: 6, normal: new Vector(0, 0, -1), orientation: "xyAxis", material: wallMat,
+  corner: new Point(-6, 0, 4), v1: new Vector(1, 0, 0), v2: new Vector(0, 1, 0),
+  width: 12, height: 6, normal: new Vector(0, 0, -1), orientation: "xyAxis", material: backWallMat,
 });
 const leftWall = new Rectangle({
   corner: new Point(-6, 0, -6), v1: new Vector(0, 1, 0), v2: new Vector(0, 0, 1),
@@ -47,14 +49,8 @@ const frontLight = new Sphere({
   material: new Material({ albedo: new Color(1, 0.95, 0.85), emissive: new Color(28, 24, 18) }),
 });
 
-// Warm back light — drives SSS glow through ears, matches dragon backLight energy
-const backLight = new Sphere({
-  center: new Point(0, 1.8, 4.5), radius: 2,
-  material: new Material({ albedo: new Color(1, 0.80, 0.45), emissive: new Color(28, 20, 8) }),
-});
-
 export const sceneObjects: SceneObject[] = [
-  floor, ceiling, backWall, leftWall, rightWall, keyLight, frontLight, backLight,
+  floor, ceiling, backWall, leftWall, rightWall, keyLight, frontLight,
 ];
 
 // ─── Monkey head (fetched at runtime in browser, loaded directly in Node.js) ──
