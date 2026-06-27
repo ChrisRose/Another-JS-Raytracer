@@ -69,6 +69,14 @@ const SCENES = [
       "A lab bench with eight glass test tubes of coloured luminous liquids, procedural wood-grain surface, and atmospheric dust that scatters a warm shaft of sunlight through the window — Henyey-Greenstein phase function, Beer's law shadow transmittance.",
     thumb: `${BASE}thumbnails/lab.jpg` as string | null,
   },
+  {
+    id: "monkey",
+    title: "Suzanne",
+    tag: "Subsurface Scattering",
+    description:
+      "Blender's Suzanne mascot rendered in translucent orange wax. A warm backlight passes through the thin geometry of the ears via Beer-Lambert transmittance — thinner sections glow, thicker ones stay dark. Next-event estimation samples the single rear sphere light directly.",
+    thumb: `${BASE}thumbnails/monkey.jpg` as string | null,
+  },
 ];
 
 // ─── Gallery view ─────────────────────────────────────────────────────────────
