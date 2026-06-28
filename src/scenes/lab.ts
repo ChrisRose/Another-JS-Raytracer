@@ -45,7 +45,7 @@ const capMat      = new Material({ albedo: new Color(0.95, 0.95, 0.95) });
 const flaskMat    = new Material({ albedo: new Color(0.18, 0.52, 0.28), roughness: 0.55, subsurface: 0.35 });
 const backFlaskMat= new Material({ albedo: new Color(0.42, 0.02, 0.08), roughness: 0.30, subsurface: 0.20 });
 const paperMat    = new Material({ albedo: new Color(0.93, 0.91, 0.86) });
-const candleWax   = new Material({ albedo: new Color(0.94, 0.91, 0.84) });
+const candleWax   = new Material({ albedo: new Color(0.94, 0.91, 0.84), subsurface: 1.0, subsurfaceSigma: 5 });
 const candleFlame = new Material({ albedo: new Color(1.0, 0.6, 0.1), emissive: new Color(6, 3, 0.5) });
 const frostedWhite= new Material({ albedo: new Color(0.88, 0.88, 0.86), roughness: 0.35, subsurface: 0.20 });
 const frostedGreen= new Material({ albedo: new Color(0.65, 0.88, 0.72), roughness: 0.40, subsurface: 0.15 });
@@ -151,8 +151,8 @@ function alcoveTube(x: number, y: number, z: number, liquid: Material): SceneObj
 
 function candle(x: number, y: number, z: number, scale = 1): SceneObject[] {
   return [
-    new Cylinder({ center: new Point(x, y,             z), radius: 0.045*scale, height: 0.28*scale, material: candleWax   }),
-    new Cylinder({ center: new Point(x, y+0.30*scale,  z), radius: 0.022*scale, height: 0.07*scale, material: candleFlame }),
+    new Cylinder({ center: new Point(x, y,            z), radius: 0.045*scale, height: 0.28*scale, material: candleWax   }),
+    new Sphere  ({ center: new Point(x, y+0.32*scale, z), radius: 0.04*scale,                      material: candleFlame }),
   ];
 }
 
@@ -242,14 +242,13 @@ sceneObjects.push(new Rectangle({
   normal: new Vector(1, 0, 0), orientation: "yzAxis",
   material: wallMat,
 }));
-// Room ceiling (z=-3 to z=5.0, matching back wall face)
-sceneObjects.push(new Rectangle({
-  corner: new Point(-4, CEILING_Y, -3),
-  v1: new Vector(1, 0, 0), v2: new Vector(0, 0, 1),
-  width: 8, height: 8,
-  normal: new Vector(0, -1, 0), orientation: "xzAxis",
-  material: wallMat,
-}));
+// Room ceiling — split to leave skylight opening at x∈[-1,1], z∈[1.5,3.5]
+const skylightMat = new Material({ albedo: new Color(0.9, 0.95, 1.0), emissive: new Color(14, 15, 17) });
+sceneObjects.push(new Rectangle({ corner: new Point(-4, CEILING_Y, -3), v1: new Vector(1, 0, 0), v2: new Vector(0, 0, 1), width: 3, height: 8, normal: new Vector(0, -1, 0), orientation: "xzAxis", material: wallMat }));   // left strip
+sceneObjects.push(new Rectangle({ corner: new Point( 1, CEILING_Y, -3), v1: new Vector(1, 0, 0), v2: new Vector(0, 0, 1), width: 3, height: 8, normal: new Vector(0, -1, 0), orientation: "xzAxis", material: wallMat }));   // right strip
+sceneObjects.push(new Rectangle({ corner: new Point(-1, CEILING_Y, -3), v1: new Vector(1, 0, 0), v2: new Vector(0, 0, 1), width: 2, height: 4.5, normal: new Vector(0, -1, 0), orientation: "xzAxis", material: wallMat })); // front piece
+sceneObjects.push(new Rectangle({ corner: new Point(-1, CEILING_Y, 3.5), v1: new Vector(1, 0, 0), v2: new Vector(0, 0, 1), width: 2, height: 1.5, normal: new Vector(0, -1, 0), orientation: "xzAxis", material: wallMat })); // back piece
+sceneObjects.push(new Rectangle({ corner: new Point(-1, CEILING_Y, 1.5), v1: new Vector(1, 0, 0), v2: new Vector(0, 0, 1), width: 2, height: 2,   normal: new Vector(0, -1, 0), orientation: "xzAxis", material: skylightMat })); // skylight
 // Baseboards — left wall, back face, right wall
 sceneObjects.push(new Rectangle({   // left wall baseboard
   corner: new Point(-4, -0.6, -3),
@@ -546,6 +545,11 @@ sceneObjects.push(new Rectangle({
   normal: new Vector(0, 1, 0), orientation: "xzAxis",
   material: paperMat,
 }));
+
+// ─── Table candles ────────────────────────────────────────────────────────────
+for (const [cx, cz] of [[-1.55, 2.3], [0.3, 3.45], [1.85, 2.15]] as [number, number][]) {
+  for (const o of candle(cx, TABLE_Y, cz)) sceneObjects.push(o);
+}
 
 // Pencil — yellow, lying diagonally on paper
 {

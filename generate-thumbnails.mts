@@ -383,9 +383,16 @@ function traceRay({ ray, sceneObjects, skyFn, skyImageData, bounceDepth = 0, inc
   }
 
   // Subsurface scattering: use Beer-Lambert T as branching probability.
-  if ((material.subsurface ?? 0) > 0 && material.subsurfaceSigma && (intersected as any).mesh?.bvh) {
-    const thicknessHit = intersectBVH((intersected as any).mesh.bvh, new Ray(intersected.point, ray.dir), epsilon * 10, Infinity, false);
-    const thickness = thicknessHit ? thicknessHit.t : 0.5;
+  if ((material.subsurface ?? 0) > 0 && material.subsurfaceSigma) {
+    let thickness = 0.5;
+    if ((intersected as any).mesh?.bvh) {
+      const hit = intersectBVH((intersected as any).mesh.bvh, new Ray(intersected.point, ray.dir), epsilon * 10, Infinity, false);
+      thickness = hit ? hit.t : 0.5;
+    } else {
+      const exitPt = intersected.point.add(ray.dir.normalize().multiply(epsilon * 10).toPoint());
+      const exitHit = (obj as any).intersection?.(new Ray(exitPt, ray.dir));
+      thickness = exitHit?.t ?? 0.5;
+    }
     const T = Math.exp(-material.subsurfaceSigma * thickness);
     if (Math.random() < T) {
       const albedo = material.texture ? material.texture(intersected.point, normal) : material.albedo;

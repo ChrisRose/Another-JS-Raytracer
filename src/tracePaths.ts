@@ -14,6 +14,7 @@ import { Point } from "./Point.js";
 import { Mesh } from "./Mesh.js";
 import { Sphere } from "./Sphere.js";
 import { Triangle } from "./Triangle.js";
+import { Rectangle } from "./Rectangle.js";
 import { intersectBVH } from "./BVH.js";
 
 // Scene state — populated dynamically in onmessage before rendering begins.
@@ -609,9 +610,16 @@ const traceRay = ({
     // Subsurface scattering: use Beer-Lambert T as branching probability.
     // Thin sections (high T) mostly scatter through; thick sections (low T) mostly
     // fall through to normal diffuse. No arbitrary subsurface parameter needed.
-    if ((material.subsurface ?? 0) > 0 && material.subsurfaceSigma && intersected.mesh?.bvh) {
-      const thicknessHit = intersectBVH(intersected.mesh.bvh, new Ray(intersected.point, ray.dir), epsilon * 10, Infinity, false);
-      const thickness = thicknessHit ? thicknessHit.t : 0.5;
+    if ((material.subsurface ?? 0) > 0 && material.subsurfaceSigma) {
+      let thickness = 0.5;
+      if (intersected.mesh?.bvh) {
+        const hit = intersectBVH(intersected.mesh.bvh, new Ray(intersected.point, ray.dir), epsilon * 10, Infinity, false);
+        thickness = hit ? hit.t : 0.5;
+      } else {
+        const exitPt = intersected.point.add(ray.dir.normalize().multiply(epsilon * 10).toPoint());
+        const exitHit = (intersected.object as any).intersection?.(new Ray(exitPt, ray.dir));
+        thickness = exitHit?.t ?? 0.5;
+      }
       const T = Math.exp(-material.subsurfaceSigma * thickness);
       if (Math.random() < T) {
         const albedo = material.texture ? material.texture(intersected.point, normal) : material.albedo;
@@ -747,6 +755,30 @@ const traceRay = ({
             radiance = radiance.addWithColor(color.multiply(weight * T).multiplyWithColor(emission));
           }
         }
+      }
+    }
+
+    // Emissive rectangle NEE (e.g. skylight, area panel)
+    for (const obj of sceneObjects) {
+      if (obj.type !== 'rectangle') continue;
+      const rect = obj as Rectangle;
+      const em = rect.material?.emissive;
+      if (!em || (em.r === 0 && em.g === 0 && em.b === 0)) continue;
+      const u = Math.random(), v = Math.random();
+      const lx = rect.corner.x + u * rect.v1.x * rect.width + v * rect.v2.x * rect.height;
+      const ly = rect.corner.y + u * rect.v1.y * rect.width + v * rect.v2.y * rect.height;
+      const lz = rect.corner.z + u * rect.v1.z * rect.width + v * rect.v2.z * rect.height;
+      const dx = lx - intersected.point.x, dy = ly - intersected.point.y, dz = lz - intersected.point.z;
+      const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+      const lightDir = new Vector(dx/dist, dy/dist, dz/dist);
+      const cosTheta = Math.max(0, normal.dotProduct(lightDir));
+      const cosThetaLight = Math.abs(rect.normal.dotProduct(lightDir));
+      if (cosTheta === 0 || cosThetaLight === 0) continue;
+      const shadowHit = findClosestIntersection({ ray: new Ray(intersected.point, lightDir), tMin: epsilon, tMax: dist - epsilon, sceneObjects, i, j });
+      if (!shadowHit) {
+        const area = rect.width * rect.height;
+        const T = sigma_t > 0 ? Math.exp(-sigma_t * dist) : 1;
+        radiance = radiance.addWithColor(color.multiply(cosTheta * cosThetaLight * area * T / (dist * dist * Math.PI)).multiplyWithColor(em));
       }
     }
   } else {
