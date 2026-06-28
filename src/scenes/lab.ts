@@ -12,13 +12,13 @@ import { getRotationXMatrix } from "../matrix.js";
 import { parseMesh } from "../meshUtils.js";
 import { icosahedron } from "../meshes/icosahedron.js";
 
-export const cameraStart = new Point(0, 2.2, -2.5);
+export const cameraStart = new Point(0, 2.2, -1.5);
 export const rotateCamera = (dir: Vector) =>
   new Vector(dir.x, dir.y, dir.z)
     .multiplyWith3x3Matrix(getRotationXMatrix(10));
 
-export const sigma_t = 0.08;
-export const sigma_s = 0.07;
+export const sigma_t = 0.03;
+export const sigma_s = 0.025;
 export const phaseG  = 0.50;
 export const skyFn = (_dir: Vector) => new Color(0, 0, 0);
 
