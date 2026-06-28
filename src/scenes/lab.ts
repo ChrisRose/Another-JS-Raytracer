@@ -495,11 +495,11 @@ sceneObjects.push(new Mesh({
 
 // ─── Stools ───────────────────────────────────────────────────────────────────
 sceneObjects.push(new Cylinder({ center: new Point(-0.8, 0.58, 0.65), radius: 0.28, height: 0.05, material: benchTop }));
-for (const [sx, sz] of [[-1.02, 0.87], [-1.02, 0.43], [-0.58, 0.87], [-0.58, 0.43]] as [number,number][]) {
+for (const [sx, sz] of [[-0.98, 0.83], [-0.98, 0.47], [-0.62, 0.83], [-0.62, 0.47]] as [number,number][]) {
   sceneObjects.push(new Cylinder({ center: new Point(sx, -0.6, sz), radius: 0.05, height: 1.18, material: legMat }));
 }
 sceneObjects.push(new Cylinder({ center: new Point(1.2, 0.58, 0.80), radius: 0.28, height: 0.05, material: benchTop }));
-for (const [sx, sz] of [[0.98, 1.02], [0.98, 0.58], [1.42, 1.02], [1.42, 0.58]] as [number,number][]) {
+for (const [sx, sz] of [[1.02, 0.98], [1.02, 0.62], [1.38, 0.98], [1.38, 0.62]] as [number,number][]) {
   sceneObjects.push(new Cylinder({ center: new Point(sx, -0.6, sz), radius: 0.05, height: 1.18, material: legMat }));
 }
 
