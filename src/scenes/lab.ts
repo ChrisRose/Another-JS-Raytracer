@@ -547,7 +547,7 @@ sceneObjects.push(new Rectangle({
 }));
 
 // ─── Table candles ────────────────────────────────────────────────────────────
-for (const [cx, cz] of [[-1.55, 2.3], [0.3, 3.45], [1.85, 2.15]] as [number, number][]) {
+for (const [cx, cz] of [[-0.7, 2.3], [0.2, 3.35], [0.95, 2.4]] as [number, number][]) {
   for (const o of candle(cx, TABLE_Y, cz)) sceneObjects.push(o);
 }
 
