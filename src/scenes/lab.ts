@@ -263,13 +263,8 @@ sceneObjects.push(new Rectangle({
   normal: new Vector(1, 0, 0), orientation: "yzAxis",
   material: wallMat,
 }));
-// Room ceiling — split to leave skylight opening at x∈[-1,1], z∈[1.5,3.5]
-const skylightMat = new Material({ albedo: new Color(0.9, 0.95, 1.0), emissive: new Color(14, 15, 17) });
-sceneObjects.push(new Rectangle({ corner: new Point(-4, CEILING_Y, -3), v1: new Vector(1, 0, 0), v2: new Vector(0, 0, 1), width: 3, height: 8, normal: new Vector(0, -1, 0), orientation: "xzAxis", material: wallMat }));   // left strip
-sceneObjects.push(new Rectangle({ corner: new Point( 1, CEILING_Y, -3), v1: new Vector(1, 0, 0), v2: new Vector(0, 0, 1), width: 3, height: 8, normal: new Vector(0, -1, 0), orientation: "xzAxis", material: wallMat }));   // right strip
-sceneObjects.push(new Rectangle({ corner: new Point(-1, CEILING_Y, -3), v1: new Vector(1, 0, 0), v2: new Vector(0, 0, 1), width: 2, height: 4.5, normal: new Vector(0, -1, 0), orientation: "xzAxis", material: wallMat })); // front piece
-sceneObjects.push(new Rectangle({ corner: new Point(-1, CEILING_Y, 3.5), v1: new Vector(1, 0, 0), v2: new Vector(0, 0, 1), width: 2, height: 1.5, normal: new Vector(0, -1, 0), orientation: "xzAxis", material: wallMat })); // back piece
-sceneObjects.push(new Rectangle({ corner: new Point(-1, CEILING_Y, 1.5), v1: new Vector(1, 0, 0), v2: new Vector(0, 0, 1), width: 2, height: 2,   normal: new Vector(0, -1, 0), orientation: "xzAxis", material: skylightMat })); // skylight
+// Room ceiling
+sceneObjects.push(new Rectangle({ corner: new Point(-4, CEILING_Y, -3), v1: new Vector(1, 0, 0), v2: new Vector(0, 0, 1), width: 8, height: 13, normal: new Vector(0, -1, 0), orientation: "xzAxis", material: wallMat }));
 // Baseboards — left wall, back face, right wall
 sceneObjects.push(new Rectangle({   // left wall baseboard
   corner: new Point(-4, -0.6, -3),
