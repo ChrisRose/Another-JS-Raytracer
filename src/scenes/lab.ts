@@ -45,6 +45,7 @@ const capMat      = new Material({ albedo: new Color(0.95, 0.95, 0.95) });
 const flaskMat    = new Material({ albedo: new Color(0.18, 0.52, 0.28), roughness: 0.55, subsurface: 0.35 });
 const backFlaskMat= new Material({ albedo: new Color(0.42, 0.02, 0.08), roughness: 0.30, subsurface: 0.20 });
 const paperMat    = new Material({ albedo: new Color(0.93, 0.91, 0.86) });
+const clearLiquid = new Material({ albedo: new Color(0, 0, 0), refractionIndex: 1.33 });
 const candleWax   = new Material({ albedo: new Color(0.94, 0.91, 0.84), subsurface: 1.0, subsurfaceSigma: 5 });
 const candleFlame = new Material({ albedo: new Color(1.0, 0.6, 0.1), emissive: new Color(6, 3, 0.5) });
 const frostedWhite= new Material({ albedo: new Color(0.88, 0.88, 0.86), roughness: 0.35, subsurface: 0.20 });
@@ -546,8 +547,8 @@ for (let i = 0; i < RACK_N; i++) {
 }
 
 // Erlenmeyers — left 1/3 (dominant) and back-right (shorter accent)
-for (const o of makeErlenmeyer(-1.1, 2.8, 0.72, flaskMat,     liquids.amber, TABLE_Y)) sceneObjects.push(o);
-for (const o of makeErlenmeyer( 1.9, 2.9, 0.75, backFlaskMat, liquids.red,   TABLE_Y)) sceneObjects.push(o);
+for (const o of makeErlenmeyer(-1.1, 2.8, 0.72, flaskMat,     clearLiquid, TABLE_Y)) sceneObjects.push(o);
+for (const o of makeErlenmeyer( 1.9, 2.9, 0.75, backFlaskMat, clearLiquid, TABLE_Y)) sceneObjects.push(o);
 
 // Faceted crystal ball — centre-left, catches window light from right
 sceneObjects.push(parseMesh({
