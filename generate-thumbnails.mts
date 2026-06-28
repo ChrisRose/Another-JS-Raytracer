@@ -186,6 +186,12 @@ function sampleSphereLight(lightCenter: Point, lightRadius: number, surfacePoint
   return { dir, solidAngle };
 }
 
+function hgPhase(cosTheta: number, g: number): number {
+  if (Math.abs(g) < 1e-3) return 1 / (4 * Math.PI);
+  const g2 = g * g;
+  return (1 - g2) / (4 * Math.PI * Math.pow(Math.max(0, 1 + g2 - 2 * g * cosTheta), 1.5));
+}
+
 function sampleHG(dir: Vector, g: number): Vector {
   const u = Math.random();
   let cosTheta: number;
@@ -226,9 +232,69 @@ function traceRay({ ray, sceneObjects, skyFn, skyImageData, bounceDepth = 0, inc
     const t_free = -Math.log(Math.max(1e-10, Math.random())) / sigma_t;
     const t_surf = intersected ? distance(intersected.point, ray.start) : Infinity;
     if (t_free < t_surf) {
-      if (Math.random() > sigma_s / sigma_t) return new Color(0, 0, 0);
       const sp = ray.getPoint(t_free);
-      return traceRay({ ray: new Ray(sp, sampleHG(ray.dir, phaseG)), sceneObjects, skyFn, skyImageData, bounceDepth: bounceDepth + 1, includeEmission: true, sigma_t, sigma_s, phaseG });
+      const inDir = ray.dir.normalize();
+      const sa = sigma_s / sigma_t;
+      let nee = new Color(0, 0, 0);
+
+      // NEE: emissive spheres
+      for (const obj of sceneObjects) {
+        if (obj.type !== 'sphere') continue;
+        const sphere = obj as unknown as Sphere;
+        const em = sphere.material?.emissive;
+        if (!em || (em.r === 0 && em.g === 0 && em.b === 0)) continue;
+        const sample = sampleSphereLight(sphere.center, sphere.radius, sp);
+        if (!sample) continue;
+        const { dir: lightDir, solidAngle } = sample;
+        const phase = hgPhase(inDir.dotProduct(lightDir), phaseG);
+        const shadowHit = findClosestIntersection({ ray: new Ray(sp, lightDir), tMin: epsilon, tMax: Infinity, sceneObjects });
+        if (shadowHit?.object === sphere) {
+          const dx = sphere.center.x - sp.x, dy = sphere.center.y - sp.y, dz = sphere.center.z - sp.z;
+          const T = Math.exp(-sigma_t * Math.sqrt(dx*dx + dy*dy + dz*dz));
+          nee = nee.addWithColor(em.multiply(sa * phase * solidAngle * T));
+        }
+      }
+
+      // NEE: emissive mesh triangles
+      const emissiveTris: { tri: Triangle; emission: Color; area: number }[] = [];
+      for (const obj of sceneObjects) {
+        if (obj.type !== 'mesh') continue;
+        const mesh = obj as any;
+        const emissive = mesh.material?.emissive as Color | undefined;
+        if (!emissive || (emissive.r === 0 && emissive.g === 0 && emissive.b === 0)) continue;
+        for (const prim of mesh.meshObjects) {
+          if (prim.type !== 'triangle') continue;
+          const tri = prim as Triangle;
+          const e1 = tri.v2.subtract(tri.v1), e2 = tri.v3.subtract(tri.v1);
+          emissiveTris.push({ tri, emission: emissive, area: 0.5 * e1.crossProduct(e2).length() });
+        }
+      }
+      if (emissiveTris.length > 0) {
+        const totalArea = emissiveTris.reduce((s, e) => s + e.area, 0);
+        let rnd = Math.random() * totalArea;
+        let chosen = emissiveTris[emissiveTris.length - 1];
+        for (const e of emissiveTris) { rnd -= e.area; if (rnd <= 0) { chosen = e; break; } }
+        const sqr1 = Math.sqrt(Math.random()), r2 = Math.random();
+        const b0 = 1 - sqr1, b1 = sqr1 * (1 - r2), b2 = sqr1 * r2;
+        const { tri, emission } = chosen;
+        const lp = new Point(b0*tri.v1.x + b1*tri.v2.x + b2*tri.v3.x, b0*tri.v1.y + b1*tri.v2.y + b2*tri.v3.y, b0*tri.v1.z + b1*tri.v2.z + b2*tri.v3.z);
+        const dx = lp.x - sp.x, dy = lp.y - sp.y, dz = lp.z - sp.z;
+        const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+        const lDir = new Vector(dx/dist, dy/dist, dz/dist);
+        const cosTL = Math.abs(tri.normal.dotProduct(lDir));
+        const phase = hgPhase(inDir.dotProduct(lDir), phaseG);
+        const shadowHit = findClosestIntersection({ ray: new Ray(sp, lDir), tMin: epsilon, tMax: dist - epsilon, sceneObjects });
+        if (!shadowHit) {
+          const T = Math.exp(-sigma_t * dist);
+          nee = nee.addWithColor(emission.multiply(sa * phase * cosTL * totalArea * T / (dist * dist)));
+        }
+      }
+
+      // Indirect scattered ray — suppress emission to avoid double-counting.
+      const indirect = new Color(sa, sa, sa).multiplyWithColor(
+        traceRay({ ray: new Ray(sp, sampleHG(ray.dir, phaseG)), sceneObjects, skyFn, skyImageData, bounceDepth: bounceDepth + 1, includeEmission: false, sigma_t, sigma_s, phaseG })
+      );
+      return nee.addWithColor(indirect);
     }
   }
 
@@ -492,8 +558,10 @@ for (const { id, scene } of scenesToRender) {
     for (const { i, j, rotatedDir } of pixelDirs) {
       const jitteredDir = new Vector(rotatedDir.x + Math.random()/WIDTH, rotatedDir.y + Math.random()/WIDTH, rotatedDir.z);
       const color = traceRay({ ray: new Ray(cameraStart, jitteredDir), sceneObjects, skyFn, skyImageData, sigma_t, sigma_s, phaseG });
+      const lum = 0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b;
+      const clampScale = lum > 20 ? 20 / lum : 1;
       const idx = i * WIDTH + j;
-      accumR[idx] += color.r; accumG[idx] += color.g; accumB[idx] += color.b;
+      accumR[idx] += color.r * clampScale; accumG[idx] += color.g * clampScale; accumB[idx] += color.b * clampScale;
       counts[idx]++;
     }
   }

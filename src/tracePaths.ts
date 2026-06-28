@@ -53,6 +53,7 @@ async function importScene(name: string): Promise<{
   else if (name === "chess")         mod = await import("./scenes/chess.js");
   else if (name === "dragon")        mod = await import("./scenes/dragon.js");
   else if (name === "lab")           mod = await import("./scenes/lab.js");
+  else if (name === "monkey")        mod = await import("./scenes/monkey.js");
   else                               mod = await import("./scenes/cornellBoxMeshes.js");
 
   if (typeof mod.init === "function") await mod.init();
@@ -847,7 +848,9 @@ onmessage = async (e: MessageEvent) => {
       }
 
       const color = traceRay({ ray: new Ray(rayOrigin, rayDir), imageMaps, i, j });
-      pixelColors.push({ i, j, r: color.r, g: color.g, b: color.b });
+      const lum = 0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b;
+      const clampScale = lum > 20 ? 20 / lum : 1;
+      pixelColors.push({ i, j, r: color.r * clampScale, g: color.g * clampScale, b: color.b * clampScale });
     }
 
     postMessage({ pass, totalPasses, pixelColors });
