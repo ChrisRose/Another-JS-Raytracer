@@ -150,9 +150,25 @@ function alcoveTube(x: number, y: number, z: number, liquid: Material): SceneObj
 }
 
 function candle(x: number, y: number, z: number, scale = 1): SceneObject[] {
+  const hw   = 0.018 * scale;          // half-width of pyramid base
+  const by   = y + 0.28 * scale;       // base Y (top of wax)
+  const ay   = by + 0.13 * scale;      // apex Y (tall flame)
+  const v0 = new Vector(x - hw, by, z - hw);
+  const v1 = new Vector(x + hw, by, z - hw);
+  const v2 = new Vector(x + hw, by, z + hw);
+  const v3 = new Vector(x - hw, by, z + hw);
+  const ap = new Vector(x,      ay, z);
   return [
-    new Cylinder({ center: new Point(x, y,            z), radius: 0.045*scale, height: 0.28*scale, material: candleWax   }),
-    new Sphere  ({ center: new Point(x, y+0.32*scale, z), radius: 0.04*scale,                      material: candleFlame }),
+    new Cylinder({ center: new Point(x, y, z), radius: 0.045*scale, height: 0.28*scale, material: candleWax }),
+    new Mesh({
+      name: "flame", material: candleFlame,
+      meshObjects: [
+        new Triangle({ v1: v0, v2: v1, v3: ap, material: candleFlame }),
+        new Triangle({ v1: v1, v2: v2, v3: ap, material: candleFlame }),
+        new Triangle({ v1: v2, v2: v3, v3: ap, material: candleFlame }),
+        new Triangle({ v1: v3, v2: v0, v3: ap, material: candleFlame }),
+      ],
+    }),
   ];
 }
 
@@ -220,7 +236,11 @@ sceneObjects.push(new Rectangle({
   material: benchSide,
 }));
 for (const [lx, lz] of [[-1.38, 3.18], [-1.38, 1.42], [2.38, 3.18], [2.38, 1.42]] as [number,number][]) {
-  sceneObjects.push(new Cylinder({ center: new Point(lx, -0.6, lz), radius: 0.10, height: 1.48, material: legMat }));
+  const N = 3, h = 1.48 / N;
+  for (let i = 0; i < N; i++) {
+    const r = 0.06 + 0.04 * (i + 0.5) / N;
+    sceneObjects.push(new Cylinder({ center: new Point(lx, -0.6 + i*h, lz), radius: r, height: h, material: legMat }));
+  }
 }
 
 // ─── Room ─────────────────────────────────────────────────────────────────────
@@ -495,11 +515,19 @@ sceneObjects.push(new Mesh({
 // ─── Stools ───────────────────────────────────────────────────────────────────
 sceneObjects.push(new Cylinder({ center: new Point(-0.8, 0.58, 0.65), radius: 0.28, height: 0.05, material: benchTop }));
 for (const [sx, sz] of [[-0.98, 0.83], [-0.98, 0.47], [-0.62, 0.83], [-0.62, 0.47]] as [number,number][]) {
-  sceneObjects.push(new Cylinder({ center: new Point(sx, -0.6, sz), radius: 0.05, height: 1.18, material: legMat }));
+  const N = 3, h = 1.18 / N;
+  for (let i = 0; i < N; i++) {
+    const r = 0.03 + 0.02 * (i + 0.5) / N;
+    sceneObjects.push(new Cylinder({ center: new Point(sx, -0.6 + i*h, sz), radius: r, height: h, material: legMat }));
+  }
 }
 sceneObjects.push(new Cylinder({ center: new Point(1.2, 0.58, 0.80), radius: 0.28, height: 0.05, material: benchTop }));
 for (const [sx, sz] of [[1.02, 0.98], [1.02, 0.62], [1.38, 0.98], [1.38, 0.62]] as [number,number][]) {
-  sceneObjects.push(new Cylinder({ center: new Point(sx, -0.6, sz), radius: 0.05, height: 1.18, material: legMat }));
+  const N = 3, h = 1.18 / N;
+  for (let i = 0; i < N; i++) {
+    const r = 0.03 + 0.02 * (i + 0.5) / N;
+    sceneObjects.push(new Cylinder({ center: new Point(sx, -0.6 + i*h, sz), radius: r, height: h, material: legMat }));
+  }
 }
 
 // ─── Table items ──────────────────────────────────────────────────────────────
