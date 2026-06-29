@@ -405,6 +405,7 @@ const traceRay = ({
   ray,
   imageMaps,
   bounceDepth = 0,
+  throughput = new Color(1, 1, 1),
   includeEmission = true,
   i,
   j,
@@ -413,15 +414,17 @@ const traceRay = ({
   ray: Ray;
   imageMaps: { [key: string]: ImageData };
   bounceDepth?: number;
+  throughput?: Color;
   includeEmission?: boolean;
   i?: number;
   j?: number;
   k?: number;
 }): Color => {
   let radiance = new Color(0, 0, 0);
-  const maxBounceDepth = 4;
+  const MIN_BOUNCES = 3;
+  const MAX_BOUNCES = 24;
 
-  if (bounceDepth > maxBounceDepth) {
+  if (bounceDepth > MAX_BOUNCES) {
     return new Color(0, 0, 0);
   }
 
@@ -487,7 +490,7 @@ const traceRay = ({
       // Indirect scattered ray — suppress emission so NEE doesn't double-count direct hits.
       const newDir = sampleHenyeyGreenstein(inDir, phaseG);
       const indirect = new Color(sa, sa, sa).multiplyWithColor(
-        traceRay({ ray: new Ray(scatterPt, newDir), imageMaps, bounceDepth: bounceDepth + 1, includeEmission: false, i, j, k })
+        traceRay({ ray: new Ray(scatterPt, newDir), imageMaps, bounceDepth: bounceDepth + 1, throughput: throughput.multiply(sa), includeEmission: false, i, j, k })
       );
       return nee.addWithColor(indirect);
     }
@@ -519,6 +522,15 @@ const traceRay = ({
     // hits to avoid double-counting the same light contribution.
     if (emission) {
       return includeEmission ? emission : new Color(0, 0, 0);
+    }
+
+    // Russian roulette: after MIN_BOUNCES, terminate low-throughput paths probabilistically.
+    // Surviving paths are boosted by 1/p so the estimator stays unbiased.
+    let rrScale = 1;
+    if (bounceDepth >= MIN_BOUNCES) {
+      const p = Math.max(0.05, Math.min(1, Math.max(throughput.r, throughput.g, throughput.b)));
+      if (Math.random() > p) return new Color(0, 0, 0);
+      rrScale = 1 / p;
     }
 
     const material = (intersected.object as Primitive).material;
@@ -554,11 +566,14 @@ const traceRay = ({
       // GGX importance-sampled weight: F * G * (ωo·h) / ((n·ωo) * (n·h))
       // (D cancels with the PDF D*(n·h)/(4*(ωo·h)))
       const weight = (G * oDotH) / (nDotO * nDotH);
+      const brdfColor = fresnel.multiply(weight);
       const Li = traceRay({
         ray: new Ray(intersected.point.add(normal.multiply(epsilon).toPoint()), ωi),
-        imageMaps, bounceDepth: bounceDepth + 1, includeEmission: true, i, j, k
+        imageMaps, bounceDepth: bounceDepth + 1,
+        throughput: throughput.multiply(rrScale).multiplyWithColor(brdfColor),
+        includeEmission: true, i, j, k
       });
-      return fresnel.multiply(weight).multiplyWithColor(Li);
+      return brdfColor.multiply(rrScale).multiplyWithColor(Li);
     }
 
     // Dielectric (glass): Fresnel-weighted Russian roulette between reflection and refraction.
@@ -570,12 +585,13 @@ const traceRay = ({
         refractionIndex: material.refractionIndex!
       });
       const reflected = getReflectedRay({ normal, point: intersected.point, incidentRay: ray.dir });
+      const dielectricThroughput = throughput.multiply(rrScale);
       if (Math.random() < fresnel) {
-        return traceRay({ ray: reflected, imageMaps, bounceDepth: bounceDepth + 1, includeEmission: true, i, j, k });
+        return traceRay({ ray: reflected, imageMaps, bounceDepth: bounceDepth + 1, throughput: dielectricThroughput, includeEmission: true, i, j, k }).multiply(rrScale);
       }
       const refracted = getRefractedRay({ normal, point: intersected.point, incidentRay: ray.dir, refractionIndex: material.refractionIndex! });
       // TIR fallback: reflect if refraction is geometrically impossible
-      return traceRay({ ray: refracted ?? reflected, imageMaps, bounceDepth: bounceDepth + 1, includeEmission: true, i, j, k });
+      return traceRay({ ray: refracted ?? reflected, imageMaps, bounceDepth: bounceDepth + 1, throughput: dielectricThroughput, includeEmission: true, i, j, k }).multiply(rrScale);
     }
 
     // Glossy dielectric: polished non-metal (lacquered wood, stone, plastic).
@@ -599,9 +615,11 @@ const traceRay = ({
           const weight = (G * oDotH) / (nDotO * nDotH);
           const Li = traceRay({
             ray: new Ray(intersected.point.add(normal.multiply(epsilon).toPoint()), ωi),
-            imageMaps, bounceDepth: bounceDepth + 1, includeEmission: true, i, j, k,
+            imageMaps, bounceDepth: bounceDepth + 1,
+            throughput: throughput.multiply(rrScale * weight),
+            includeEmission: true, i, j, k,
           });
-          return new Color(1, 1, 1).multiply(weight).multiplyWithColor(Li);
+          return new Color(1, 1, 1).multiply(weight * rrScale).multiplyWithColor(Li);
         }
       }
       // Diffuse arm: fall through to texture + NEE below.
@@ -625,8 +643,8 @@ const traceRay = ({
         const albedo = material.texture ? material.texture(intersected.point, normal) : material.albedo;
         const scatterDir = getCosineWeightedSample(normal.multiply(-1));
         const exitPt = intersected.point.add(normal.multiply(-epsilon).toPoint());
-        return albedo.multiplyWithColor(
-          traceRay({ ray: new Ray(exitPt, scatterDir), imageMaps, bounceDepth: bounceDepth + 1, includeEmission: true, i, j, k })
+        return albedo.multiply(rrScale).multiplyWithColor(
+          traceRay({ ray: new Ray(exitPt, scatterDir), imageMaps, bounceDepth: bounceDepth + 1, throughput: throughput.multiply(rrScale).multiplyWithColor(albedo), includeEmission: true, i, j, k })
         );
       }
     }
@@ -644,6 +662,8 @@ const traceRay = ({
       }
     }
 
+    color = color.multiply(rrScale);
+
     // Single path sample per bounce (proper Monte Carlo path tracing).
     // With cosine-weighted sampling, PDF = cos(θ)/π and BRDF = albedo/π,
     // so the weight simplifies to just albedo.
@@ -660,6 +680,7 @@ const traceRay = ({
           ray: new Ray(shiftedPoint, randomDirection),
           imageMaps,
           bounceDepth: bounceDepth + 1,
+          throughput: throughput.multiplyWithColor(color),
           includeEmission: false,
           i,
           j,
