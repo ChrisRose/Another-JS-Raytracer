@@ -63,10 +63,10 @@ export async function init() {
   const dragon = await fetchAndParseMesh(`${base}meshes/dragon.obj`, {
     name: "dragon",
     material: new Material({
-      albedo: new Color(0.08, 0.48, 0.22),  // jade green
-      roughness: 0.08,                       // waxy polished surface
-      subsurface: 0.62,                      // translucency — light bleeds through thin sections
-      subsurfaceSigma: 4,                    // Beer-Lambert: fins ~T=0.30, body ~T≈0
+      albedo: new Color(0.10, 0.58, 0.32),
+      roughness: 0.18,
+      subsurface: 0.70,
+      subsurfaceSigma: 2.5,
     }),
     scale: 4,
     translate: { x: 0, y: 2.34, z: 1 },

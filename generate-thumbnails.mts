@@ -508,7 +508,7 @@ for (const { id, scene } of scenesToRender) {
     const dragon = parseMesh({
       mesh: objText,
       name: 'dragon',
-      material: new Material({ albedo: new Color(0.08, 0.48, 0.22), roughness: 0.08, subsurface: 0.62, subsurfaceSigma: 4 }),
+      material: new Material({ albedo: new Color(0.10, 0.58, 0.32), roughness: 0.18, subsurface: 0.70, subsurfaceSigma: 2.5 }),
       scale: 4,
       translate: { x: 0, y: 2.34, z: 1 },
     });
