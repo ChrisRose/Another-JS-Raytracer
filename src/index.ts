@@ -10,7 +10,7 @@ const SCENES = [
     title: "Cornell Box (Mesh Scene)",
     tag: "Path Tracing",
     description:
-      "Classic Cornell box with a red left wall, green right wall, and a diffuse ceiling area light. Two white OBJ boxes of different heights share the floor with a red Utah teapot. Cosine-weighted hemisphere sampling with sphere-light next-event estimation.",
+      "The classic Cornell box test scene. Red and green walls, two white boxes, and a Utah teapot on the floor under a ceiling light.",
     thumb: `${BASE}thumbnails/cornellBoxMeshes.jpg` as string | null,
   },
   {
@@ -18,7 +18,7 @@ const SCENES = [
     title: "Global Illumination",
     tag: "Path Tracing",
     description:
-      "A green diffuse sphere in a white room lit by an emissive sphere off to the left. Green light bleeds onto the surrounding white walls — a minimal scene that isolates indirect colour interreflection.",
+      "A green sphere in a white room. The green light bleeds onto the surrounding walls, showing off indirect colour bouncing.",
     thumb: `${BASE}thumbnails/globalIllumination.jpg` as string | null,
   },
   {
@@ -26,7 +26,7 @@ const SCENES = [
     title: "Refraction",
     tag: "Dielectrics",
     description:
-      "A large glass sphere (IOR 1.5) sits in a room with a red left wall, blue right wall, and gold ceiling. An orange and a teal sphere behind the glass appear inverted and distorted through refraction. Fresnel-weighted Russian roulette picks between reflection and transmission at each bounce.",
+      "A large glass sphere in a colourful room. The two spheres behind it appear inverted and distorted, with reflections and transmission varying by angle.",
     thumb: `${BASE}thumbnails/refraction.jpg` as string | null,
   },
   {
@@ -34,7 +34,7 @@ const SCENES = [
     title: "Metal Bunny",
     tag: "Metallic BRDF",
     description:
-      "Stanford Bunny rendered with a Cook-Torrance GGX metallic BRDF — gold F0 (1.0, 0.71, 0.29) at roughness 0.25. Red and green side walls reflect across the polished gold surface. BVH-accelerated intersection over ~70 000 triangles.",
+      "The Stanford Bunny in polished gold. The red and green walls reflect across its surface.",
     thumb: `${BASE}thumbnails/metalBunny.jpg` as string | null,
   },
   {
@@ -42,7 +42,7 @@ const SCENES = [
     title: "The Backrooms",
     tag: "Environment",
     description:
-      "A 63-unit deep corridor with yellow chevron-patterned walls, dark brown carpet, and ten warm fluorescent ceiling panels fading to darkness. A nearly black teapot silhouette stands mid-hallway beside a side door on the left. Progressive path-traced global illumination.",
+      "A long corridor with yellow chevron walls and warm fluorescent lights fading into the dark. A teapot silhouette stands mid-hallway next to a door.",
     thumb: `${BASE}thumbnails/backrooms.jpg` as string | null,
   },
   {
@@ -50,7 +50,7 @@ const SCENES = [
     title: "Stanford Dragon",
     tag: "Subsurface Scattering",
     description:
-      "Stanford Dragon (100k triangles) in translucent jade. A waxy GGX gloss coat sits over a subsurface scattering body — 45% of body bounces pass through thin sections and exit the far side tinted green, making fins and claws glow when backlit.",
+      "The Stanford Dragon in translucent jade. Light passes through the thin fins and claws, making them glow from behind.",
     thumb: `${BASE}thumbnails/dragon.jpg` as string | null,
   },
   {
@@ -58,7 +58,7 @@ const SCENES = [
     title: "Chess Board",
     tag: "Reflections",
     description:
-      "A Qe1# checkmate position: polished silver and dark gunmetal pieces on a semi-reflective lacquered board — piece silhouettes and the Milky Way sky reflect faintly in the ivory-and-ebony squares via a Fresnel-weighted GGX gloss layer.",
+      "A checkmate position with polished silver and gunmetal pieces. The Milky Way sky reflects faintly in the lacquered board.",
     thumb: `${BASE}thumbnails/chess.jpg` as string | null,
   },
   {
@@ -66,7 +66,7 @@ const SCENES = [
     title: "Laboratory",
     tag: "Volumetrics",
     description:
-      "A lab bench with eight glass test tubes of coloured luminous liquids, procedural wood-grain surface, and atmospheric dust that scatters a warm shaft of sunlight through the window — Henyey-Greenstein phase function, Beer's law shadow transmittance.",
+      "A lab bench with eight glowing test tubes. Dust in the air scatters a warm shaft of sunlight coming through the window.",
     thumb: `${BASE}thumbnails/lab.jpg` as string | null,
   },
   {
@@ -74,7 +74,7 @@ const SCENES = [
     title: "Suzanne",
     tag: "Subsurface Scattering",
     description:
-      "Blender's Suzanne mascot rendered in translucent orange wax. A warm backlight passes through the thin geometry of the ears via Beer-Lambert transmittance — thinner sections glow, thicker ones stay dark. Next-event estimation samples the single rear sphere light directly.",
+      "Blender's Suzanne in translucent orange wax. A backlight shines through the ears, making the thin parts glow.",
     thumb: `${BASE}thumbnails/monkey.jpg` as string | null,
   },
   {
@@ -82,7 +82,7 @@ const SCENES = [
     title: "Crystal Tumbler",
     tag: "Dielectrics",
     description:
-      "A procedural 12-facet borosilicate glass tumbler (IOR 1.52) with a 45° twist from base to rim and a thick solid base. Two sphere lights — warm overhead and cool fill — illuminate the interior walls. Red and blue side walls bleed colour through the refracting facets.",
+      "A glass tumbler with a 45° twist and a candy-striped straw. Red and blue walls bleed colour through the refracting facets.",
     thumb: `${BASE}thumbnails/tumbler.jpg` as string | null,
   },
 ];
