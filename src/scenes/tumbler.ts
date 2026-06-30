@@ -136,7 +136,7 @@ const WATER_LEVEL = 1.85;
 const WATER_RINGS = RINGS_ABOVE;
 
 const waterMat = new Material({
-  albedo: new Color(0.82, 0.94, 1.0),
+  albedo: new Color(0.96, 0.99, 1.0),
   refractionIndex: 1.33,
 });
 
