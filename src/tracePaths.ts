@@ -57,6 +57,7 @@ async function importScene(name: string): Promise<{
   else if (name === "dragon")        mod = await import("./scenes/dragon.js");
   else if (name === "lab")           mod = await import("./scenes/lab.js");
   else if (name === "monkey")        mod = await import("./scenes/monkey.js");
+  else if (name === "tumbler")       mod = await import("./scenes/tumbler.js");
   else                               mod = await import("./scenes/cornellBoxMeshes.js");
 
   if (typeof mod.init === "function") await mod.init();
