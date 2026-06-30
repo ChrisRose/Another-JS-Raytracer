@@ -83,7 +83,7 @@ const SCENES = [
     tag: "Dielectrics",
     description:
       "A procedural 12-facet borosilicate glass tumbler (IOR 1.52) with a 45° twist from base to rim and a thick solid base. Two sphere lights — warm overhead and cool fill — illuminate the interior walls. Red and blue side walls bleed colour through the refracting facets.",
-    thumb: null,
+    thumb: `${BASE}thumbnails/tumbler.jpg` as string | null,
   },
 ];
 
