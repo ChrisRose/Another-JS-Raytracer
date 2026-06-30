@@ -225,7 +225,7 @@ interface TraceCtx {
 }
 
 function traceRay({ ray, sceneObjects, skyFn, skyImageData, bounceDepth = 0, includeEmission = true, sigma_t = 0, sigma_s = 0, phaseG = 0 }: TraceCtx): Color {
-  if (bounceDepth > 4) return new Color(0, 0, 0);
+  if (bounceDepth > 8) return new Color(0, 0, 0);
 
   const intersected = findClosestIntersection({ ray, tMin: epsilon, tMax: Infinity, sceneObjects });
 
