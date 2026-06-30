@@ -29,6 +29,8 @@ let focusDistance = 0;
 let sigma_t = 0; // extinction coefficient (scattering + absorption)
 let sigma_s = 0; // scattering coefficient
 let phaseG  = 0; // Henyey-Greenstein anisotropy (-1…1)
+let totalEmissiveMeshArea = 0; // precomputed per scene for MIS PDF
+let totalEmissiveRectArea = 0;
 /* eslint-enable prefer-const */
 
 async function importScene(name: string): Promise<{
@@ -55,6 +57,7 @@ async function importScene(name: string): Promise<{
   else if (name === "dragon")        mod = await import("./scenes/dragon.js");
   else if (name === "lab")           mod = await import("./scenes/lab.js");
   else if (name === "monkey")        mod = await import("./scenes/monkey.js");
+  else if (name === "tumbler")       mod = await import("./scenes/tumbler.js");
   else                               mod = await import("./scenes/cornellBoxMeshes.js");
 
   if (typeof mod.init === "function") await mod.init();
@@ -405,6 +408,8 @@ const traceRay = ({
   ray,
   imageMaps,
   bounceDepth = 0,
+  throughput = new Color(1, 1, 1),
+  misPBrdf,
   includeEmission = true,
   i,
   j,
@@ -413,15 +418,18 @@ const traceRay = ({
   ray: Ray;
   imageMaps: { [key: string]: ImageData };
   bounceDepth?: number;
+  throughput?: Color;
+  misPBrdf?: number;
   includeEmission?: boolean;
   i?: number;
   j?: number;
   k?: number;
 }): Color => {
   let radiance = new Color(0, 0, 0);
-  const maxBounceDepth = 4;
+  const MIN_BOUNCES = 3;
+  const MAX_BOUNCES = 24;
 
-  if (bounceDepth > maxBounceDepth) {
+  if (bounceDepth > MAX_BOUNCES) {
     return new Color(0, 0, 0);
   }
 
@@ -487,7 +495,7 @@ const traceRay = ({
       // Indirect scattered ray — suppress emission so NEE doesn't double-count direct hits.
       const newDir = sampleHenyeyGreenstein(inDir, phaseG);
       const indirect = new Color(sa, sa, sa).multiplyWithColor(
-        traceRay({ ray: new Ray(scatterPt, newDir), imageMaps, bounceDepth: bounceDepth + 1, includeEmission: false, i, j, k })
+        traceRay({ ray: new Ray(scatterPt, newDir), imageMaps, bounceDepth: bounceDepth + 1, throughput: throughput.multiply(sa), includeEmission: false, i, j, k })
       );
       return nee.addWithColor(indirect);
     }
@@ -514,11 +522,48 @@ const traceRay = ({
 
     const emission = intersected?.object?.material?.emissive;
 
-    // Only count emissive surfaces for camera rays or specular bounces.
-    // Diffuse bounces use NEE for direct lighting, so suppress emissive
-    // hits to avoid double-counting the same light contribution.
     if (emission) {
-      return includeEmission ? emission : new Color(0, 0, 0);
+      if (!includeEmission) return new Color(0, 0, 0);
+
+      // BRDF-sampled ray hit an emissive surface. Apply MIS balance weight so
+      // this and the NEE contribution together equal the full direct lighting integral.
+      if (misPBrdf !== undefined) {
+        const d = distance(intersected.point, ray.start);
+        const cosTL = Math.abs(normal.dotProduct(ray.dir.normalize().multiply(-1)));
+        let pLightSa = 0;
+        if (d > 0 && cosTL > 0) {
+          if (intersected.mesh && totalEmissiveMeshArea > 0) {
+            pLightSa = (d * d) / (cosTL * totalEmissiveMeshArea);
+          } else if (intersected.object?.type === 'rectangle' && totalEmissiveRectArea > 0) {
+            pLightSa = (d * d) / (cosTL * totalEmissiveRectArea);
+          } else if (intersected.object?.name === 'lightBall') {
+            const sphere = intersected.object as Sphere;
+            const toCenter = new Vector(
+              sphere.center.x - ray.start.x,
+              sphere.center.y - ray.start.y,
+              sphere.center.z - ray.start.z
+            );
+            const d2c = toCenter.length();
+            if (d2c > sphere.radius) {
+              const sinMax = sphere.radius / d2c;
+              const cosMax = Math.sqrt(Math.max(0, 1 - sinMax * sinMax));
+              pLightSa = 1 / (2 * Math.PI * (1 - cosMax));
+            }
+          }
+        }
+        if (pLightSa > 0) return emission.multiply(misPBrdf / (misPBrdf + pLightSa));
+      }
+
+      return emission;
+    }
+
+    // Russian roulette: after MIN_BOUNCES, terminate low-throughput paths probabilistically.
+    // Surviving paths are boosted by 1/p so the estimator stays unbiased.
+    let rrScale = 1;
+    if (bounceDepth >= MIN_BOUNCES) {
+      const p = Math.max(0.05, Math.min(1, Math.max(throughput.r, throughput.g, throughput.b)));
+      if (Math.random() > p) return new Color(0, 0, 0);
+      rrScale = 1 / p;
     }
 
     const material = (intersected.object as Primitive).material;
@@ -554,11 +599,14 @@ const traceRay = ({
       // GGX importance-sampled weight: F * G * (ωo·h) / ((n·ωo) * (n·h))
       // (D cancels with the PDF D*(n·h)/(4*(ωo·h)))
       const weight = (G * oDotH) / (nDotO * nDotH);
+      const brdfColor = fresnel.multiply(weight);
       const Li = traceRay({
         ray: new Ray(intersected.point.add(normal.multiply(epsilon).toPoint()), ωi),
-        imageMaps, bounceDepth: bounceDepth + 1, includeEmission: true, i, j, k
+        imageMaps, bounceDepth: bounceDepth + 1,
+        throughput: throughput.multiply(rrScale).multiplyWithColor(brdfColor),
+        includeEmission: true, i, j, k
       });
-      return fresnel.multiply(weight).multiplyWithColor(Li);
+      return brdfColor.multiply(rrScale).multiplyWithColor(Li);
     }
 
     // Dielectric (glass): Fresnel-weighted Russian roulette between reflection and refraction.
@@ -570,12 +618,13 @@ const traceRay = ({
         refractionIndex: material.refractionIndex!
       });
       const reflected = getReflectedRay({ normal, point: intersected.point, incidentRay: ray.dir });
+      const dielectricThroughput = throughput.multiply(rrScale);
       if (Math.random() < fresnel) {
-        return traceRay({ ray: reflected, imageMaps, bounceDepth: bounceDepth + 1, includeEmission: true, i, j, k });
+        return traceRay({ ray: reflected, imageMaps, bounceDepth: bounceDepth + 1, throughput: dielectricThroughput, includeEmission: true, i, j, k }).multiply(rrScale);
       }
       const refracted = getRefractedRay({ normal, point: intersected.point, incidentRay: ray.dir, refractionIndex: material.refractionIndex! });
       // TIR fallback: reflect if refraction is geometrically impossible
-      return traceRay({ ray: refracted ?? reflected, imageMaps, bounceDepth: bounceDepth + 1, includeEmission: true, i, j, k });
+      return traceRay({ ray: refracted ?? reflected, imageMaps, bounceDepth: bounceDepth + 1, throughput: dielectricThroughput, includeEmission: true, i, j, k }).multiply(rrScale);
     }
 
     // Glossy dielectric: polished non-metal (lacquered wood, stone, plastic).
@@ -599,9 +648,11 @@ const traceRay = ({
           const weight = (G * oDotH) / (nDotO * nDotH);
           const Li = traceRay({
             ray: new Ray(intersected.point.add(normal.multiply(epsilon).toPoint()), ωi),
-            imageMaps, bounceDepth: bounceDepth + 1, includeEmission: true, i, j, k,
+            imageMaps, bounceDepth: bounceDepth + 1,
+            throughput: throughput.multiply(rrScale * weight),
+            includeEmission: true, i, j, k,
           });
-          return new Color(1, 1, 1).multiply(weight).multiplyWithColor(Li);
+          return new Color(1, 1, 1).multiply(weight * rrScale).multiplyWithColor(Li);
         }
       }
       // Diffuse arm: fall through to texture + NEE below.
@@ -625,8 +676,8 @@ const traceRay = ({
         const albedo = material.texture ? material.texture(intersected.point, normal) : material.albedo;
         const scatterDir = getCosineWeightedSample(normal.multiply(-1));
         const exitPt = intersected.point.add(normal.multiply(-epsilon).toPoint());
-        return albedo.multiplyWithColor(
-          traceRay({ ray: new Ray(exitPt, scatterDir), imageMaps, bounceDepth: bounceDepth + 1, includeEmission: true, i, j, k })
+        return albedo.multiply(rrScale).multiplyWithColor(
+          traceRay({ ray: new Ray(exitPt, scatterDir), imageMaps, bounceDepth: bounceDepth + 1, throughput: throughput.multiply(rrScale).multiplyWithColor(albedo), includeEmission: true, i, j, k })
         );
       }
     }
@@ -644,6 +695,8 @@ const traceRay = ({
       }
     }
 
+    color = color.multiply(rrScale);
+
     // Single path sample per bounce (proper Monte Carlo path tracing).
     // With cosine-weighted sampling, PDF = cos(θ)/π and BRDF = albedo/π,
     // so the weight simplifies to just albedo.
@@ -653,14 +706,16 @@ const traceRay = ({
       normal.multiply(epsilon).toPoint()
     );
 
-    // Diffuse bounce: suppress emissive hits since NEE covers direct lighting.
+    // BRDF sample: pass misPBrdf so emissive hits use MIS balance weight instead of being suppressed.
+    const pBrdf = Math.max(0, normal.dotProduct(randomDirection)) / Math.PI;
     radiance = radiance.addWithColor(
       throughputWeight.multiplyWithColor(
         traceRay({
           ray: new Ray(shiftedPoint, randomDirection),
           imageMaps,
           bounceDepth: bounceDepth + 1,
-          includeEmission: false,
+          throughput: throughput.multiplyWithColor(color),
+          misPBrdf: pBrdf,
           i,
           j,
           k
@@ -668,7 +723,8 @@ const traceRay = ({
       )
     );
 
-    // Next-event estimation: sphere light or mesh area light.
+    // Next-event estimation: run all applicable light types simultaneously.
+    // Each uses a MIS balance weight vs the cosine-weighted BRDF sample (p_brdf = cosθ/π).
     const lightSphere = sceneObjects.find((o) => o.name === "lightBall") as Sphere | undefined;
 
     if (lightSphere) {
@@ -680,19 +736,23 @@ const traceRay = ({
         if (cosTheta > 0) {
           const shadowHit = castRay({ ray: new Ray(intersected.point, lightDir), sceneObjects, i, j });
           if (shadowHit?.object?.name === "lightBall") {
-            const emission = lightSphere.material.emissive ?? new Color(0, 0, 0);
+            const neeEmission = lightSphere.material.emissive ?? new Color(0, 0, 0);
+            const pLightSa = 1 / solidAngle;
+            const pBrdfSa = cosTheta / Math.PI;
+            const wNee = pLightSa / (pLightSa + pBrdfSa);
             const weight = cosTheta * solidAngle / Math.PI;
             const lightDist = lightSphere.center.subtract(intersected.point).toVector().length();
             const T = sigma_t > 0 ? Math.exp(-sigma_t * lightDist) : 1;
-            radiance = radiance.addWithColor(color.multiply(weight * T).multiplyWithColor(emission));
+            radiance = radiance.addWithColor(color.multiply(weight * T * wNee).multiplyWithColor(neeEmission));
           }
         }
       }
-    } else {
-      // Area-light NEE: sample a random point on any emissive mesh triangle.
-      // Estimator: albedo/π × L_e × cosTheta_surface × cosTheta_light × totalArea / dist²
-      type EmissiveTri = { tri: Triangle; emission: Color; area: number };
-      const emissiveTris: EmissiveTri[] = [];
+    }
+
+    // Area-light NEE: always runs regardless of sphere lights.
+    // Estimator: albedo/π × L_e × cosTheta_surface × cosTheta_light × totalArea / dist²
+    {
+      const emissiveTris: { tri: Triangle; emission: Color; area: number }[] = [];
       for (const obj of sceneObjects) {
         if (obj.type === "mesh") {
           const mesh = obj as Mesh;
@@ -723,7 +783,7 @@ const traceRay = ({
         const sqr1 = Math.sqrt(Math.random());
         const r2 = Math.random();
         const b0 = 1 - sqr1, b1 = sqr1 * (1 - r2), b2 = sqr1 * r2;
-        const { tri, emission } = chosen;
+        const { tri, emission: meshEmission } = chosen;
         const lightPoint = new Point(
           b0 * tri.v1.x + b1 * tri.v2.x + b2 * tri.v3.x,
           b0 * tri.v1.y + b1 * tri.v2.y + b2 * tri.v3.y,
@@ -750,9 +810,12 @@ const traceRay = ({
             j
           });
           if (!shadowHit) {
+            const pLightSa = (dist * dist) / (cosThetaLight * totalArea);
+            const pBrdfSa = cosTheta / Math.PI;
+            const wNee = pLightSa / (pLightSa + pBrdfSa);
             const weight = cosTheta * cosThetaLight * totalArea / (dist * dist * Math.PI);
             const T = sigma_t > 0 ? Math.exp(-sigma_t * dist) : 1;
-            radiance = radiance.addWithColor(color.multiply(weight * T).multiplyWithColor(emission));
+            radiance = radiance.addWithColor(color.multiply(weight * T * wNee).multiplyWithColor(meshEmission));
           }
         }
       }
@@ -777,8 +840,11 @@ const traceRay = ({
       const shadowHit = findClosestIntersection({ ray: new Ray(intersected.point, lightDir), tMin: epsilon, tMax: dist - epsilon, sceneObjects, i, j });
       if (!shadowHit) {
         const area = rect.width * rect.height;
+        const pLightSa = (dist * dist) / (cosThetaLight * area);
+        const pBrdfSa = cosTheta / Math.PI;
+        const wNee = pLightSa / (pLightSa + pBrdfSa);
         const T = sigma_t > 0 ? Math.exp(-sigma_t * dist) : 1;
-        radiance = radiance.addWithColor(color.multiply(cosTheta * cosThetaLight * area * T / (dist * dist * Math.PI)).multiplyWithColor(em));
+        radiance = radiance.addWithColor(color.multiply(cosTheta * cosThetaLight * area * T * wNee / (dist * dist * Math.PI)).multiplyWithColor(em));
       }
     }
   } else {
@@ -825,6 +891,32 @@ onmessage = async (e: MessageEvent) => {
   sigma_t = scene.sigma_t ?? 0;
   sigma_s = scene.sigma_s ?? 0;
   phaseG  = scene.phaseG  ?? 0;
+
+  // Precompute total emissive areas for MIS PDF calculations.
+  totalEmissiveMeshArea = 0;
+  totalEmissiveRectArea = 0;
+  for (const obj of sceneObjects) {
+    if (obj.type === 'mesh') {
+      const mesh = obj as Mesh;
+      const em = mesh.material?.emissive;
+      if (em && (em.r > 0 || em.g > 0 || em.b > 0)) {
+        for (const prim of mesh.meshObjects) {
+          if (prim.type === 'triangle') {
+            const tri = prim as Triangle;
+            const e1 = tri.v2.subtract(tri.v1);
+            const e2 = tri.v3.subtract(tri.v1);
+            totalEmissiveMeshArea += 0.5 * e1.crossProduct(e2).length();
+          }
+        }
+      }
+    } else if (obj.type === 'rectangle') {
+      const rect = obj as Rectangle;
+      const em = rect.material?.emissive;
+      if (em && (em.r > 0 || em.g > 0 || em.b > 0)) {
+        totalEmissiveRectArea += rect.width * rect.height;
+      }
+    }
+  }
 
   // Camera basis vectors for DOF lens-disk sampling.
   const cameraRight = rotateCamera(new Vector(1, 0, 0));

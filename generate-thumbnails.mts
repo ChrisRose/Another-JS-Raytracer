@@ -18,6 +18,7 @@ import * as chessScene              from './src/scenes/chess.js';
 import * as dragonScene             from './src/scenes/dragon.js';
 import * as labScene               from './src/scenes/lab.js';
 import * as monkeyScene            from './src/scenes/monkey.js';
+import * as tumblerScene           from './src/scenes/tumbler.js';
 
 // Raytracer utilities
 import { Color }    from './src/Color.js';
@@ -47,6 +48,7 @@ const SCENES = [
   { id: 'dragon',             scene: dragonScene             },
   { id: 'lab',               scene: labScene               },
   { id: 'monkey',            scene: monkeyScene            },
+  { id: 'tumbler',           scene: tumblerScene           },
 ];
 
 const PREVIEW = process.argv.includes('--preview');

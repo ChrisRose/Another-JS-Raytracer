@@ -77,6 +77,14 @@ const SCENES = [
       "Blender's Suzanne mascot rendered in translucent orange wax. A warm backlight passes through the thin geometry of the ears via Beer-Lambert transmittance — thinner sections glow, thicker ones stay dark. Next-event estimation samples the single rear sphere light directly.",
     thumb: `${BASE}thumbnails/monkey.jpg` as string | null,
   },
+  {
+    id: "tumbler",
+    title: "Crystal Tumbler",
+    tag: "Dielectrics",
+    description:
+      "A procedural 12-facet borosilicate glass tumbler (IOR 1.52) with a 45° twist from base to rim and a thick solid base. Two sphere lights — warm overhead and cool fill — illuminate the interior walls. Red and blue side walls bleed colour through the refracting facets.",
+    thumb: null,
+  },
 ];
 
 // ─── Gallery view ─────────────────────────────────────────────────────────────
